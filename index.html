@@ -1,9 +1,665 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My GitHub Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rui Ying - Electrical Engineering Student & Developer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-menu a:hover {
+            color: #ffd700;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding-top: 80px;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #ffd700;
+            color: #333;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 1s ease 0.4s both;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .section {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .section:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .about-image {
+            text-align: center;
+        }
+
+        .profile-placeholder {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+            margin: 0 auto;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .skill-category {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .skill-category:hover {
+            transform: translateY(-5px);
+        }
+
+        .skill-category h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .skill-tag {
+            background: #667eea;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .project-image {
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .project-content {
+            padding: 1.5rem;
+        }
+
+        .project-content h3 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .project-content p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .project-tech {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tech-tag {
+            background: #f0f0f0;
+            padding: 0.2rem 0.6rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: #667eea;
+        }
+
+        .project-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .project-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .project-link:hover {
+            text-decoration: underline;
+        }
+
+        .experience-timeline {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .timeline-item {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+            margin-left: 2rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 2rem;
+            width: 1rem;
+            height: 1rem;
+            background: #667eea;
+            border-radius: 50%;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: -1.7rem;
+            top: 3rem;
+            width: 0.3rem;
+            height: calc(100% + 2rem);
+            background: #667eea;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+
+        .contact {
+            background: #333;
+            color: white;
+            text-align: center;
+        }
+
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .contact-item {
+            padding: 1rem;
+        }
+
+        .contact-item h4 {
+            color: #ffd700;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer {
+            background: #222;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            
+            .about-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .nav-menu {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Hello, this is my homepage!</h1>
+    <header class="header">
+        <nav class="nav container">
+            <div class="logo">Rui Ying</div>
+            <ul class="nav-menu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#experience">Experience</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Rui Ying</h1>
+            <p>Electrical Engineering Student | Embedded Systems Developer | AI Enthusiast</p>
+            <p>Technical University of Munich</p>
+            <a href="#about" class="btn">Learn More About Me</a>
+        </div>
+    </section>
+
+    <section id="about" class="section">
+        <div class="container">
+            <h2 class="section-title">About Me</h2>
+            <div class="about-grid">
+                <div class="about-image">
+                    <div class="profile-placeholder">RY</div>
+                </div>
+                <div class="about-content">
+                    <h3>Hello! I'm Rui Ying</h3>
+                    <p>I'm a passionate Electrical and Information Engineering student at the Technical University of Munich, with a strong background in both hardware and software development.</p>
+                    <p>My expertise spans from low-level embedded systems programming with microcontrollers to high-level AI application development. I have hands-on experience with circuit design, firmware development, full-stack applications, and machine learning implementations.</p>
+                    <p>Originally from Anhui, China, I bring a global perspective to my engineering projects and am fluent in Chinese (native), German, English, and Spanish.</p>
+                    <p><strong>Current Focus:</strong> Embedded systems, IoT applications, and AI-powered solutions</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="skills" class="section">
+        <div class="container">
+            <h2 class="section-title">Technical Skills</h2>
+            <div class="skills-grid">
+                <div class="skill-category">
+                    <h3>Programming Languages</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">C/C++</span>
+                        <span class="skill-tag">Python</span>
+                        <span class="skill-tag">Java</span>
+                        <span class="skill-tag">C#</span>
+                        <span class="skill-tag">JavaScript</span>
+                        <span class="skill-tag">TypeScript</span>
+                    </div>
+                </div>
+                <div class="skill-category">
+                    <h3>Embedded & Hardware</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">PSoC Creator</span>
+                        <span class="skill-tag">Arduino</span>
+                        <span class="skill-tag">Keil</span>
+                        <span class="skill-tag">VHDL</span>
+                        <span class="skill-tag">KiCad</span>
+                        <span class="skill-tag">LTspice</span>
+                    </div>
+                </div>
+                <div class="skill-category">
+                    <h3>Software & Frameworks</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">Qt6</span>
+                        <span class="skill-tag">React</span>
+                        <span class="skill-tag">Node.js</span>
+                        <span class="skill-tag">Spring Boot</span>
+                        <span class="skill-tag">Docker</span>
+                        <span class="skill-tag">Git</span>
+                    </div>
+                </div>
+                <div class="skill-category">
+                    <h3>Tools & Platforms</h3>
+                    <div class="skill-tags">
+                        <span class="skill-tag">MATLAB/Simulink</span>
+                        <span class="skill-tag">AutoCAD</span>
+                        <span class="skill-tag">SolidWorks</span>
+                        <span class="skill-tag">Linux</span>
+                        <span class="skill-tag">CI/CD</span>
+                        <span class="skill-tag">CMake</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" class="section">
+        <div class="container">
+            <h2 class="section-title">Featured Projects</h2>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <div class="project-image">🔌</div>
+                    <div class="project-content">
+                        <h3>CDC Set Up Control Program</h3>
+                        <p>Advanced embedded control system with cross-platform desktop application built in C++/Qt6. Features real-time monitoring, multi-device serial communication, and comprehensive safety mechanisms.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">C++</span>
+                            <span class="tech-tag">Qt6</span>
+                            <span class="tech-tag">PSoC</span>
+                            <span class="tech-tag">KiCad</span>
+                            <span class="tech-tag">CI/CD</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://github.com/rruiying/CDC_Set_Up_Control_Programm" class="project-link">View Code</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-image">📡</div>
+                    <div class="project-content">
+                        <h3>CDC MCU Programming Suite</h3>
+                        <p>Firmware and hardware integration project featuring PSoC 4500s programming, PID control algorithms, and multi-protocol communication systems.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">C</span>
+                            <span class="tech-tag">PSoC Creator</span>
+                            <span class="tech-tag">PID Control</span>
+                            <span class="tech-tag">I²C</span>
+                            <span class="tech-tag">UART</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://github.com/rruiying/CDC_SET_UP_Programm_on_MCU" class="project-link">View Code</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-image">🌐</div>
+                    <div class="project-content">
+                        <h3>Internet Communication System</h3>
+                        <p>Decentralized multi-server chatroom with UDP broadcast discovery, TCP communication, real-time translation, and comprehensive chat management features.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">Socket Programming</span>
+                            <span class="tech-tag">PySide6</span>
+                            <span class="tech-tag">Google Translate API</span>
+                        </div>
+                        <div class="project-links">
+                            <a href="https://github.com/rruiying/Internetkommunikation-Gruppe4" class="project-link">View Code</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-image">🤖</div>
+                    <div class="project-content">
+                        <h3>AI Video Generation Pipeline</h3>
+                        <p>Three-stage API pipeline integrating Llava, Llama, and Luma for automated video generation from image descriptions with batch processing capabilities.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">AI APIs</span>
+                            <span class="tech-tag">Asyncio</span>
+                            <span class="tech-tag">Pillow</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-image">🏗️</div>
+                    <div class="project-content">
+                        <h3>Digital Circuit Design</h3>
+                        <p>VHDL implementation of ATM Paketierer and RV32I CPU with comprehensive testbenches, synthesis, and timing optimization in Vivado.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">VHDL</span>
+                            <span class="tech-tag">Vivado</span>
+                            <span class="tech-tag">Digital Design</span>
+                            <span class="tech-tag">CPU Architecture</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-image">🎮</div>
+                    <div class="project-content">
+                        <h3>Q-Learning Elevator System</h3>
+                        <p>Reinforcement learning implementation in Python with pygame-based simulation, featuring policy optimization and performance analysis.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">Pygame</span>
+                            <span class="tech-tag">Machine Learning</span>
+                            <span class="tech-tag">Matplotlib</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="experience" class="section">
+        <div class="container">
+            <h2 class="section-title">Professional Experience</h2>
+            <div class="experience-timeline">
+                <div class="timeline-item">
+                    <h3>Embedded Full-Stack Developer</h3>
+                    <h4>Chair of Circuit Design, Technical University of Munich</h4>
+                    <p><strong>April 2025 - August 2025</strong> | Munich, Germany</p>
+                    <p>Led development of electromechanical control system with cross-platform C++/Qt6 application. Implemented TDD approach with GoogleTest, GitLab CI/CD integration, and comprehensive sensor-feedback PID control systems.</p>
+                    <ul>
+                        <li>Architected modular CMake structure with static analysis integration</li>
+                        <li>Developed multi-device serial communication protocols</li>
+                        <li>Programmed PSoC 4500s firmware with advanced motor control</li>
+                    </ul>
+                </div>
+
+                <div class="timeline-item">
+                    <h3>Equipment Management Intern</h3>
+                    <h4>Shanghai Railway Bureau, Hefei Rolling Stock Maintenance Division</h4>
+                    <p><strong>June 2019 - September 2019</strong> | Hefei, Anhui, China</p>
+                    <p>Coordinated high-precision measurement equipment inventory management for passenger car maintenance operations. Developed automated reporting systems and improved utilization efficiency.</p>
+                    <ul>
+                        <li>Managed critical testing equipment reliability and availability</li>
+                        <li>Created Excel-based inventory tracking and visualization systems</li>
+                        <li>Improved equipment utilization rate through data analysis</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2 class="section-title" style="color: white;">Get In Touch</h2>
+            <p style="color: #ccc; font-size: 1.2rem;">Always excited to collaborate on innovative projects!</p>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <h4>📧 Email</h4>
+                    <p>yrleo174@gmail.com</p>
+                </div>
+                <div class="contact-item">
+                    <h4>📱 Phone</h4>
+                    <p>+49 (0)162 9596823</p>
+                </div>
+                <div class="contact-item">
+                    <h4>🏠 Location</h4>
+                    <p>Munich, Germany</p>
+                </div>
+                <div class="contact-item">
+                    <h4>🎓 University</h4>
+                    <p>Technical University of Munich</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Rui Ying. Passionate about embedded systems, AI, and innovative engineering solutions.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(255, 255, 255, 0.95)';
+                header.style.color = '#333';
+            } else {
+                header.style.background = 'rgba(255, 255, 255, 0.1)';
+                header.style.color = 'white';
+            }
+        });
+
+        // Animate elements on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements for animation
+        document.querySelectorAll('.skill-category, .project-card, .timeline-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
 </body>
 </html>
