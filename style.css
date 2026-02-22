@@ -49,19 +49,6 @@ a:hover {
     align-self: start;
 }
 
-.photo-placeholder {
-    width: 200px;
-    height: 240px;
-    background: #e8e8e8;
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    font-size: 13px;
-    font-family: 'Source Sans 3', sans-serif;
-    margin-bottom: 20px;
-}
 
 .sidebar-name {
     font-family: 'Source Serif 4', Georgia, serif;
