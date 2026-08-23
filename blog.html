@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog — Rui Ying</title>
+    <meta name="description" content="Notes, course write-ups and reading logs by Rui Ying.">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <a class="topnav-brand" href="index.html">Rui Ying</a>
+            <ul class="topnav-links">
+                <li><a href="index.html#about">About me</a></li>
+                <li><a href="index.html#news">News</a></li>
+                <li><a href="index.html#publications">Publications</a></li>
+                <li><a class="active" href="blog.html">Blog</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-wrapper narrow">
+        <main class="main-content">
+
+            <h1>Blog</h1>
+            <p class="empty-note">
+                Course notes, reading logs and things I want to remember. Read-only &mdash;
+                entries are added by committing to the repository.
+            </p>
+
+            <!-- Controls -->
+            <div class="blog-controls">
+                <input type="search" id="blog-search" class="blog-search"
+                       placeholder="Search titles, summaries, tags&hellip;" autocomplete="off"
+                       aria-label="Search posts">
+                <label class="blog-sort-label" for="blog-sort">Sort</label>
+                <select id="blog-sort" class="blog-sort" aria-label="Sort posts">
+                    <option value="date-desc">Newest first</option>
+                    <option value="date-asc">Oldest first</option>
+                    <option value="title-asc">Title A &rarr; Z</option>
+                    <option value="title-desc">Title Z &rarr; A</option>
+                    <option value="category-asc">Category A &rarr; Z</option>
+                </select>
+            </div>
+
+            <div class="blog-filters" id="blog-filters" role="group" aria-label="Filter by category"></div>
+
+            <div class="blog-count" id="blog-count"></div>
+
+            <div class="blog-list" id="blog-list"></div>
+
+        </main>
+
+        <footer class="page-footer">
+            &copy; 2026 Rui Ying &middot; Munich, Germany
+        </footer>
+    </div>
+
+    <script src="posts.js"></script>
+    <script>
+    (function () {
+        "use strict";
+
+        var listEl    = document.getElementById("blog-list");
+        var countEl   = document.getElementById("blog-count");
+        var filtersEl = document.getElementById("blog-filters");
+        var searchEl  = document.getElementById("blog-search");
+        var sortEl    = document.getElementById("blog-sort");
+
+        var posts = (typeof POSTS !== "undefined" ? POSTS : []).slice();
+        var activeCategory = "All";
+
+        // ── Category chips ────────────────────────────────────────────────
+        var categories = ["All"].concat(
+            posts.map(function (p) { return p.category || "Uncategorised"; })
+                 .filter(function (c, i, a) { return a.indexOf(c) === i; })
+                 .sort(function (a, b) { return a.localeCompare(b); })
+        );
+
+        categories.forEach(function (cat) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "chip" + (cat === activeCategory ? " active" : "");
+            btn.textContent = cat;
+            btn.addEventListener("click", function () {
+                activeCategory = cat;
+                Array.prototype.forEach.call(filtersEl.children, function (c) {
+                    c.classList.toggle("active", c === btn);
+                });
+                render();
+            });
+            filtersEl.appendChild(btn);
+        });
+
+        // ── Helpers ───────────────────────────────────────────────────────
+        function haystack(p) {
+            return [p.title, p.summary, p.category]
+                .concat(p.tags || [])
+                .join(" ")
+                .toLowerCase();
+        }
+
+        function formatDate(iso) {
+            var d = new Date(iso + "T00:00:00");
+            if (isNaN(d)) { return iso; }
+            return d.toLocaleDateString("en-GB", {
+                year: "numeric", month: "short", day: "numeric"
+            });
+        }
+
+        var comparators = {
+            "date-desc":     function (a, b) { return (b.date || "").localeCompare(a.date || ""); },
+            "date-asc":      function (a, b) { return (a.date || "").localeCompare(b.date || ""); },
+            "title-asc":     function (a, b) { return a.title.localeCompare(b.title); },
+            "title-desc":    function (a, b) { return b.title.localeCompare(a.title); },
+            "category-asc":  function (a, b) {
+                var c = (a.category || "").localeCompare(b.category || "");
+                return c !== 0 ? c : (b.date || "").localeCompare(a.date || "");
+            }
+        };
+
+        // ── Render ────────────────────────────────────────────────────────
+        function render() {
+            var q = searchEl.value.trim().toLowerCase();
+            var terms = q ? q.split(/\s+/) : [];
+
+            var shown = posts.filter(function (p) {
+                var cat = p.category || "Uncategorised";
+                if (activeCategory !== "All" && cat !== activeCategory) { return false; }
+                if (!terms.length) { return true; }
+                var h = haystack(p);
+                return terms.every(function (t) { return h.indexOf(t) !== -1; });
+            });
+
+            shown.sort(comparators[sortEl.value] || comparators["date-desc"]);
+
+            listEl.innerHTML = "";
+
+            if (!shown.length) {
+                var none = document.createElement("p");
+                none.className = "empty-note";
+                none.textContent = posts.length
+                    ? "No posts match that search."
+                    : "No posts yet.";
+                listEl.appendChild(none);
+                countEl.textContent = "";
+                return;
+            }
+
+            countEl.textContent = shown.length + (shown.length === 1 ? " post" : " posts");
+
+            shown.forEach(function (p) {
+                var art = document.createElement("article");
+                art.className = "post-item";
+
+                var h = document.createElement("h3");
+                h.className = "post-title";
+                var a = document.createElement("a");
+                a.href = p.url;
+                a.textContent = p.title;
+                h.appendChild(a);
+                art.appendChild(h);
+
+                var meta = document.createElement("div");
+                meta.className = "post-meta";
+                meta.appendChild(document.createTextNode(formatDate(p.date)));
+                if (p.category) {
+                    meta.appendChild(document.createTextNode(" · "));
+                    var cs = document.createElement("span");
+                    cs.className = "post-category";
+                    cs.textContent = p.category;
+                    meta.appendChild(cs);
+                }
+                art.appendChild(meta);
+
+                if (p.summary) {
+                    var s = document.createElement("p");
+                    s.className = "post-summary";
+                    s.textContent = p.summary;
+                    art.appendChild(s);
+                }
+
+                if (p.tags && p.tags.length) {
+                    var tw = document.createElement("div");
+                    tw.className = "post-tags";
+                    p.tags.forEach(function (t) {
+                        var tag = document.createElement("span");
+                        tag.className = "tag";
+                        tag.textContent = t;
+                        tw.appendChild(tag);
+                    });
+                    art.appendChild(tw);
+                }
+
+                listEl.appendChild(art);
+            });
+        }
+
+        searchEl.addEventListener("input", render);
+        sortEl.addEventListener("change", render);
+        render();
+    })();
+    </script>
+
+</body>
+</html>

@@ -3,25 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rui Ying - TU Munich</title>
+    <title>Rui Ying — TU Munich</title>
+    <meta name="description" content="Rui Ying — M.Sc. student in Robotics, Cognition, Intelligence at TU Munich. Physical AI, spatial AI, robot learning, graphics.">
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- Top navigation -->
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <a class="topnav-brand" href="index.html">Rui Ying</a>
+            <ul class="topnav-links">
+                <li><a href="#about">About me</a></li>
+                <li><a href="#news">News</a></li>
+                <li><a href="#publications">Publications</a></li>
+                <li><a href="blog.html">Blog</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="page-wrapper">
 
         <!-- Sidebar -->
         <aside class="sidebar">
-            <img src="images/image.jpg" alt="Rui Ying" style="width: 200px; border: 1px solid #ddd; margin-bottom: 20px;">
-            <div class="sidebar-name">Rui Ying</div>
+            <img class="avatar" src="images/image.jpg" alt="Rui Ying">
+            <div class="sidebar-name">Rui Ying &middot; 应睿</div>
             <div class="sidebar-affiliation">
-                M.Sc. Student<br>
-                Electrical and Information Engineering<br>
+                M.Sc. Robotics, Cognition, Intelligence<br>
+                School of Computation, Information and Technology<br>
                 Technical University of Munich
             </div>
             <ul class="sidebar-links">
                 <li><span class="label">Email</span> <a href="mailto:rui.ying@tum.de">rui.ying@tum.de</a></li>
-                <li><span class="label">GitHub</span> <a href="https://github.com/rruiying">github.com/rruiying</a></li>
+                <li><span class="label">Scholar</span> <a href="https://scholar.google.com/citations?user=SCHOLAR_ID" rel="noopener">Google Scholar</a></li>
+                <li><span class="label">GitHub</span> <a href="https://github.com/rruiying" rel="noopener">rruiying</a></li>
                 <li><span class="label">Based</span> Munich, Germany</li>
             </ul>
         </aside>
@@ -29,123 +45,108 @@
         <!-- Main -->
         <main class="main-content">
 
+            <h1 id="about">About me</h1>
+
             <p class="intro-text">
-                I am an M.Sc. student in Electrical and Information Engineering at the Technical University of Munich (TUM). My work lies at the intersection of embedded systems, robotics, mixed reality, and intelligent cyber-physical systems.
+                I am a first-year M.Sc. student in <strong>Robotics, Cognition, Intelligence (RCI)</strong> at the
+                Technical University of Munich. I am interested in <strong>physical AI</strong> and
+                <strong>spatial AI</strong> &mdash; how embodied agents build a geometric, persistent understanding
+                of the world and act in it &mdash; and in <strong>robot learning</strong> as the bridge between
+                the two.
+            </p>
 
-My research centers on learning-based world models, deep reinforcement learning, and vision-based embodied intelligence. I am particularly interested in integrating geometry, optimization, and dynamical systems theory with machine learning for 2D/3D perception, graphics and rendering, signal processing, and control.
+            <p class="intro-text">
+                I am also a computer graphics enthusiast. Rendering, geometry processing and differentiable
+                simulation are, to me, the same mathematics that underpins spatial perception seen from the other
+                direction, and I like working where the two meet.
+            </p>
 
-My bachelor’s thesis investigated interoperability frameworks for Web of Things (WoT)-based digital twins in augmented reality environments. I am currently working as a student assistant (HiWi) at the Associate Professorship of Embedded Systems and Internet of Things at TUM.
-
-Alongside my research, I continuously strengthen my mathematical foundations in machine learning, convex optimization, signal and systems theory, and control, aiming to develop a rigorous and unified framework for intelligent embodied systems.
-
-I am open to collaboration and academic exchange in these areas.
+            <p class="intro-text">
+                I am currently <strong>looking for research and internship opportunities</strong> in these areas.
+                If you think there is a fit, please <a href="mailto:rui.ying@tum.de">get in touch</a>.
             </p>
 
             <p class="interests">
-                Research Interests: Signal processing, Control Theory, embedded systems, mixed reality, robotics, learning-based world models, deep reinforcement learning, vision-based embodied intelligence
+                Research interests: physical AI &middot; spatial AI &middot; robot learning &middot;
+                3D vision and scene representation &middot; computer graphics and rendering
             </p>
 
-            <h1>Selected Projects</h1>
-
-            <div class="entry">
-                <div class="entry-title">TUM-ESI-Universal-XR - Cross-Platform Unity XR Package to fill the gap of OpenXR</div>
-                <div class="entry-meta">Bachelor Thesis · Associate Professorship of Embedded Systems and Internet of Things · TU Munich · 2025</div>
-                <div class="entry-desc">Cross-platform XR abstraction layer for Unity to unify Unifying fragmented OpenXR vendor extensions from QR Code tracking to Spatial Anchor</div>
-            </div>
-
-            <div class="entry">
-                <div class="entry-title">A Dual-Motor Capacitive Measure and Testing Platform for Wearable Glove Development</div>
-                <div class="entry-meta">Chair of Circuit Design · TU Munich · 2025</div>
-                <div class="entry-desc">Cross-platform C++/Qt6 desktop application for real-time monitoring and PID control of capacitive displacement measurement systems. TDD with GoogleTest and CI/CD. PSoC 4500s firmware for multi-protocol communication (I²C, UART), PID motor control, and sensor-feedback loops.</div>
-                <div class="entry-links"><a href="https://github.com/rruiying/CDC_Set_Up_Control_Programm">[code]</a></div>
-            </div>
-
-            <div class="entry">
-                <div class="entry-title">Decentralized Chatroom System</div>
-                <div class="entry-meta">Class Project Award · TU Munich · 2024</div>
-                <div class="entry-desc">Multi-server chat based on socket with UDP broadcast discovery, TCP messaging, and real-time translation via Google Translate API. Built in Python/PySide6.</div>
-                <div class="entry-links"><a href="https://github.com/rruiying/Internetkommunikation-Gruppe4">[code]</a></div>
-            </div>
-
-            <div class="entry">
-                <div class="entry-title">RV32I CPU &amp; ATM Packetizer in VHDL</div>
-                <div class="entry-meta">Class Project · TU Munich</div>
-                <div class="entry-desc">Digital circuit design with comprehensive testbenches, synthesis, and timing optimization in Vivado.</div>
-            </div>
-
-            <h1>Education</h1>
+            <h2>Education</h2>
 
             <div class="cv-entry">
-                <div class="cv-date">2026 – present</div>
+                <div class="cv-date">2026 &ndash; present</div>
                 <div class="cv-details">
-                    <strong>M.Sc. Electrical and Information Engineering</strong><br>
+                    <strong>M.Sc. Robotics, Cognition, Intelligence</strong><br>
                     <span class="cv-sub">Technical University of Munich, Germany</span>
                 </div>
             </div>
 
             <div class="cv-entry">
-                <div class="cv-date">2021 – 2025</div>
+                <div class="cv-date">2021 &ndash; 2025</div>
                 <div class="cv-details">
                     <strong>B.Sc. Electrical and Information Engineering</strong><br>
                     <span class="cv-sub">Technical University of Munich, Germany</span>
                 </div>
             </div>
 
-            <h1>Experience</h1>
-                <div class="cv-entry">
-                <div class="cv-date">Jan – Feb 2026</div>
+            <h2>Experience</h2>
+
+            <div class="cv-entry">
+                <div class="cv-date">Jan &ndash; Feb 2026</div>
                 <div class="cv-details">
-                    <strong>student assistant(HiWi) at TUM-ESI: Unity AR-WoT Software Developer for X-Tech Conference of Siemens</strong><br>
+                    <strong>Student Assistant (HiWi), TUM-ESI</strong><br>
                     <span class="cv-sub">Associate Professorship of Embedded Systems and Internet of Things, TU Munich</span><br>
-                    <span class="cv-sub">Unity, C#, AR/VR, WoT (Web of Things)</span>
+                    <span class="cv-sub">Unity AR / Web of Things developer for the Siemens X-Tech conference</span>
                 </div>
             </div>
 
             <div class="cv-entry">
-                <div class="cv-date">Sep 2025 – Mar 2026</div>
+                <div class="cv-date">Sep 2025 &ndash; Mar 2026</div>
                 <div class="cv-details">
-                    <strong>DevOps Engineering at XPENG Germany GmBH</strong><br>
-                    <span class="cv-sub">XPENG Germany Research and Development Center, Munich, Germany</span><br>
-                    <ul class="cv-list">
-                        <li>Maintained and optimized CI/CD integration for internal operational software</li>
-                        <li>Built monitoring and log-analysis web-platform to improve observability and system reliability</li>
-                        <li>Integrated DevOps platform for Xpeng internal Software with Lark (Feishu) for automated alerting and error diagnosis.</li>
-                    </ul>
-                    <span class="cv-sub">Kafka, Webhook, Grafana, ELK</span>
+                    <strong>DevOps Engineer</strong><br>
+                    <span class="cv-sub">XPENG Germany Research and Development Center, Munich</span>
                 </div>
             </div>
-
 
             <div class="cv-entry">
-                <div class="cv-date">Apr – Aug 2025</div>
+                <div class="cv-date">Apr &ndash; Aug 2025</div>
                 <div class="cv-details">
-                    <strong>Embedded System Full-Stack Developer</strong><br>
-                    <span class="cv-sub">Chair of Circuit Design, TU Munich</span><br>
-                    <span class="cv-sub">Electromechanical control systems, C++/Qt6, PSoC firmware, CI/CD</span>
+                    <strong>Embedded Systems Developer</strong><br>
+                    <span class="cv-sub">Chair of Circuit Design, TU Munich</span>
                 </div>
             </div>
 
-            <h1>Skills &amp; Languages</h1>
+            <h1 id="news">News</h1>
 
-            <div class="skills-list">
-                <p><strong>Programming:</strong> C/C++, Python, Java, C#, JavaScript/TypeScript, VHDL</p>
-                <p><strong>Embedded &amp; Hardware:</strong> PSoC Creator, Arduino, Keil, KiCad, LTspice</p>
-                <p><strong>Frameworks &amp; Tools:</strong> Qt6, React, Node.js, Spring Boot, Docker, Unity, Git, CMake, MATLAB/Simulink</p>
-                <p><strong>Frameworks &amp; Tools:</strong> Pytorch, Numpy, Scipy</p>
-                <p><strong>Languages:</strong> Chinese (native), German (fluent), English (fluent), Spanish (conversational)</p>
-            </div>
+            <ul class="news-list">
+                <li>
+                    <span class="news-date">Aug 2026</span>
+                    <span class="news-text">Started the M.Sc. in Robotics, Cognition, Intelligence at TUM.</span>
+                </li>
+                <li>
+                    <span class="news-date">Feb 2026</span>
+                    <span class="news-text">Presented an AR / Web-of-Things demo built at TUM-ESI at the Siemens X-Tech conference.</span>
+                </li>
+                <li>
+                    <span class="news-date">Jul 2025</span>
+                    <span class="news-text">Completed my B.Sc. in Electrical and Information Engineering at TUM.</span>
+                </li>
+            </ul>
 
-            <h1>Hobbies &amp; Interests</h1>
-            <p>
-                In my free time, I enjoy traveling in Europe, reading science and technology literature, and playing football. </p>
+            <h1 id="publications">Publications</h1>
+
+            <p class="empty-note">
+                Nothing published yet &mdash; this is where my papers and preprints will appear.
+                In the meantime, notes and course write-ups live on the <a href="blog.html">blog</a>.
+            </p>
+
         </main>
 
         <footer class="page-footer">
-            Last updated: February 2026 · Visitors: <span id="busuanzi_value_site_uv"></span>
+            &copy; 2026 Rui Ying &middot; Munich, Germany
         </footer>
 
     </div>
 
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 </body>
 </html>

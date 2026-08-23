@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Learning — lecture notes — Rui Ying</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <a class="topnav-brand" href="../index.html">Rui Ying</a>
+            <ul class="topnav-links">
+                <li><a href="../index.html#about">About me</a></li>
+                <li><a href="../index.html#news">News</a></li>
+                <li><a href="../index.html#publications">Publications</a></li>
+                <li><a class="active" href="../blog.html">Blog</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-wrapper narrow">
+        <main class="main-content post-page">
+
+            <a class="back-link" href="../blog.html">&larr; Back to blog</a>
+
+            <h1>Robot Learning — lecture notes</h1>
+            <div class="post-meta">20 August 2026 · <span class="post-category">Course notes</span></div>
+
+            <p>
+                Running notes from the TUM <em>Robot Learning</em> lecture. Updated as the
+                semester goes on.
+            </p>
+
+            <h2>1. Policy representations</h2>
+            <p>
+                A policy maps observations to actions. The interesting design question is what
+                structure to bake in: end-to-end networks, movement primitives, or an explicit
+                model plus a planner on top.
+            </p>
+
+            <h2>2. Imitation learning</h2>
+            <p>
+                Behaviour cloning is supervised learning on demonstrations, and its failure mode
+                is compounding distribution shift &mdash; small errors move the robot to states
+                that were never demonstrated. DAgger addresses this by querying the expert on
+                states the learner actually visits.
+            </p>
+
+            <h2>3. Model-based control</h2>
+            <p>
+                Learn the dynamics, then optimise actions against the learned model. Sample
+                efficient, but the optimiser will happily exploit whatever the model gets wrong.
+            </p>
+
+            <p class="empty-note">Notes in progress.</p>
+
+        </main>
+
+        <footer class="page-footer">
+            &copy; 2026 Rui Ying &middot; Munich, Germany
+        </footer>
+    </div>
+
+</body>
+</html>
