@@ -81,8 +81,13 @@
         var activeCategory = "All";
 
         // ── Category chips ────────────────────────────────────────────────
+        function cats(p) {
+            var c = p.categories || (p.category ? [p.category] : []);
+            return c.length ? c : ["Uncategorised"];
+        }
+
         var categories = ["All"].concat(
-            posts.map(function (p) { return p.category || "Uncategorised"; })
+            posts.reduce(function (acc, p) { return acc.concat(cats(p)); }, [])
                  .filter(function (c, i, a) { return a.indexOf(c) === i; })
                  .sort(function (a, b) { return a.localeCompare(b); })
         );
@@ -104,7 +109,8 @@
 
         // ── Helpers ───────────────────────────────────────────────────────
         function haystack(p) {
-            return [p.title, p.summary, p.category]
+            return [p.title, p.summary]
+                .concat(cats(p))
                 .concat(p.tags || [])
                 .join(" ")
                 .toLowerCase();
@@ -124,7 +130,7 @@
             "title-asc":     function (a, b) { return a.title.localeCompare(b.title); },
             "title-desc":    function (a, b) { return b.title.localeCompare(a.title); },
             "category-asc":  function (a, b) {
-                var c = (a.category || "").localeCompare(b.category || "");
+                var c = cats(a)[0].localeCompare(cats(b)[0]);
                 return c !== 0 ? c : (b.date || "").localeCompare(a.date || "");
             }
         };
@@ -135,8 +141,7 @@
             var terms = q ? q.split(/\s+/) : [];
 
             var shown = posts.filter(function (p) {
-                var cat = p.category || "Uncategorised";
-                if (activeCategory !== "All" && cat !== activeCategory) { return false; }
+                if (activeCategory !== "All" && cats(p).indexOf(activeCategory) === -1) { return false; }
                 if (!terms.length) { return true; }
                 var h = haystack(p);
                 return terms.every(function (t) { return h.indexOf(t) !== -1; });
