@@ -26,9 +26,24 @@ Add an object to the `POSTS` array:
   category: "Course notes",    // a filter chip is created per distinct category
   tags: ["slam", "3d vision"], // optional, searchable
   url: "posts/my-new-post.html",
-  summary: "One or two lines, shown in the list and searchable."
+  image: "images/blog/my-cover.jpg",  // optional card cover; omit for a text card
+  summary: "One or two lines, shown on the card and searchable."
 }
 ```
+
+## Images
+
+- **Card cover:** put the file under `images/blog/` and set the `image` field.
+  Landscape around 3:2 looks best; the card crops with `object-fit: cover`.
+- **Inside a post:** use a `<figure>` (note the `../` prefix, since post pages
+  live one level down):
+
+  ```html
+  <figure>
+      <img src="../images/blog/my-figure.jpg" alt="">
+      <figcaption>Caption text.</figcaption>
+  </figure>
+  ```
 
 Order in the file does not matter — `blog.html` sorts on load.
 

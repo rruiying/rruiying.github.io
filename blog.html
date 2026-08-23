@@ -25,28 +25,35 @@
     <div class="page-wrapper narrow">
         <main class="main-content">
 
-            <h1>Blog</h1>
-            <p class="empty-note">
-                Course notes, reading logs and things I want to remember. Read-only &mdash;
-                entries are added by committing to the repository.
-            </p>
+            <header class="blog-header">
+                <h1 class="blog-title">Blog</h1>
+                <p class="blog-subtitle">
+                    Course notes, reading logs and things I want to remember.
+                </p>
+            </header>
 
-            <!-- Controls -->
-            <div class="blog-controls">
+            <!-- Search -->
+            <div class="blog-searchbar">
+                <svg class="search-icon" viewBox="0 0 20 20" aria-hidden="true">
+                    <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <line x1="12.8" y1="12.8" x2="17" y2="17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
                 <input type="search" id="blog-search" class="blog-search"
                        placeholder="Search titles, summaries, tags&hellip;" autocomplete="off"
                        aria-label="Search posts">
-                <label class="blog-sort-label" for="blog-sort">Sort</label>
+            </div>
+
+            <!-- Filters (left) + sort (right) -->
+            <div class="blog-toolbar">
+                <div class="blog-filters" id="blog-filters" role="group" aria-label="Filter by category"></div>
                 <select id="blog-sort" class="blog-sort" aria-label="Sort posts">
                     <option value="date-desc">Newest first</option>
                     <option value="date-asc">Oldest first</option>
                     <option value="title-asc">Title A &rarr; Z</option>
                     <option value="title-desc">Title Z &rarr; A</option>
-                    <option value="category-asc">Category A &rarr; Z</option>
+                    <option value="category-asc">By category</option>
                 </select>
             </div>
-
-            <div class="blog-filters" id="blog-filters" role="group" aria-label="Filter by category"></div>
 
             <div class="blog-count" id="blog-count"></div>
 
@@ -153,34 +160,46 @@
             countEl.textContent = shown.length + (shown.length === 1 ? " post" : " posts");
 
             shown.forEach(function (p) {
-                var art = document.createElement("article");
-                art.className = "post-item";
+                var card = document.createElement("a");
+                card.className = "post-card" + (p.image ? "" : " no-image");
+                card.href = p.url;
 
-                var h = document.createElement("h3");
-                h.className = "post-title";
-                var a = document.createElement("a");
-                a.href = p.url;
-                a.textContent = p.title;
-                h.appendChild(a);
-                art.appendChild(h);
+                if (p.image) {
+                    var thumb = document.createElement("div");
+                    thumb.className = "post-thumb";
+                    var img = document.createElement("img");
+                    img.src = p.image;
+                    img.alt = "";
+                    img.loading = "lazy";
+                    thumb.appendChild(img);
+                    card.appendChild(thumb);
+                }
+
+                var body = document.createElement("div");
+                body.className = "post-body";
 
                 var meta = document.createElement("div");
                 meta.className = "post-meta";
-                meta.appendChild(document.createTextNode(formatDate(p.date)));
                 if (p.category) {
-                    meta.appendChild(document.createTextNode(" · "));
                     var cs = document.createElement("span");
                     cs.className = "post-category";
                     cs.textContent = p.category;
                     meta.appendChild(cs);
+                    meta.appendChild(document.createTextNode(" · "));
                 }
-                art.appendChild(meta);
+                meta.appendChild(document.createTextNode(formatDate(p.date)));
+                body.appendChild(meta);
+
+                var h = document.createElement("h3");
+                h.className = "post-title";
+                h.textContent = p.title;
+                body.appendChild(h);
 
                 if (p.summary) {
                     var s = document.createElement("p");
                     s.className = "post-summary";
                     s.textContent = p.summary;
-                    art.appendChild(s);
+                    body.appendChild(s);
                 }
 
                 if (p.tags && p.tags.length) {
@@ -192,10 +211,11 @@
                         tag.textContent = t;
                         tw.appendChild(tag);
                     });
-                    art.appendChild(tw);
+                    body.appendChild(tw);
                 }
 
-                listEl.appendChild(art);
+                card.appendChild(body);
+                listEl.appendChild(card);
             });
         }
 

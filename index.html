@@ -10,14 +10,14 @@
 </head>
 <body>
 
-    <!-- Top navigation -->
+    <!-- Top navigation: always a horizontal bar -->
     <nav class="topnav">
         <div class="topnav-inner">
             <a class="topnav-brand" href="index.html">Rui Ying</a>
             <ul class="topnav-links">
-                <li><a href="#about">About me</a></li>
-                <li><a href="#news">News</a></li>
-                <li><a href="#publications">Publications</a></li>
+                <li><a href="index.html#about">About me</a></li>
+                <li><a href="index.html#news">News</a></li>
+                <li><a href="index.html#publications">Publications</a></li>
                 <li><a href="blog.html">Blog</a></li>
             </ul>
         </div>
@@ -25,13 +25,13 @@
 
     <div class="page-wrapper">
 
-        <!-- Sidebar -->
+        <!-- Left column: photo, then everything below it -->
         <aside class="sidebar">
-            <img class="avatar" src="images/image.jpg" alt="Rui Ying">
-            <div class="sidebar-name">Rui Ying &middot; 应睿</div>
+            <img class="avatar" src="images/101ceb4ae81e5691b95cb80a1b626471.jpg" alt="Rui Ying">
+            <div class="sidebar-name">Rui Ying</div>
+            <div class="sidebar-cnname">应睿</div>
             <div class="sidebar-affiliation">
                 M.Sc. Robotics, Cognition, Intelligence<br>
-                School of Computation, Information and Technology<br>
                 Technical University of Munich
             </div>
             <ul class="sidebar-links">
@@ -42,103 +42,129 @@
             </ul>
         </aside>
 
-        <!-- Main -->
+        <!-- Right column -->
         <main class="main-content">
 
-            <h1 id="about">About me</h1>
+            <section id="about">
+                <h1>About me</h1>
 
-            <p class="intro-text">
-                I am a first-year M.Sc. student in <strong>Robotics, Cognition, Intelligence (RCI)</strong> at the
-                Technical University of Munich. I am interested in <strong>physical AI</strong> and
-                <strong>spatial AI</strong> &mdash; how embodied agents build a geometric, persistent understanding
-                of the world and act in it &mdash; and in <strong>robot learning</strong> as the bridge between
-                the two.
-            </p>
+                <p class="intro-text">
+                    I am a first-year M.Sc. student in <strong>Robotics, Cognition, Intelligence (RCI)</strong>
+                    at the Technical University of Munich. I am interested in <strong>physical AI</strong> and
+                    <strong>spatial AI</strong> &mdash; how embodied agents build a geometric, persistent
+                    understanding of the world and act in it &mdash; and in <strong>robot learning</strong> as
+                    the bridge between the two.
+                </p>
 
-            <p class="intro-text">
-                I am also a computer graphics enthusiast. Rendering, geometry processing and differentiable
-                simulation are, to me, the same mathematics that underpins spatial perception seen from the other
-                direction, and I like working where the two meet.
-            </p>
+                <p class="intro-text">
+                    I am also a computer graphics enthusiast. Rendering, geometry processing and differentiable
+                    simulation are, to me, the same mathematics that underpins spatial perception seen from the
+                    other direction, and I enjoy working where the two meet.
+                </p>
 
-            <p class="intro-text">
-                I am currently <strong>looking for research and internship opportunities</strong> in these areas.
-                If you think there is a fit, please <a href="mailto:rui.ying@tum.de">get in touch</a>.
-            </p>
+                <p class="intro-text">
+                    Before the master's, I worked as a student assistant (HiWi) at the Associate Professorship
+                    of Embedded Systems and Internet of Things (TUM-ESI), building AR / Web-of-Things digital-twin
+                    demos. My bachelor's thesis there &mdash; <em>TUM-ESI-Universal-XR</em>, a cross-platform
+                    Unity XR package unifying fragmented OpenXR vendor extensions &mdash; was graded
+                    <strong>1.0</strong>.
+                </p>
 
-            <p class="interests">
-                Research interests: physical AI &middot; spatial AI &middot; robot learning &middot;
-                3D vision and scene representation &middot; computer graphics and rendering
-            </p>
+                <p class="intro-text">
+                    I am currently <strong>looking for research and internship opportunities</strong> in these
+                    areas. If you think there is a fit, please
+                    <a href="mailto:rui.ying@tum.de">get in touch</a>.
+                </p>
 
-            <h2>Education</h2>
+                <p class="interests">
+                    Research interests: physical AI &middot; spatial AI &middot; robot learning &middot;
+                    3D vision and scene representation &middot; computer graphics and rendering
+                </p>
 
-            <div class="cv-entry">
-                <div class="cv-date">2026 &ndash; present</div>
-                <div class="cv-details">
-                    <strong>M.Sc. Robotics, Cognition, Intelligence</strong><br>
-                    <span class="cv-sub">Technical University of Munich, Germany</span>
+                <h2>Education</h2>
+
+                <div class="cv-entry">
+                    <div class="cv-date">2026 &ndash; present</div>
+                    <div class="cv-details">
+                        <strong>M.Sc. Robotics, Cognition, Intelligence</strong><br>
+                        <span class="cv-sub">Technical University of Munich, Germany</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="cv-entry">
-                <div class="cv-date">2021 &ndash; 2025</div>
-                <div class="cv-details">
-                    <strong>B.Sc. Electrical and Information Engineering</strong><br>
-                    <span class="cv-sub">Technical University of Munich, Germany</span>
+                <div class="cv-entry">
+                    <div class="cv-date">2021 &ndash; 2025</div>
+                    <div class="cv-details">
+                        <strong>B.Sc. Electrical and Information Engineering</strong><br>
+                        <span class="cv-sub">Technical University of Munich, Germany</span><br>
+                        <span class="cv-sub">Thesis: <em>TUM-ESI-Universal-XR &mdash; a cross-platform Unity XR
+                        package unifying fragmented OpenXR vendor extensions</em>, at the Associate
+                        Professorship of Embedded Systems and Internet of Things &middot;
+                        <strong>grade 1.0</strong></span>
+                    </div>
                 </div>
-            </div>
 
-            <h2>Experience</h2>
+                <h2>Experience</h2>
 
-            <div class="cv-entry">
-                <div class="cv-date">Jan &ndash; Feb 2026</div>
-                <div class="cv-details">
-                    <strong>Student Assistant (HiWi), TUM-ESI</strong><br>
-                    <span class="cv-sub">Associate Professorship of Embedded Systems and Internet of Things, TU Munich</span><br>
-                    <span class="cv-sub">Unity AR / Web of Things developer for the Siemens X-Tech conference</span>
+                <div class="cv-entry">
+                    <div class="cv-date">Jan &ndash; Feb 2026</div>
+                    <div class="cv-details">
+                        <strong>Student Assistant (HiWi) &mdash; Unity AR / Web of Things Developer</strong><br>
+                        <span class="cv-sub">Associate Professorship of Embedded Systems and Internet of Things (TUM-ESI), TU Munich</span>
+                        <ul class="cv-list">
+                            <li>Built the AR demonstrator shown at the Siemens X-Tech conference, connecting
+                                Web-of-Things digital twins to a Unity AR front end.</li>
+                            <li>Continued the XR interoperability work started in my bachelor's thesis
+                                (cross-platform OpenXR abstraction, QR-code tracking, spatial anchors).</li>
+                        </ul>
+                        <span class="cv-sub">Unity &middot; C# &middot; AR/VR &middot; Web of Things</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="cv-entry">
-                <div class="cv-date">Sep 2025 &ndash; Mar 2026</div>
-                <div class="cv-details">
-                    <strong>DevOps Engineer</strong><br>
-                    <span class="cv-sub">XPENG Germany Research and Development Center, Munich</span>
+                <div class="cv-entry">
+                    <div class="cv-date">Sep 2025 &ndash; Mar 2026</div>
+                    <div class="cv-details">
+                        <strong>DevOps Engineer</strong><br>
+                        <span class="cv-sub">XPENG Germany Research and Development Center, Munich</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="cv-entry">
-                <div class="cv-date">Apr &ndash; Aug 2025</div>
-                <div class="cv-details">
-                    <strong>Embedded Systems Developer</strong><br>
-                    <span class="cv-sub">Chair of Circuit Design, TU Munich</span>
+                <div class="cv-entry">
+                    <div class="cv-date">Apr &ndash; Aug 2025</div>
+                    <div class="cv-details">
+                        <strong>Embedded Systems Developer</strong><br>
+                        <span class="cv-sub">Chair of Circuit Design, TU Munich</span>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <h1 id="news">News</h1>
+            <section id="news">
+                <h1>News</h1>
 
-            <ul class="news-list">
-                <li>
-                    <span class="news-date">Aug 2026</span>
-                    <span class="news-text">Started the M.Sc. in Robotics, Cognition, Intelligence at TUM.</span>
-                </li>
-                <li>
-                    <span class="news-date">Feb 2026</span>
-                    <span class="news-text">Presented an AR / Web-of-Things demo built at TUM-ESI at the Siemens X-Tech conference.</span>
-                </li>
-                <li>
-                    <span class="news-date">Jul 2025</span>
-                    <span class="news-text">Completed my B.Sc. in Electrical and Information Engineering at TUM.</span>
-                </li>
-            </ul>
+                <ul class="news-list">
+                    <li>
+                        <span class="news-date">Aug 2026</span>
+                        <span class="news-text">Started the M.Sc. in Robotics, Cognition, Intelligence at TUM.</span>
+                    </li>
+                    <li>
+                        <span class="news-date">Feb 2026</span>
+                        <span class="news-text">Presented an AR / Web-of-Things demo built at TUM-ESI at the Siemens X-Tech conference.</span>
+                    </li>
+                    <li>
+                        <span class="news-date">Jul 2025</span>
+                        <span class="news-text">Completed my B.Sc. in Electrical and Information Engineering at TUM
+                        &mdash; bachelor's thesis <em>TUM-ESI-Universal-XR</em> graded 1.0.</span>
+                    </li>
+                </ul>
+            </section>
 
-            <h1 id="publications">Publications</h1>
+            <section id="publications">
+                <h1>Publications</h1>
 
-            <p class="empty-note">
-                Nothing published yet &mdash; this is where my papers and preprints will appear.
-                In the meantime, notes and course write-ups live on the <a href="blog.html">blog</a>.
-            </p>
+                <p class="empty-note">
+                    Nothing published yet &mdash; this is where my papers and preprints will appear.
+                    In the meantime, notes and course write-ups live on the <a href="blog.html">blog</a>.
+                </p>
+            </section>
 
         </main>
 
