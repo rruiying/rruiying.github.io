@@ -25,12 +25,17 @@ html {
 }
 
 body {
-    font-family: 'Source Sans 3', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Source Sans 3', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif;
     color: var(--text);
     background: var(--bg);
     line-height: 1.7;
-    font-size: 15.5px;
+    font-size: 0.9688rem;
     -webkit-font-smoothing: antialiased;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
 }
 
 a {
@@ -69,8 +74,8 @@ a:hover {
 }
 
 .topnav-brand {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 17px;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.0625rem;
     font-weight: 600;
     color: var(--text);
     white-space: nowrap;
@@ -98,7 +103,7 @@ a:hover {
 
 .topnav-links a {
     display: inline-block;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--text-secondary);
     letter-spacing: 0.2px;
     white-space: nowrap;
@@ -148,21 +153,21 @@ a:hover {
 }
 
 .sidebar-name {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 23px;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.4375rem;
     font-weight: 600;
     color: var(--text);
     line-height: 1.25;
 }
 
 .sidebar-cnname {
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: var(--text-muted);
     margin-bottom: 8px;
 }
 
 .sidebar-affiliation {
-    font-size: 13.5px;
+    font-size: 0.8438rem;
     color: var(--text-secondary);
     line-height: 1.55;
     margin-bottom: 16px;
@@ -172,7 +177,7 @@ a:hover {
 
 .sidebar-links {
     list-style: none;
-    font-size: 13.5px;
+    font-size: 0.8438rem;
     line-height: 2.1;
 }
 
@@ -180,7 +185,7 @@ a:hover {
     color: var(--text-muted);
     display: inline-block;
     width: 64px;
-    font-size: 11.5px;
+    font-size: 0.7188rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -189,8 +194,8 @@ a:hover {
    Main column
    ══════════════════════════════════════════════════════════════════════ */
 .main-content h1 {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 15.5px;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 0.9688rem;
     font-weight: 600;
     color: var(--text);
     margin-top: 44px;
@@ -207,8 +212,8 @@ a:hover {
 }
 
 .main-content h2 {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 15px;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 0.9375rem;
     font-weight: 600;
     color: var(--text-secondary);
     margin-top: 28px;
@@ -226,15 +231,15 @@ a:hover {
 }
 
 .intro-text {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 16.5px;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.0312rem;
     line-height: 1.85;
     color: var(--text);
     margin-bottom: 14px;
 }
 
 .interests {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--text-secondary);
     font-style: italic;
     margin-top: 18px;
@@ -245,7 +250,7 @@ a:hover {
 }
 
 .empty-note {
-    font-size: 14.5px;
+    font-size: 0.9062rem;
     color: var(--text-secondary);
 }
 
@@ -255,12 +260,12 @@ a:hover {
     display: grid;
     grid-template-columns: 130px minmax(0, 1fr);
     gap: 14px;
-    font-size: 14.5px;
+    font-size: 0.9062rem;
 }
 
 .cv-date {
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 0.8125rem;
     padding-top: 2px;
 }
 
@@ -270,12 +275,12 @@ a:hover {
 
 .cv-details .cv-sub {
     color: var(--text-secondary);
-    font-size: 13.5px;
+    font-size: 0.8438rem;
 }
 
 .cv-list {
     margin: 4px 0 4px 18px;
-    font-size: 13.5px;
+    font-size: 0.8438rem;
     color: var(--text-secondary);
     line-height: 1.65;
 }
@@ -288,7 +293,7 @@ a:hover {
 .news-list {
     list-style: none;
     margin: 0;
-    font-size: 14.5px;
+    font-size: 0.9062rem;
 }
 
 .news-list li {
@@ -305,7 +310,7 @@ a:hover {
 
 .news-date {
     color: var(--text-muted);
-    font-size: 12.5px;
+    font-size: 0.7812rem;
     font-family: 'JetBrains Mono', monospace;
     padding-top: 3px;
     white-space: nowrap;
@@ -319,8 +324,8 @@ a:hover {
 }
 
 .blog-title {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 30px !important;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.875rem !important;
     font-weight: 600;
     text-transform: none !important;
     letter-spacing: -0.3px !important;
@@ -330,7 +335,7 @@ a:hover {
 }
 
 .blog-subtitle {
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: var(--text-secondary);
     margin: 0 !important;
 }
@@ -355,7 +360,7 @@ a:hover {
 .blog-search {
     width: 100%;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: var(--text);
     padding: 11px 16px 11px 42px;
     border: 1px solid var(--border);
@@ -388,7 +393,7 @@ a:hover {
 
 .chip {
     font-family: inherit;
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: var(--text-secondary);
     background: var(--bg-soft);
     border: 1px solid transparent;
@@ -409,7 +414,7 @@ a:hover {
 
 .blog-sort {
     font-family: inherit;
-    font-size: 13.5px;
+    font-size: 0.8438rem;
     color: var(--text-secondary);
     padding: 6px 10px;
     border: 1px solid var(--border);
@@ -425,7 +430,7 @@ a:hover {
 }
 
 .blog-count {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: var(--text-muted);
     font-family: 'JetBrains Mono', monospace;
     margin: 6px 0 14px;
@@ -479,7 +484,7 @@ a:hover {
 }
 
 .post-meta {
-    font-size: 12.5px;
+    font-size: 0.7812rem;
     color: var(--text-muted);
     margin-bottom: 4px;
 }
@@ -488,13 +493,13 @@ a:hover {
     color: var(--accent);
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 11.5px;
+    font-size: 0.7188rem;
     letter-spacing: 0.6px;
 }
 
 .post-title {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 18.5px;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.2188rem;
     font-weight: 600;
     line-height: 1.35;
     color: var(--text);
@@ -506,7 +511,7 @@ a:hover {
 }
 
 .post-summary {
-    font-size: 14px;
+    font-size: 0.875rem;
     line-height: 1.65;
     color: var(--text-secondary);
     margin: 0 0 10px !important;
@@ -520,7 +525,7 @@ a:hover {
 
 .tag {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10.5px;
+    font-size: 0.6562rem;
     color: var(--text-secondary);
     background: var(--bg-soft);
     border-radius: 4px;
@@ -532,14 +537,14 @@ a:hover {
    ══════════════════════════════════════════════════════════════════════ */
 .back-link {
     display: inline-block;
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: var(--text-secondary);
     margin-bottom: 20px;
 }
 
 .post-page h1 {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 28px;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.9375rem;
     font-weight: 600;
     text-transform: none;
     letter-spacing: -0.3px;
@@ -550,21 +555,22 @@ a:hover {
 }
 
 .post-page > .post-meta {
-    font-size: 13.5px;
+    font-size: 0.8438rem;
     margin-bottom: 26px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-light);
 }
 
 .post-page p {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 16.5px;
-    line-height: 1.85;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.0625rem;
+    line-height: 1.95;
+    letter-spacing: 0.1px;
     margin-bottom: 18px;
 }
 
 .post-page h2 {
-    font-size: 19px;
+    font-size: 1.3438rem;
     color: var(--text);
     margin-top: 34px;
     letter-spacing: -0.1px;
@@ -572,8 +578,9 @@ a:hover {
 
 .post-page ul,
 .post-page ol {
-    font-family: 'Source Serif 4', Georgia, serif;
-    font-size: 16px;
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.0312rem;
+    line-height: 1.9;
     margin: 0 0 18px 22px;
 }
 
@@ -594,7 +601,7 @@ a:hover {
 }
 
 .post-page figcaption {
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: var(--text-muted);
     text-align: center;
     margin-top: 8px;
@@ -603,7 +610,7 @@ a:hover {
 
 .post-page code {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: 0.8125rem;
     background: var(--bg-soft);
     border-radius: 4px;
     padding: 1px 6px;
@@ -621,7 +628,134 @@ a:hover {
 .post-page pre code {
     background: none;
     padding: 0;
-    font-size: 13px;
+    font-size: 0.8125rem;
+}
+
+
+.post-page h3 {
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.1562rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 26px;
+    margin-bottom: 8px;
+}
+
+.post-page blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--bg-soft);
+    padding: 12px 18px;
+    margin: 0 0 18px;
+    border-radius: 0 8px 8px 0;
+}
+
+.post-page blockquote p {
+    font-size: 0.9062rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.post-page blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+.post-page table {
+    border-collapse: collapse;
+    margin: 4px 0 18px;
+    font-size: 0.9062rem;
+    display: block;
+    overflow-x: auto;
+}
+
+.post-page th,
+.post-page td {
+    border: 1px solid var(--border-light);
+    padding: 6px 12px;
+    text-align: left;
+}
+
+.post-page th {
+    background: var(--bg-soft);
+    font-weight: 600;
+}
+
+.post-page hr {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 28px 0;
+}
+
+
+/* ── Post table of contents (left bookmarks) ── */
+.page-wrapper.with-toc {
+    grid-template-columns: 230px minmax(0, 1fr);
+    max-width: 1100px;
+    gap: 52px;
+}
+
+.post-toc {
+    position: sticky;
+    top: 92px;
+    align-self: start;
+    max-height: calc(100vh - 130px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding-right: 6px;
+}
+
+.post-toc-title {
+    font-size: 0.7188rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.post-toc ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.post-toc li {
+    margin: 0;
+}
+
+.post-toc a {
+    display: block;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    padding: 4px 0 4px 12px;
+    border-left: 2px solid var(--border-light);
+}
+
+.post-toc .toc-h3 a {
+    padding-left: 28px;
+    font-size: 0.7812rem;
+    color: var(--text-muted);
+}
+
+.post-toc a:hover {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.post-toc a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+}
+
+@media (max-width: 940px) {
+    .page-wrapper.with-toc {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .post-toc {
+        display: none;
+    }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -632,7 +766,7 @@ a:hover {
     border-top: 1px solid var(--border-light);
     padding-top: 18px;
     margin-top: 48px;
-    font-size: 12.5px;
+    font-size: 0.7812rem;
     color: #999;
     text-align: center;
 }
@@ -662,7 +796,7 @@ a:hover {
 
     .topnav-links a {
         padding: 13px 0 11px;
-        font-size: 13.5px;
+        font-size: 0.8438rem;
     }
 
     .page-wrapper {

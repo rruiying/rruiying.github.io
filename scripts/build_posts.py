@@ -18,7 +18,9 @@ CI runs it automatically on every push that touches content/.
 
 import html
 import json
+import math
 import re
+import subprocess
 import sys
 from datetime import date as _date
 from datetime import datetime
@@ -41,7 +43,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {marker}
     <title>{title_esc} — Rui Ying</title>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -58,13 +60,18 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
         </div>
     </nav>
 
-    <div class="page-wrapper narrow">
+    <div class="page-wrapper narrow{toc_class}">{toc_html}
         <main class="main-content post-page">
 
             <a class="back-link" href="../blog.html">&larr; Back to blog</a>
 
             <h1>{title_esc}</h1>
-            <div class="post-meta">{date_human} · {categories_html}</div>
+            <div class="post-meta">
+                <span>Published {date_human}</span>{updated_html} ·
+                {categories_html} ·
+                <span>{words:,} words · {minutes} min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span id="busuanzi_value_page_pv"></span> views</span>
+            </div>
 
 {body}
 
@@ -75,6 +82,8 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
         </footer>
     </div>
 
+    <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<!--SCROLLSPY-->
 </body>
 </html>
 """
@@ -129,6 +138,8 @@ def parse_source(path):
 
     return {
         "slug": path.stem,
+        "path": path,
+        "meta": meta,
         "title": str(meta["title"]),
         "date": iso,
         "categories": cats,
@@ -136,6 +147,91 @@ def parse_source(path):
         "summary": str(meta.get("summary") or "").strip(),
         "body_md": m.group(2),
     }
+
+
+HEADING_RE = re.compile(r'<h([23]) id="([^"]+)">(.*?)</h\1>', re.S)
+
+SCROLLSPY_JS = """    <script>
+    (function () {
+        var links = document.querySelectorAll(".post-toc a");
+        if (!links.length) { return; }
+        var map = {};
+        var heads = [];
+        links.forEach = Array.prototype.forEach;
+        links.forEach.call(links, function (a) {
+            var id = decodeURIComponent(a.getAttribute("href").slice(1));
+            var h = document.getElementById(id);
+            if (h) { map[id] = a; heads.push(h); }
+        });
+        function activate(id) {
+            for (var k in map) { map[k].classList.toggle("active", k === id); }
+        }
+        var obs = new IntersectionObserver(function (entries) {
+            var visible = entries.filter(function (e) { return e.isIntersecting; });
+            if (visible.length) {
+                activate(visible[0].target.id);
+            }
+        }, { rootMargin: "0px 0px -70% 0px", threshold: 0 });
+        heads.forEach(function (h) { obs.observe(h); });
+    })();
+    </script>"""
+
+
+def build_toc(body_html):
+    """Sidebar bookmark list from the post's numbered h2/h3 headings."""
+    items = []
+    for level, hid, text in HEADING_RE.findall(body_html):
+        label = html.unescape(re.sub(r"<[^>]+>", "", text)).strip()
+        items.append((level, hid, label))
+    if len(items) < 3:
+        return "", ""
+    lis = "\n".join(
+        f'                <li class="toc-h{level}"><a href="#{hid}">{html.escape(label)}</a></li>'
+        for level, hid, label in items
+    )
+    toc = f"""
+        <aside class="post-toc">
+            <div class="post-toc-title">Contents</div>
+            <ul>
+{lis}
+            </ul>
+        </aside>"""
+    return " with-toc", toc
+
+
+CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+LATIN_WORD_RE = re.compile(r"[A-Za-z0-9]+(?:['\u2019-][A-Za-z0-9]+)*")
+
+
+def count_words(body_html):
+    """CJK characters count as one word each; latin words by whitespace."""
+    text = re.sub(r"<[^>]+>", " ", body_html)
+    text = html.unescape(text)
+    cjk = len(CJK_RE.findall(text))
+    latin = len(LATIN_WORD_RE.findall(text))
+    # ~350 CJK chars/min, ~200 latin words/min
+    minutes = max(1, math.ceil(cjk / 350 + latin / 200))
+    return cjk + latin, minutes
+
+
+def updated_date(path, meta, published_iso):
+    """Explicit 'updated' front matter wins; else the file's last git commit."""
+    u = meta.get("updated")
+    if u:
+        if hasattr(u, "isoformat"):
+            return u.isoformat()[:10]
+        return str(u).strip()
+    try:
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%as", "--", str(path)],
+            capture_output=True, text=True, cwd=ROOT, timeout=10,
+        )
+        got = out.stdout.strip()
+        if got:
+            return got
+    except Exception:
+        pass
+    return published_iso
 
 
 def render_body(md_text):
@@ -148,6 +244,16 @@ def render_body(md_text):
     # is opened locally; rewrite them relative to the posts/ directory.
     body = body.replace('src="/images/', 'src="../images/')
     body = body.replace('href="/images/', 'href="../images/')
+
+    # A paragraph that is just an image becomes a <figure>, with the
+    # Markdown alt text as its caption.
+    def to_figure(m):
+        img = m.group(1)
+        alt = re.search(r'alt="([^"]*)"', img)
+        caption = f"<figcaption>{alt.group(1)}</figcaption>" if alt and alt.group(1) else ""
+        return f"<figure>{img}{caption}</figure>"
+
+    body = re.sub(r"<p>(<img [^>]*>)</p>", to_figure, body)
     return body
 
 
@@ -162,6 +268,14 @@ def build():
             continue
         post = parse_source(path)
         date_human = datetime.strptime(post["date"], "%Y-%m-%d").strftime("%-d %B %Y")
+        body = render_body(post["body_md"])
+        toc_class, toc_html = build_toc(body)
+        post["words"], post["minutes"] = count_words(body)
+        post["updated"] = updated_date(path, post["meta"], post["date"])
+        updated_html = ""
+        if post["updated"] > post["date"]:
+            upd_human = datetime.strptime(post["updated"], "%Y-%m-%d").strftime("%-d %B %Y")
+            updated_html = f" ·\n                <span>Updated {upd_human}</span>"
         page = PAGE_TEMPLATE.format(
             marker=MARKER,
             title_esc=html.escape(post["title"]),
@@ -170,8 +284,14 @@ def build():
                 for c in post["categories"]
             ),
             date_human=date_human,
-            body=render_body(post["body_md"]),
+            updated_html=updated_html,
+            words=post["words"],
+            minutes=post["minutes"],
+            toc_class=toc_class,
+            toc_html=toc_html,
+            body=body,
         )
+        page = page.replace("<!--SCROLLSPY-->", SCROLLSPY_JS if toc_html else "")
         out = OUT_DIR / f"{post['slug']}.html"
         out.write_text(page, encoding="utf-8")
         posts.append(post)
@@ -195,6 +315,9 @@ def build():
             "categories": p["categories"],
             "tags": p["tags"],
             "url": f"posts/{p['slug']}.html",
+            "updated": p["updated"],
+            "words": p["words"],
+            "minutes": p["minutes"],
             "summary": p["summary"],
         }
         for p in posts
