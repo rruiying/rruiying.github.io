@@ -7,6 +7,7 @@
     <meta name="description" content="Notes, course write-ups and reading logs by Rui Ying.">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <script>(function(){try{var t=localStorage.getItem("theme");if(!t&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches){t="dark";}if(t==="dark"){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,6 +20,7 @@
                 <li><a href="index.html#publications">Publications</a></li>
                 <li><a class="active" href="blog.html">Blog</a></li>
             </ul>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="开灯 / 关灯">🌙</button>
         </div>
     </nav>
 
@@ -52,6 +54,7 @@
                     </div>
                     <div class="blog-count" id="blog-count"></div>
                     <div class="blog-list" id="blog-list"></div>
+                    <div class="blog-pager" id="blog-pager"></div>
                 </section>
 
             </div>
@@ -76,78 +79,114 @@
 
         var posts = (typeof POSTS !== "undefined" ? POSTS : []).slice();
         var activeFolder = "All";
+        var pagerEl = document.getElementById("blog-pager");
+        var PAGE_SIZE = 8;
+        var curPage = 1;
 
         function cats(p) {
             var c = p.categories || (p.category ? [p.category] : []);
             return c.length ? c : ["Uncategorised"];
         }
 
-        // ── Folder tree ──────────────────────────────────────────────────
-        var folders = {};
+        // ── Folder tree (folders only, hierarchical via "/") ─────────────
+        function segsOf(path) {
+            return path.split("/").map(function (x) { return x.trim(); }).filter(Boolean);
+        }
+
+        function inFolder(p, path) {
+            if (path === "All") { return true; }
+            return cats(p).some(function (c) {
+                var norm = segsOf(c).join("/");
+                return norm === path || norm.indexOf(path + "/") === 0;
+            });
+        }
+
+        function countFor(path) {
+            return posts.filter(function (p) { return inFolder(p, path); }).length;
+        }
+
+        var rootChildren = {};
         posts.forEach(function (p) {
             cats(p).forEach(function (c) {
-                (folders[c] = folders[c] || []).push(p);
-            });
-        });
-        Object.keys(folders).forEach(function (c) {
-            folders[c].sort(function (a, b) {
-                return (b.date || "").localeCompare(a.date || "");
+                var node = rootChildren;
+                var acc = [];
+                segsOf(c).forEach(function (seg) {
+                    acc.push(seg);
+                    node[seg] = node[seg] || { path: acc.join("/"), children: {} };
+                    node = node[seg].children;
+                });
             });
         });
 
-        function setActive(name) {
-            activeFolder = name;
+        function setActive(path) {
+            activeFolder = path;
+            curPage = 1;
             Array.prototype.forEach.call(
                 treeEl.querySelectorAll(".tree-item"),
                 function (el) {
-                    el.classList.toggle("active", el.getAttribute("data-folder") === name);
+                    el.classList.toggle("active", el.getAttribute("data-folder") === path);
                 }
             );
             render();
         }
 
+        function folderButton(label, path, hasChildren, icon) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "tree-item";
+            btn.setAttribute("data-folder", path);
+            var caret = document.createElement("span");
+            caret.className = "tree-caret";
+            caret.textContent = hasChildren ? "▸" : "";
+            btn.appendChild(caret);
+            var ic = document.createElement("span");
+            ic.className = "tree-icon";
+            ic.textContent = icon;
+            btn.appendChild(ic);
+            var nm = document.createElement("span");
+            nm.className = "tree-name";
+            nm.textContent = label;
+            nm.title = label;
+            btn.appendChild(nm);
+            var ct = document.createElement("span");
+            ct.className = "tree-count";
+            ct.textContent = countFor(path);
+            btn.appendChild(ct);
+            return btn;
+        }
+
+        function buildNode(name, info, container) {
+            var kids = Object.keys(info.children).sort();
+            var wrap = document.createElement("div");
+            wrap.className = "tree-node open";
+
+            var btn = folderButton(name, info.path, kids.length > 0, "📁");
+            btn.addEventListener("click", function () {
+                if (activeFolder === info.path) {
+                    wrap.classList.toggle("open");   // second click folds / unfolds
+                } else {
+                    wrap.classList.add("open");
+                    setActive(info.path);
+                }
+            });
+            wrap.appendChild(btn);
+
+            if (kids.length) {
+                var inner = document.createElement("div");
+                inner.className = "tree-children";
+                kids.forEach(function (k) { buildNode(k, info.children[k], inner); });
+                wrap.appendChild(inner);
+            }
+            container.appendChild(wrap);
+        }
+
         function buildTree() {
-            // "All posts" root
-            var all = document.createElement("button");
-            all.type = "button";
-            all.className = "tree-item active";
-            all.setAttribute("data-folder", "All");
-            all.innerHTML = '<span class="tree-caret"></span><span class="tree-icon">🗂</span>' +
-                '<span class="tree-name">All posts</span><span class="tree-count">' + posts.length + "</span>";
+            var all = folderButton("All posts", "All", false, "🗂");
+            all.classList.add("active");
             all.addEventListener("click", function () { setActive("All"); });
             treeEl.appendChild(all);
-
-            Object.keys(folders).sort().forEach(function (name) {
-                var btn = document.createElement("button");
-                btn.type = "button";
-                btn.className = "tree-item tree-folder open";
-                btn.setAttribute("data-folder", name);
-                btn.innerHTML = '<span class="tree-caret">▸</span><span class="tree-icon">📁</span>' +
-                    '<span class="tree-name"></span><span class="tree-count">' + folders[name].length + "</span>";
-                btn.querySelector(".tree-name").textContent = name;
-
-                btn.addEventListener("click", function () {
-                    if (activeFolder === name) {
-                        btn.classList.toggle("open");     // second click folds/unfolds
-                    } else {
-                        btn.classList.add("open");
-                        setActive(name);
-                    }
-                });
-                treeEl.appendChild(btn);
-
-                var ul = document.createElement("ul");
-                ul.className = "tree-posts";
-                folders[name].forEach(function (p) {
-                    var li = document.createElement("li");
-                    var a = document.createElement("a");
-                    a.href = p.url;
-                    a.textContent = p.title;
-                    a.title = p.title;
-                    li.appendChild(a);
-                    ul.appendChild(li);
-                });
-                treeEl.appendChild(ul);
+            Object.keys(rootChildren).sort().forEach(function (k) {
+                buildNode(k, rootChildren[k], treeEl);
             });
         }
 
@@ -175,7 +214,7 @@
             var terms = q ? q.split(/\s+/) : [];
 
             var shown = posts.filter(function (p) {
-                if (activeFolder !== "All" && cats(p).indexOf(activeFolder) === -1) { return false; }
+                if (!inFolder(p, activeFolder)) { return false; }
                 if (!terms.length) { return true; }
                 var h = haystack(p);
                 return terms.every(function (t) { return h.indexOf(t) !== -1; });
@@ -183,6 +222,7 @@
 
             shown.sort(comparators[sortEl.value] || comparators["date-desc"]);
             listEl.innerHTML = "";
+            pagerEl.innerHTML = "";
 
             if (!shown.length) {
                 var none = document.createElement("p");
@@ -194,16 +234,20 @@
             }
 
             countEl.textContent = shown.length + (shown.length === 1 ? " post" : " posts") +
-                (activeFolder !== "All" ? " in " + activeFolder : "");
+                (activeFolder !== "All" ? " in " + segsOf(activeFolder).pop() : "");
 
-            shown.forEach(function (p) {
+            var pages = Math.ceil(shown.length / PAGE_SIZE);
+            if (curPage > pages) { curPage = pages; }
+            var pageItems = shown.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
+
+            pageItems.forEach(function (p) {
                 var art = document.createElement("article");
                 art.className = "post-item";
 
                 var meta = document.createElement("div");
                 meta.className = "post-meta";
                 var bits = [formatDate(p.date)];
-                bits.push(cats(p).join(" / "));
+                bits.push(cats(p).map(function (c) { return segsOf(c).join(" › "); }).join(", "));
                 if (p.minutes) { bits.push(p.minutes + " min read"); }
                 meta.textContent = bits.join("  ·  ");
                 art.appendChild(meta);
@@ -237,14 +281,57 @@
 
                 listEl.appendChild(art);
             });
+
+            if (pages > 1) { buildPager(pages); }
+        }
+
+        function pagerButton(label, page, opts) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            if (opts && opts.current) { b.className = "current"; }
+            if (opts && opts.disabled) { b.disabled = true; }
+            else {
+                b.addEventListener("click", function () {
+                    curPage = page;
+                    render();
+                    listEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+            }
+            return b;
+        }
+
+        function buildPager(pages) {
+            pagerEl.appendChild(pagerButton("←", curPage - 1, { disabled: curPage === 1 }));
+            for (var i = 1; i <= pages; i++) {
+                pagerEl.appendChild(pagerButton(String(i), i, { current: i === curPage }));
+            }
+            pagerEl.appendChild(pagerButton("→", curPage + 1, { disabled: curPage === pages }));
         }
 
         buildTree();
-        searchEl.addEventListener("input", render);
-        sortEl.addEventListener("change", render);
+        searchEl.addEventListener("input", function () { curPage = 1; render(); });
+        sortEl.addEventListener("change", function () { curPage = 1; render(); });
         render();
     })();
     </script>
 
+
+    <script>
+    (function () {
+        var btn = document.getElementById("theme-toggle");
+        if (!btn) { return; }
+        function mode() { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; }
+        function paint() { btn.textContent = mode() === "dark" ? "\u2600\ufe0f" : "\ud83c\udf19"; }
+        btn.addEventListener("click", function () {
+            var next = mode() === "dark" ? "light" : "dark";
+            if (next === "dark") { document.documentElement.setAttribute("data-theme", "dark"); }
+            else { document.documentElement.removeAttribute("data-theme"); }
+            try { localStorage.setItem("theme", next); } catch (e) {}
+            paint();
+        });
+        paint();
+    })();
+    </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 ---
 title: "Computer Vision III — Notes 3: Image Segmentation"
 date: 2026-08-23
-categories: [Course notes, Computer Vision]
+categories: [Course notes/Computer Vision/Computer Vision III]
 tags: [Deep learning, Computer Vision, TUM, segmentation, video object segmentation]
 summary: Third notes for CV3 at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval.
 ---

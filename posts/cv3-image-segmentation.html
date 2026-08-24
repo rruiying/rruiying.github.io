@@ -12,6 +12,7 @@
     <meta property="og:url" content="https://rruiying.github.io/posts/cv3-image-segmentation.html">
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <script>(function(){try{var t=localStorage.getItem("theme");if(!t&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches){t="dark";}if(t==="dark"){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
     <link rel="stylesheet" href="../style.css">
     <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 </head>
@@ -25,6 +26,7 @@
                 <li><a href="../index.html#publications">Publications</a></li>
                 <li><a class="active" href="../blog.html">Blog</a></li>
             </ul>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="开灯 / 关灯">🌙</button>
         </div>
     </nav>
 
@@ -63,7 +65,7 @@
             <h1>Computer Vision III — Notes 3: Image Segmentation</h1>
             <div class="post-meta">
                 <span>Published 23 August 2026</span> ·
-                <span class="post-category">Course notes</span> · <span class="post-category">Computer Vision</span> ·
+                <span class="post-category">Course notes › Computer Vision › Computer Vision III</span> ·
                 <span>261 words · 2 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
@@ -123,17 +125,34 @@ that cast VOS as <strong>pixel-wise retrieval</strong>.</p>
 <h3 id="64-metric-based-approaches-pixel-wise-retrieval">6.4 Metric-based approaches: pixel-wise retrieval</h3>
 <p><em>(…)</em></p>
 
-            <!-- Comments (utterances -> GitHub issues) -->
+            <!-- Share -->
+            <div class="post-share">
+                <span class="share-label">Share</span>
+                <a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Frruiying.github.io%2Fposts%2Fcv3-image-segmentation.html&text=Computer%20Vision%20III%20%E2%80%94%20Notes%203%3A%20Image%20Segmentation" target="_blank" rel="noopener">X / Twitter</a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Frruiying.github.io%2Fposts%2Fcv3-image-segmentation.html" target="_blank" rel="noopener">Facebook</a>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Frruiying.github.io%2Fposts%2Fcv3-image-segmentation.html" target="_blank" rel="noopener">LinkedIn</a>
+                <a href="https://service.weibo.com/share/share.php?url=https%3A%2F%2Frruiying.github.io%2Fposts%2Fcv3-image-segmentation.html&title=Computer%20Vision%20III%20%E2%80%94%20Notes%203%3A%20Image%20Segmentation" target="_blank" rel="noopener">微博</a>
+                <button type="button" id="wechat-share">微信</button>
+            </div>
+            <div class="wechat-qr" id="wechat-qr" hidden>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Frruiying.github.io%2Fposts%2Fcv3-image-segmentation.html" alt="WeChat QR code" width="150" height="150">
+                <div class="wechat-qr-tip">微信扫一扫，分享本文</div>
+            </div>
+
+            <!-- Related -->
+            <div class="post-related">
+                <h2 class="post-comments-title">You may also like</h2>
+                <ul>
+                    <li><span class="rel-date">23 Aug 2026</span><a href="cv3-modern-approaches.html">Computer Vision III — Notes 4: Modern Approaches</a></li>
+                    <li><span class="rel-date">23 Aug 2026</span><a href="cv3-object-tracking.html">Computer Vision III — Notes 2: Object Tracking</a></li>
+                    <li><span class="rel-date">20 Aug 2026</span><a href="cv3-object-detection.html">Computer Vision III — Notes 1: Object Detection</a></li>
+                </ul>
+            </div>
+
+            <!-- Comments (giscus -> GitHub Discussions) -->
             <div class="post-comments">
                 <h2 class="post-comments-title">Comments</h2>
-                <script src="https://utteranc.es/client.js"
-                        repo="rruiying/rruiying.github.io"
-                        issue-term="pathname"
-                        label="💬 comment"
-                        theme="github-light"
-                        crossorigin="anonymous"
-                        async>
-                </script>
+                <div id="giscus-slot"></div>
             </div>
 
         </main>
@@ -144,6 +163,51 @@ that cast VOS as <strong>pixel-wise retrieval</strong>.</p>
     </div>
 
     <script defer src="https://cn.vercount.one/js"></script>
+    <script>
+    (function () {
+        var b = document.getElementById("wechat-share");
+        var q = document.getElementById("wechat-qr");
+        if (b && q) { b.addEventListener("click", function () { q.hidden = !q.hidden; }); }
+
+        var dark = document.documentElement.getAttribute("data-theme") === "dark";
+        var g = document.createElement("script");
+        g.src = "https://giscus.app/client.js";
+        g.async = true;
+        g.crossOrigin = "anonymous";
+        var cfg = {
+            "data-repo": "rruiying/rruiying.github.io",
+            "data-repo-id": "R_kgDOPjVrmQ",
+            "data-category": "Announcements",
+            "data-category-id": "DIC_kwDOPjVrmc4DEFGL",
+            "data-mapping": "pathname",
+            "data-strict": "0",
+            "data-reactions-enabled": "1",
+            "data-emit-metadata": "0",
+            "data-input-position": "bottom",
+            "data-theme": dark ? "dark" : "light",
+            "data-lang": "en"
+        };
+        for (var k in cfg) { g.setAttribute(k, cfg[k]); }
+        document.getElementById("giscus-slot").appendChild(g);
+
+        var btn = document.getElementById("theme-toggle");
+        if (!btn) { return; }
+        function mode() { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; }
+        function paint() { btn.textContent = mode() === "dark" ? "☀️" : "🌙"; }
+        btn.addEventListener("click", function () {
+            var next = mode() === "dark" ? "light" : "dark";
+            if (next === "dark") { document.documentElement.setAttribute("data-theme", "dark"); }
+            else { document.documentElement.removeAttribute("data-theme"); }
+            try { localStorage.setItem("theme", next); } catch (e) {}
+            paint();
+            var f = document.querySelector("iframe.giscus-frame");
+            if (f && f.contentWindow) {
+                f.contentWindow.postMessage({ giscus: { setConfig: { theme: next } } }, "https://giscus.app");
+            }
+        });
+        paint();
+    })();
+    </script>
     <script>
     (function () {
         var links = document.querySelectorAll(".post-toc a");

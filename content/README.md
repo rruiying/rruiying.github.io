@@ -30,8 +30,10 @@ summary: 一两句摘要，显示在博客列表里，参与搜索。
 4. 点 **Commit changes** → 等一两分钟，Actions 跑完文章就上线了。
 
 - `title` / `date` / `category` 必填；`date` 必须是 `YYYY-MM-DD`
-- `category` 一篇一个，会变成博客页的筛选按钮，建议固定用少数几个：
-  `Course notes` / `Paper notes` / `Projects` / `Meta`
+- `categories` 支持用 `/` 表示**子文件夹层级**，比如
+  `Course notes/Computer Vision/Computer Vision III` 会在博客页左侧生成
+  三层嵌套的文件夹；点任意一层都能筛出该层级下的所有文章
+- 一篇文章也可以属于多个文件夹：`categories: [A/B, C]`
 - `tags` 随意多个，显示为小标签且可被搜索
 
 ## 插图

@@ -6,8 +6,7 @@ const POSTS = [
     "title": "Computer Vision III — Notes 3: Image Segmentation",
     "date": "2026-08-23",
     "categories": [
-      "Course notes",
-      "Computer Vision"
+      "Course notes/Computer Vision/Computer Vision III"
     ],
     "tags": [
       "Deep learning",
@@ -26,8 +25,7 @@ const POSTS = [
     "title": "Computer Vision III — Notes 4: Modern Approaches",
     "date": "2026-08-23",
     "categories": [
-      "Course notes",
-      "Computer Vision"
+      "Course notes/Computer Vision/Computer Vision III"
     ],
     "tags": [
       "Deep learning",
@@ -47,8 +45,7 @@ const POSTS = [
     "title": "Computer Vision III — Notes 2: Object Tracking",
     "date": "2026-08-23",
     "categories": [
-      "Course notes",
-      "Computer Vision"
+      "Course notes/Computer Vision/Computer Vision III"
     ],
     "tags": [
       "Deep learning",
@@ -67,8 +64,7 @@ const POSTS = [
     "title": "Computer Vision III — Notes 1: Object Detection",
     "date": "2026-08-20",
     "categories": [
-      "Course notes",
-      "Computer Vision"
+      "Course notes/Computer Vision/Computer Vision III"
     ],
     "tags": [
       "Deep learning",

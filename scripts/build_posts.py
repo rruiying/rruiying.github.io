@@ -28,6 +28,7 @@ from pathlib import Path
 
 import markdown
 import yaml
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = ROOT / "content" / "posts"
@@ -52,6 +53,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     <meta property="og:url" content="https://rruiying.github.io/posts/{slug}.html">
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <script>(function(){{try{{var t=localStorage.getItem("theme");if(!t&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches){{t="dark";}}if(t==="dark"){{document.documentElement.setAttribute("data-theme","dark");}}}}catch(e){{}}}})();</script>
     <link rel="stylesheet" href="../style.css">
     <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 </head>
@@ -65,6 +67,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
                 <li><a href="../index.html#publications">Publications</a></li>
                 <li><a class="active" href="../blog.html">Blog</a></li>
             </ul>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="开灯 / 关灯">🌙</button>
         </div>
     </nav>
 
@@ -83,17 +86,24 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 
 {body}
 
-            <!-- Comments (utterances -> GitHub issues) -->
+            <!-- Share -->
+            <div class="post-share">
+                <span class="share-label">Share</span>
+                <a href="https://twitter.com/intent/tweet?url={url_q}&text={title_q}" target="_blank" rel="noopener">X / Twitter</a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u={url_q}" target="_blank" rel="noopener">Facebook</a>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url={url_q}" target="_blank" rel="noopener">LinkedIn</a>
+                <a href="https://service.weibo.com/share/share.php?url={url_q}&title={title_q}" target="_blank" rel="noopener">微博</a>
+                <button type="button" id="wechat-share">微信</button>
+            </div>
+            <div class="wechat-qr" id="wechat-qr" hidden>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={url_q}" alt="WeChat QR code" width="150" height="150">
+                <div class="wechat-qr-tip">微信扫一扫，分享本文</div>
+            </div>
+{related_html}
+            <!-- Comments (giscus -> GitHub Discussions) -->
             <div class="post-comments">
                 <h2 class="post-comments-title">Comments</h2>
-                <script src="https://utteranc.es/client.js"
-                        repo="rruiying/rruiying.github.io"
-                        issue-term="pathname"
-                        label="💬 comment"
-                        theme="github-light"
-                        crossorigin="anonymous"
-                        async>
-                </script>
+                <div id="giscus-slot"></div>
             </div>
 
         </main>
@@ -104,6 +114,51 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <script defer src="https://cn.vercount.one/js"></script>
+    <script>
+    (function () {{
+        var b = document.getElementById("wechat-share");
+        var q = document.getElementById("wechat-qr");
+        if (b && q) {{ b.addEventListener("click", function () {{ q.hidden = !q.hidden; }}); }}
+
+        var dark = document.documentElement.getAttribute("data-theme") === "dark";
+        var g = document.createElement("script");
+        g.src = "https://giscus.app/client.js";
+        g.async = true;
+        g.crossOrigin = "anonymous";
+        var cfg = {{
+            "data-repo": "rruiying/rruiying.github.io",
+            "data-repo-id": "R_kgDOPjVrmQ",
+            "data-category": "Announcements",
+            "data-category-id": "DIC_kwDOPjVrmc4DEFGL",
+            "data-mapping": "pathname",
+            "data-strict": "0",
+            "data-reactions-enabled": "1",
+            "data-emit-metadata": "0",
+            "data-input-position": "bottom",
+            "data-theme": dark ? "dark" : "light",
+            "data-lang": "en"
+        }};
+        for (var k in cfg) {{ g.setAttribute(k, cfg[k]); }}
+        document.getElementById("giscus-slot").appendChild(g);
+
+        var btn = document.getElementById("theme-toggle");
+        if (!btn) {{ return; }}
+        function mode() {{ return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; }}
+        function paint() {{ btn.textContent = mode() === "dark" ? "☀️" : "🌙"; }}
+        btn.addEventListener("click", function () {{
+            var next = mode() === "dark" ? "light" : "dark";
+            if (next === "dark") {{ document.documentElement.setAttribute("data-theme", "dark"); }}
+            else {{ document.documentElement.removeAttribute("data-theme"); }}
+            try {{ localStorage.setItem("theme", next); }} catch (e) {{}}
+            paint();
+            var f = document.querySelector("iframe.giscus-frame");
+            if (f && f.contentWindow) {{
+                f.contentWindow.postMessage({{ giscus: {{ setConfig: {{ theme: next }} }} }}, "https://giscus.app");
+            }}
+        }});
+        paint();
+    }})();
+    </script>
 <!--SCROLLSPY-->
 </body>
 </html>
@@ -279,46 +334,100 @@ def render_body(md_text):
     return body
 
 
+def norm_path(c):
+    return tuple(seg.strip() for seg in c.split("/") if seg.strip())
+
+
+def affinity(a, b):
+    """Depth of the deepest shared folder prefix between two posts."""
+    best = 0
+    for pa in (norm_path(c) for c in a["categories"]):
+        for pb in (norm_path(c) for c in b["categories"]):
+            d = 0
+            for x, y in zip(pa, pb):
+                if x != y:
+                    break
+                d += 1
+            best = max(best, d)
+    return best
+
+
+def related_html_for(post, posts):
+    scored = [(affinity(post, q), q) for q in posts if q is not post]
+    scored = [(a, q) for a, q in scored if a > 0]
+    scored.sort(key=lambda t: (-t[0], t[1]["date"]), reverse=False)
+    scored.sort(key=lambda t: t[1]["date"], reverse=True)
+    scored.sort(key=lambda t: -t[0])
+    picks = [q for _, q in scored[:3]]
+    if not picks:
+        return ""
+    items = []
+    for q in picks:
+        d = datetime.strptime(q["date"], "%Y-%m-%d").strftime("%-d %b %Y")
+        items.append(
+            f'                    <li><span class="rel-date">{d}</span>'
+            f'<a href="{q["slug"]}.html">{html.escape(q["title"])}</a></li>'
+        )
+    return (
+        '\n            <!-- Related -->\n'
+        '            <div class="post-related">\n'
+        '                <h2 class="post-comments-title">You may also like</h2>\n'
+        '                <ul>\n' + "\n".join(items) + "\n"
+        '                </ul>\n'
+        '            </div>\n'
+    )
+
+
 def build():
     if not SRC_DIR.is_dir():
         fail(f"source directory {SRC_DIR} does not exist")
     OUT_DIR.mkdir(exist_ok=True)
 
+    # ── Pass 1: parse every source, render bodies, gather stats ──
     posts = []
     for path in sorted(SRC_DIR.glob("*.md")):
         if path.stem.startswith("_") or path.name.lower() == "readme.md":
             continue
         post = parse_source(path)
-        date_human = datetime.strptime(post["date"], "%Y-%m-%d").strftime("%-d %B %Y")
-        body = render_body(post["body_md"])
-        toc_class, toc_html = build_toc(body)
-        post["words"], post["minutes"] = count_words(body)
+        post["body"] = render_body(post["body_md"])
+        post["toc_class"], post["toc_html"] = build_toc(post["body"])
+        post["words"], post["minutes"] = count_words(post["body"])
         post["updated"] = updated_date(path, post["meta"], post["date"])
+        posts.append(post)
+
+    # ── Pass 2: render pages (needs the full list for related posts) ──
+    for post in posts:
+        date_human = datetime.strptime(post["date"], "%Y-%m-%d").strftime("%-d %B %Y")
         updated_html = ""
         if post["updated"] > post["date"]:
             upd_human = datetime.strptime(post["updated"], "%Y-%m-%d").strftime("%-d %B %Y")
             updated_html = f" ·\n                <span>Updated {upd_human}</span>"
+        page_url = f"{SITE_URL}/posts/{post['slug']}.html"
         page = PAGE_TEMPLATE.format(
             marker=MARKER,
             title_esc=html.escape(post["title"]),
             summary_esc=html.escape(post["summary"], quote=True),
             slug=post["slug"],
             categories_html=" · ".join(
-                f'<span class="post-category">{html.escape(c)}</span>'
+                '<span class="post-category">'
+                + " › ".join(html.escape(seg.strip()) for seg in c.split("/"))
+                + "</span>"
                 for c in post["categories"]
             ),
             date_human=date_human,
             updated_html=updated_html,
             words=post["words"],
             minutes=post["minutes"],
-            toc_class=toc_class,
-            toc_html=toc_html,
-            body=body,
+            toc_class=post["toc_class"],
+            toc_html=post["toc_html"],
+            url_q=quote(page_url, safe=""),
+            title_q=quote(post["title"], safe=""),
+            related_html=related_html_for(post, posts),
+            body=post["body"],
         )
-        page = page.replace("<!--SCROLLSPY-->", SCROLLSPY_JS if toc_html else "")
+        page = page.replace("<!--SCROLLSPY-->", SCROLLSPY_JS if post["toc_html"] else "")
         out = OUT_DIR / f"{post['slug']}.html"
         out.write_text(page, encoding="utf-8")
-        posts.append(post)
         print(f"built  posts/{out.name}")
 
     # Remove generated pages whose Markdown source is gone. Hand-written

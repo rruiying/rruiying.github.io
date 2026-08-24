@@ -1,7 +1,7 @@
 ---
 title: "Computer Vision III — Notes 1: Object Detection"
 date: 2026-08-20
-categories: [Course notes, Computer Vision]
+categories: [Course notes/Computer Vision/Computer Vision III]
 tags: [Deep learning, Computer Vision, TUM, object detection]
 summary: First notes for CV3 (Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated.
 ---

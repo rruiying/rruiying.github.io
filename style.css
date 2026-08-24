@@ -5,14 +5,29 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 :root {
-    --ink: #1b1a17;
-    --ink-soft: #57534c;
-    --ink-faint: #8f8a80;
-    --paper: #faf9f6;
-    --paper-deep: #f1efe9;
-    --hairline: #e3e0d8;
+    --ink: #1c1c1c;
+    --ink-soft: #575757;
+    --ink-faint: #8c8c8c;
+    --paper: #ffffff;
+    --paper-deep: #f4f4f3;
+    --hairline: #e6e6e5;
     --accent: #2d4a6d;
     --accent-strong: #16334f;
+    --nav-bg: rgba(255, 255, 255, 0.92);
+    --sel: #d9e2ec;
+}
+
+[data-theme="dark"] {
+    --ink: #e6e4e1;
+    --ink-soft: #aeacaa;
+    --ink-faint: #7b7975;
+    --paper: #141416;
+    --paper-deep: #202023;
+    --hairline: #2c2c2f;
+    --accent: #92b4d8;
+    --accent-strong: #bad1ea;
+    --nav-bg: rgba(20, 20, 22, 0.9);
+    --sel: #31465e;
 }
 
 * {
@@ -28,6 +43,7 @@ html {
 }
 
 body {
+    transition: background 0.2s, color 0.2s;
     font-family: 'Source Sans 3', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     color: var(--ink);
     background: var(--paper);
@@ -54,7 +70,7 @@ a:hover {
 }
 
 ::selection {
-    background: #d9e2ec;
+    background: var(--sel);
 }
 
 /* ── Top navigation ─────────────────────────────────────────────────── */
@@ -62,7 +78,7 @@ a:hover {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(250, 249, 246, 0.92);
+    background: var(--nav-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--hairline);
@@ -380,8 +396,19 @@ a:hover {
     display: inline-block;
 }
 
-.tree-folder.open .tree-caret {
+.tree-node.open > .tree-item .tree-caret {
     transform: rotate(90deg);
+}
+
+.tree-children {
+    display: none;
+    margin-left: 15px;
+    border-left: 1px solid var(--hairline);
+    padding-left: 4px;
+}
+
+.tree-node.open > .tree-children {
+    display: block;
 }
 
 .tree-icon {
@@ -403,33 +430,6 @@ a:hover {
     color: var(--ink-faint);
     font-size: 0.85em;
     font-variant-numeric: tabular-nums;
-}
-
-.tree-posts {
-    list-style: none;
-    margin: 0 0 2px;
-    display: none;
-}
-
-.tree-folder.open + .tree-posts {
-    display: block;
-}
-
-.tree-posts a {
-    display: block;
-    color: var(--ink-faint);
-    font-size: 0.95em;
-    padding: 3px 6px 3px 34px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    border-radius: 3px;
-}
-
-.tree-posts a:hover {
-    color: var(--accent);
-    background: var(--paper-deep);
-    text-decoration: none;
 }
 
 /* Search + sort */
@@ -637,6 +637,10 @@ a:hover {
     border: 1px solid var(--hairline);
 }
 
+[data-theme="dark"] .post-page figure img {
+    filter: brightness(0.85);
+}
+
 .post-page figcaption {
     font-size: 0.7222rem;
     color: var(--ink-faint);
@@ -778,6 +782,176 @@ a:hover {
     font-size: 0.6944rem;
     color: var(--ink-faint);
     text-align: center;
+}
+
+
+/* ── Theme toggle ───────────────────────────────────────────────────── */
+.theme-toggle {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8889rem;
+    line-height: 1;
+    padding: 8px 10px;
+    border-radius: 5px;
+    color: var(--ink-soft);
+}
+
+.theme-toggle:hover {
+    background: var(--paper-deep);
+}
+
+/* ── Sidebar icon links ─────────────────────────────────────────────── */
+.sidebar-links li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.sidebar-links .sicon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    color: var(--ink-faint);
+}
+
+.sidebar-links .sicon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ── Share row ──────────────────────────────────────────────────────── */
+.post-share {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline);
+    font-size: 0.7222rem;
+}
+
+.post-share .share-label {
+    color: var(--ink-faint);
+}
+
+.post-share a,
+.post-share button {
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+    color: var(--ink-soft);
+    padding: 0;
+}
+
+.post-share a:hover,
+.post-share button:hover {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.wechat-qr {
+    margin-top: 14px;
+}
+
+.wechat-qr img {
+    display: block;
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    background: #fff;
+    padding: 8px;
+}
+
+.wechat-qr-tip {
+    font-size: 0.6944rem;
+    color: var(--ink-faint);
+    margin-top: 6px;
+}
+
+/* ── Related posts ──────────────────────────────────────────────────── */
+.post-related {
+    margin-top: 44px;
+    padding-top: 8px;
+    border-top: 1px solid var(--hairline);
+}
+
+.post-related ul {
+    list-style: none;
+    margin: 12px 0 0;
+    font-family: inherit;
+}
+
+.post-related li {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 6px 0;
+    margin: 0;
+}
+
+.post-related .rel-date {
+    flex: 0 0 auto;
+    color: var(--ink-faint);
+    font-size: 0.6944rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.post-related a {
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 0.8611rem;
+    color: var(--ink);
+}
+
+.post-related a:hover {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* ── Blog pagination ────────────────────────────────────────────────── */
+.blog-pager {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    margin-top: 30px;
+    font-size: 0.7778rem;
+}
+
+.blog-pager button {
+    background: none;
+    border: 1px solid transparent;
+    font: inherit;
+    color: var(--ink-soft);
+    padding: 4px 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+}
+
+.blog-pager button:hover:not(:disabled) {
+    color: var(--ink);
+    background: var(--paper-deep);
+}
+
+.blog-pager button.current {
+    color: var(--ink);
+    font-weight: 600;
+    border-color: var(--hairline);
+}
+
+.blog-pager button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* ── giscus ─────────────────────────────────────────────────────────── */
+.giscus,
+#giscus-slot {
+    margin-top: 14px;
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────── */
