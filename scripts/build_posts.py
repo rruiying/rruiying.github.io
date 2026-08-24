@@ -44,6 +44,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     {marker}
     <title>{title_esc} — Rui Ying</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="stylesheet" href="../style.css">
     <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 </head>
@@ -74,6 +75,19 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
             </div>
 
 {body}
+
+            <!-- Comments (utterances -> GitHub issues) -->
+            <div class="post-comments">
+                <h2 class="post-comments-title">Comments</h2>
+                <script src="https://utteranc.es/client.js"
+                        repo="rruiying/rruiying.github.io"
+                        issue-term="pathname"
+                        label="💬 comment"
+                        theme="github-light"
+                        crossorigin="anonymous"
+                        async>
+                </script>
+            </div>
 
         </main>
 

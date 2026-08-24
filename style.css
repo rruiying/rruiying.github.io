@@ -70,7 +70,7 @@ a:hover {
     display: flex;
     flex-direction: row;          /* never stacks vertically */
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 16px;
 }
 
@@ -766,6 +766,22 @@ a:hover {
     overflow-x: auto;
     overflow-y: hidden;
     padding: 2px 0;
+}
+
+
+/* ── Comments ── */
+.post-comments {
+    margin-top: 48px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+}
+
+.post-comments-title {
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-size: 1.1875rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 14px 0 4px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

@@ -1,0 +1,4 @@
+# Keep photos and figures out of search engines / image search.
+# Pages themselves stay indexable.
+User-agent: *
+Disallow: /images/
