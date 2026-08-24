@@ -9,7 +9,7 @@ summary: GAMES103 note 1 — what physics-based animation is, the graphics pipel
 
 ### 1.1 什么是计算机图形学
 
-从**3D digital world到2D digital image是计算机图形学**（rendering干的事），
+从**3D digital world到2D digital image是计算机图形学**（rendering渲染），
 反过来从2D image恢复出3D world是计算机视觉。两者互为逆问题。
 
 Three areas in Computer Graphics:
@@ -33,17 +33,17 @@ Three areas in Computer Graphics:
 Geometry有三种表示：
 
 1. **Mesh**：由vertices（nodes）和elements（triangles, polygons, tetrahedra…）组成，
-   分structured和unstructured mesh。围绕mesh的问题有：
+   分structured和unstructured mesh。围绕mesh的方向有：
     - Meshing（怎么生成网格，如Delaunay triangulation）
     - Simplification / subdivision（简化与细分）
     - Mesh optimization（smoothing, flows…）
     - Volume mesh（体网格）
-2. **Point Cloud**：一堆 $(x, y, z)$ 点，surface scan扫出来的raw data通常就是它。问题有：
+2. **Point Cloud**：一堆 $(x, y, z)$ 点，surface scan扫出来的raw data通常就是它。方向有：
     - Mesh reconstruction from point cloud（从点云重建网格）
     - (Re)-sampling（重采样）
     - Neighborhood search（邻域查找）
 3. **Volumetric Grid**（体素）：用grid把空间切成cell，每个cell存这个位置的物理量，
-   常来自volumetric scan（比如CT）。问题有：
+   常来自volumetric scan（比如CT）。方向有：
     - Memory cost（内存开销大，可用octree省）
     - Volumetric rendering（体渲染）
 
