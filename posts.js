@@ -297,7 +297,7 @@ const POSTS = [
       "video object segmentation"
     ],
     "url": "posts/cv3-image-segmentation.html",
-    "updated": "2026-08-23",
+    "updated": "2026-08-24",
     "words": 261,
     "minutes": 2,
     "summary": "Third notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval."
@@ -317,7 +317,7 @@ const POSTS = [
       "semi-supervised learning"
     ],
     "url": "posts/cv3-modern-approaches.html",
-    "updated": "2026-08-23",
+    "updated": "2026-08-24",
     "words": 348,
     "minutes": 2,
     "summary": "Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
@@ -336,7 +336,7 @@ const POSTS = [
       "MOT"
     ],
     "url": "posts/cv3-object-tracking.html",
-    "updated": "2026-08-23",
+    "updated": "2026-08-24",
     "words": 707,
     "minutes": 4,
     "summary": "Second notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated."
@@ -354,7 +354,7 @@ const POSTS = [
       "object detection"
     ],
     "url": "posts/cv3-object-detection.html",
-    "updated": "2026-08-20",
+    "updated": "2026-08-24",
     "words": 1705,
     "minutes": 7,
     "summary": "First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."
