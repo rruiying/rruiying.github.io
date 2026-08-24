@@ -266,11 +266,13 @@ def build_toc(body_html):
         for level, hid, label in items
     )
     toc = f"""
-        <aside class="post-toc">
-            <div class="post-toc-title">Contents</div>
-            <ul>
+        <aside class="post-toc-col">
+            <nav class="post-toc">
+                <div class="post-toc-title">Contents</div>
+                <ul>
 {lis}
-            </ul>
+                </ul>
+            </nav>
         </aside>"""
     return " with-toc", toc
 

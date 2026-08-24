@@ -712,11 +712,15 @@ a:hover {
 }
 
 /* ── Table of contents ──────────────────────────────────────────────── */
+.post-toc-col {
+    min-width: 0;
+    /* stretches to the full height of the content row, bounding the sticky nav */
+}
+
 .post-toc {
     position: sticky;
     top: 100px;
-    align-self: start;
-    max-height: calc(100vh - 140px);
+    max-height: calc(100vh - 130px);
     overflow-y: auto;
     scrollbar-width: thin;
     padding-right: 4px;
@@ -965,7 +969,7 @@ a:hover {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .post-toc {
+    .post-toc-col {
         display: none;
     }
 
