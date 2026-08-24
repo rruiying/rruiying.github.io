@@ -130,7 +130,7 @@ $T$ 是template。$d$ 可以用：
 **Quiz: Can I just swap SSD with NCC in my code?**
 
 No. SSD是distance，要**最小化**；NCC是similarity，要**最大化**。直接替换会把最差的
-位置当成最好的——需要把argmin改成argmax（或改用 1 − NCC 作为distance）。
+位置当成最好的，所以需要把argmin改成argmax（或改用 1 − NCC 作为distance）。
 
 但是template matching有根本性的问题：
 
@@ -170,7 +170,7 @@ idea是learn feature-based classifiers **invariant to natural object changes**�
 3. 最终的strong classifier是所有weak learners的**linear combination**（每个learner
    的权重和它的准确率相关）。
 
-    注意：原始论文里的weak classifier**不是SVM**，而是**decision stump**——对单个
+    注意：原始论文里的weak classifier**不是SVM**，而是**decision stump**，即对单个
     Haar feature取threshold的一层决策树，简单到单独用几乎没用，但组合起来很强。
     实际检测时VJ还把strong classifiers串成**attentional cascade**：前几级用极少的
     feature快速拒绝绝大多数negative windows，只有全部通过的window才算检测到，
@@ -180,7 +180,7 @@ idea是learn feature-based classifiers **invariant to natural object changes**�
 
 - Haar features是**hand-crafted**的，表达能力有限，基本只对rigid、frontal的物体
   （典型：正脸）work
-- 对**pose / viewpoint变化、形变、遮挡**不robust——侧脸就得另外训练一个detector
+- 对**pose / viewpoint变化、形变、遮挡**不robust，比如侧脸就得另外训练一个detector
 - 每个类别都要**单独训练**，无法scale到general的多类别object detection
 
 ### 3.3 HOG features and sliding windows

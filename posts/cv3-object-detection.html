@@ -78,7 +78,7 @@
                 <span>Published 20 August 2026</span> ·
                 <span>Updated 24 August 2026</span> ·
                 <span class="post-category">Course notes › Computer Vision › Computer Vision III (IN2375)</span> ·
-                <span>1,924 words · 8 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>1,929 words · 8 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
@@ -182,7 +182,7 @@ measure每个位置和template的similarity，其中high correlation的region认
 </ol>
 <p class="quiz-q"><span class="quiz-badge">QUIZ</span>Can I just swap SSD with NCC in my code?</p>
 <p>No. SSD是distance，要<strong>最小化</strong>；NCC是similarity，要<strong>最大化</strong>。直接替换会把最差的
-位置当成最好的——需要把argmin改成argmax（或改用 1 − NCC 作为distance）。</p>
+位置当成最好的，所以需要把argmin改成argmax（或改用 1 − NCC 作为distance）。</p>
 <p>但是template matching有根本性的问题：</p>
 <ol>
 <li><strong>(Self-)occlusions</strong>（例如pose变化造成的遮挡），template对不上</li>
@@ -216,7 +216,7 @@ measure每个位置和template的similarity，其中high correlation的region认
 <li>
 <p>最终的strong classifier是所有weak learners的<strong>linear combination</strong>（每个learner
    的权重和它的准确率相关）。</p>
-<p>注意：原始论文里的weak classifier<strong>不是SVM</strong>，而是<strong>decision stump</strong>——对单个
+<p>注意：原始论文里的weak classifier<strong>不是SVM</strong>，而是<strong>decision stump</strong>，即对单个
 Haar feature取threshold的一层决策树，简单到单独用几乎没用，但组合起来很强。
 实际检测时VJ还把strong classifiers串成<strong>attentional cascade</strong>：前几级用极少的
 feature快速拒绝绝大多数negative windows，只有全部通过的window才算检测到，
@@ -227,7 +227,7 @@ feature快速拒绝绝大多数negative windows，只有全部通过的window才
 <ul>
 <li>Haar features是<strong>hand-crafted</strong>的，表达能力有限，基本只对rigid、frontal的物体
   （典型：正脸）work</li>
-<li>对<strong>pose / viewpoint变化、形变、遮挡</strong>不robust——侧脸就得另外训练一个detector</li>
+<li>对<strong>pose / viewpoint变化、形变、遮挡</strong>不robust，比如侧脸就得另外训练一个detector</li>
 <li>每个类别都要<strong>单独训练</strong>，无法scale到general的多类别object detection</li>
 </ul>
 <h3 id="33-hog-features-and-sliding-windows">3.3 HOG features and sliding windows</h3>

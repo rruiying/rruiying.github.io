@@ -53,7 +53,7 @@
             <div class="post-meta">
                 <span>Published 24 August 2026</span> ·
                 <span class="post-category">Course notes › Computer Graphics › Animation › Games103</span> ·
-                <span>854 words · 3 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>856 words · 3 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
@@ -132,7 +132,7 @@
 <li><strong>state可以是任何描述场景的量</strong>：position/orientation、velocity、appearance、density…
   模拟刚体时state是位置和朝向，模拟烟雾时state就是密度场。</li>
 <li><strong>time step不需要等于frame rate</strong>：常见做法是每渲染一帧之间跑好几个仿真步
-  （比如渲染60fps，仿真240步/秒）——step太大会不稳定、丢细节，所以仿真要比渲染更密。</li>
+  （比如渲染60fps，仿真240步/秒）。因为step太大会不稳定、丢细节，所以仿真要比渲染更密。</li>
 </ul>
 <p>所谓physics-based，就是这个"从State_k算State_k+1"的更新规则<strong>由物理定律给出</strong>
 （牛顿第二定律、弹性力、流体方程…），而不是美术师手K关键帧。</p>
@@ -148,8 +148,8 @@
 </ul>
 <p>红圈是<strong>本课会讲的内容</strong>：</p>
 <ul>
-<li>用<strong>mesh</strong>做刚体contacts、cloth、elastic软体 —— 对应note 2（刚体）、note 3（布料）、note 4（FEM弹性体）</li>
-<li>用<strong>particle和grid</strong>做流体（实时烟雾、水波、飞溅）—— 对应note 5</li>
+<li>用<strong>mesh</strong>做刚体contacts、cloth、elastic软体，对应note 2（刚体）、note 3（布料）、note 4（FEM弹性体）</li>
+<li>用<strong>particle和grid</strong>做流体（实时烟雾、水波、飞溅），对应note 5</li>
 </ul>
 <p>打星号的（meshless fracture、用grid处理cloth/hair contact）属于进阶话题，课上不展开。</p>
 <h2 id="2-math-background">2. Math Background</h2>

@@ -34,7 +34,7 @@ const POSTS = [
     ],
     "url": "posts/games103-note1.html",
     "updated": "2026-08-24",
-    "words": 854,
+    "words": 856,
     "minutes": 3,
     "summary": "GAMES103 note 1 — what physics-based animation is, the graphics pipeline, and the math toolbox of vectors, matrices and calculus for simulation."
   },
@@ -318,8 +318,8 @@ const POSTS = [
     ],
     "url": "posts/cv3-modern-approaches.html",
     "updated": "2026-08-24",
-    "words": 2849,
-    "minutes": 11,
+    "words": 5542,
+    "minutes": 21,
     "summary": "Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
   },
   {
@@ -355,7 +355,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-object-detection.html",
     "updated": "2026-08-24",
-    "words": 1924,
+    "words": 1929,
     "minutes": 8,
     "summary": "First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."
   }

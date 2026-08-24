@@ -58,7 +58,7 @@ Geometry有三种表示：
 - **state可以是任何描述场景的量**：position/orientation、velocity、appearance、density…
   模拟刚体时state是位置和朝向，模拟烟雾时state就是密度场。
 - **time step不需要等于frame rate**：常见做法是每渲染一帧之间跑好几个仿真步
-  （比如渲染60fps，仿真240步/秒）——step太大会不稳定、丢细节，所以仿真要比渲染更密。
+  （比如渲染60fps，仿真240步/秒）。因为step太大会不稳定、丢细节，所以仿真要比渲染更密。
 
 所谓physics-based，就是这个"从State_k算State_k+1"的更新规则**由物理定律给出**
 （牛顿第二定律、弹性力、流体方程…），而不是美术师手K关键帧。
@@ -77,8 +77,8 @@ Geometry有三种表示：
 
 红圈是**本课会讲的内容**：
 
-- 用**mesh**做刚体contacts、cloth、elastic软体 —— 对应note 2（刚体）、note 3（布料）、note 4（FEM弹性体）
-- 用**particle和grid**做流体（实时烟雾、水波、飞溅）—— 对应note 5
+- 用**mesh**做刚体contacts、cloth、elastic软体，对应note 2（刚体）、note 3（布料）、note 4（FEM弹性体）
+- 用**particle和grid**做流体（实时烟雾、水波、飞溅），对应note 5
 
 打星号的（meshless fracture、用grid处理cloth/hair contact）属于进阶话题，课上不展开。
 
