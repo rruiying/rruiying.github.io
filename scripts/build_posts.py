@@ -172,6 +172,13 @@ def fail(msg):
     sys.exit(1)
 
 
+def pretty_segment(seg):
+    """Directory name -> display name: underscores to spaces, space before '('."""
+    out = seg.replace("_", " ").strip()
+    out = re.sub(r"\s*\(", " (", out)
+    return re.sub(r"\s+", " ", out)
+
+
 def parse_source(path):
     text = path.read_text(encoding="utf-8")
     m = FRONT_MATTER_RE.match(text)
@@ -192,8 +199,6 @@ def parse_source(path):
     if isinstance(cats, str):
         cats = [c.strip() for c in cats.split(",") if c.strip()]
     cats = [str(c) for c in cats]
-    if not cats:
-        fail(f"{path.name}: front matter needs 'category' or 'categories'")
 
     d = meta["date"]
     if isinstance(d, datetime):
@@ -425,10 +430,22 @@ def build():
 
     # ── Pass 1: parse every source, render bodies, gather stats ──
     posts = []
-    for path in sorted(SRC_DIR.glob("*.md")):
+    seen_slugs = {}
+    for path in sorted(SRC_DIR.rglob("*.md")):
         if path.stem.startswith("_") or path.name.lower() == "readme.md":
             continue
         post = parse_source(path)
+        if post["slug"] in seen_slugs:
+            fail(f"duplicate post filename '{path.name}' "
+                 f"(also at {seen_slugs[post['slug']]}) — filenames must be unique, they become URLs")
+        seen_slugs[post["slug"]] = str(path.relative_to(SRC_DIR))
+        rel_parts = path.parent.relative_to(SRC_DIR).parts
+        if rel_parts:
+            # The folder the file lives in IS its category path.
+            post["categories"] = ["/".join(pretty_segment(seg) for seg in rel_parts)]
+        if not post["categories"]:
+            fail(f"{path.name}: top-level posts need 'category'/'categories' in front matter "
+                 f"(or move the file into a folder)")
         post["body"] = render_post_body(post["body_md"], post["slug"])
         post["toc_class"], post["toc_html"] = build_toc(post["body"])
         post["words"], post["minutes"] = count_words(post["body"])

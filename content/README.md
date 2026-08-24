@@ -1,54 +1,54 @@
-# 怎么发博客（网页上就能完成）
+# 怎么发博客
 
-每篇文章 = `content/posts/` 里的**一个 Markdown 文件**。推送后 GitHub Actions
-会自动生成文章页面并更新博客索引 —— `posts/` 目录和 `posts.js` 都是机器生成的,
-**永远不要手改**。
+每篇文章 = `content/posts/` 里的一个 Markdown 文件。**文件放在哪个文件夹，
+博客页左侧的分类树就长什么样** —— 不用在 front matter 里写分类。
 
-## 发一篇新文章
+```
+content/posts/Course_notes/Computer_Graphics/Animation/Games103/games103-note1.md
+                └──────── 这个目录路径就是文章的分类：
+                          Course notes › Computer Graphics › Animation › Games103
+```
 
-1. 打开仓库页面 → 进入 `content/posts/` → **Add file → Create new file**
-2. 文件名用英文小写加连字符，如 `convex-optimization.md`（它决定文章网址）
-3. 按这个格式写：
+- 目录名里的下划线显示时自动变空格，`(IN2064)` 前自动补空格
+- 新分类 = 新建文件夹，放进第一篇文章即可
+- **文件名 = 文章网址**，用小写英文加连字符（`games103-note1.md`），
+  发布后不要改名（会断链接），全站文件名不能重复（构建会报错拦住）
+
+## front matter 模板
 
 ```markdown
 ---
-title: Convex Optimization — lecture notes
-date: 2026-09-15
-category: Course notes
-tags: [optimization, math, TUM]
-summary: 一两句摘要，显示在博客列表里，参与搜索。
+title: "标题（含冒号必须加引号）"
+date: 2026-09-01
+tags: [physics simulation, GAMES103]
+summary: 一两句摘要，显示在列表里、参与搜索。注意整行不能出现英文冒号。
 ---
-正文从这里开始，就是普通 Markdown。
-
-## 小节标题
-
-支持 **加粗**、*斜体*、[链接](https://example.com)、代码块、表格。
-
-![图片说明](/images/my-figure.png)
+正文 Markdown。公式用 $...$（行内）和 $$...$$（独立）。
 ```
 
-4. 点 **Commit changes** → 等一两分钟，Actions 跑完文章就上线了。
-
-- `title` / `date` / `category` 必填；`date` 必须是 `YYYY-MM-DD`
-- `categories` 支持用 `/` 表示**子文件夹层级**，比如
-  `Course notes/Computer Vision/Computer Vision III` 会在博客页左侧生成
-  三层嵌套的文件夹；点任意一层都能筛出该层级下的所有文章
-- 一篇文章也可以属于多个文件夹：`categories: [A/B, C]`
-- `tags` 随意多个，显示为小标签且可被搜索
+`title` 和 `date` 必填；`tags`、`summary` 建议写。
 
 ## 插图
 
-1. 仓库页面 → `images/` 目录 → **Add file → Upload files**，把图片拖进去提交
-2. 正文里写 `![说明](/images/文件名.png)`
+图片放进 `images/blog/` 下对应的文件夹（建议和文章目录结构一致），正文里：
 
-## 修改 / 删除文章
+```markdown
+![图注文字](/images/blog/Course_notes/Computer_Graphics/Games103/note1/xxx.png)
+```
 
-- 修改：直接在网页上编辑对应的 `.md` 文件（铅笔图标），提交即可
-- 删除：删掉 `.md` 文件，Actions 会连生成的页面一起清掉
+图注（方括号里的字）会显示在图片下方。构建时自动写入图片尺寸、懒加载；
+引用了不存在的图片会在构建日志里警告。
+**图片路径里不要出现括号和空格**（会破坏 Markdown 链接）。
 
-## 本地预览（可选）
+## 修改 / 删除
+
+- 修改：编辑 md 文件，提交即可（"Updated" 日期自动取 git 记录）
+- 删除：删掉 md 文件，生成的页面会被自动清理
+- `posts/`、`posts.js`、`sitemap.xml` 全部是机器生成的，永远不要手改
+
+## 本地预览
 
 ```bash
-pip install markdown pyyaml
+pip install markdown pyyaml pymdown-extensions pillow
 python3 scripts/build_posts.py
 ```

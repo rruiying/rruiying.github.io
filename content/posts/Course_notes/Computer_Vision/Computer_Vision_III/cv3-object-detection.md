@@ -1,7 +1,6 @@
 ---
 title: "Computer Vision III — Notes 1: Object Detection"
 date: 2026-08-20
-categories: [Course notes/Computer Vision/Computer Vision III]
 tags: [Deep learning, Computer Vision, TUM, object detection]
 summary: First notes for CV3 (Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated.
 ---
@@ -25,7 +24,7 @@ networks.
 ## 1. Motivation
 Computer Vision的目标是mimic the human visual system, 发展从mit 1963年project mac到现在是ai的中心。
 
-![MIT Project MAC, 1963 (CSAIL)](/images/blog/cv3-note1/CSAIL.png)
+![MIT Project MAC, 1963 (CSAIL)](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/CSAIL.png)
 
 本课专注rgb image和rgb video的不同颗粒度下的semantic understanding,属于highlevel computer vision. 在object detection任务中我们用bounding box这种coarse的description来localize object.
 
@@ -36,7 +35,7 @@ Computer Vision的目标是mimic the human visual system, 发展从mit 1963年pr
 首先我们为了定义两个框之间的关系(Region overlap)引入了Intersection over Union (IoU) or
 Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者并集的面积
 
-![Intersection over Union](/images/blog/cv3-note1/IoU.png)
+![Intersection over Union](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/IoU.png)
 
 ### 2.2 TP / FP / FN, precision and recall
 
@@ -64,7 +63,7 @@ Recall评估模型召回有多好，其中 $TP + FN$ 是ground truth boxes的数
 
 结合precision和recall我们得到了average precision(AP)的metric, 横轴用recall竖轴用precision, 在1x1的区域内，面积越大越好
 
-![Precision–recall curve and AP](/images/blog/cv3-note1/AP.png)
+![Precision–recall curve and AP](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/AP.png)
 
 ### 2.5 Computing average precision
 
@@ -82,7 +81,7 @@ Recall评估模型召回有多好，其中 $TP + FN$ 是ground truth boxes的数
 
 ### 2.6 AP flavours and mAP
 
-![AP flavours](/images/blog/cv3-note1/AP_flavours.png)
+![AP flavours](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/AP_flavours.png)
 
 - AP may be averaged over multiple IoU thresholds.
 - mAP is the average over object categories.
@@ -94,7 +93,7 @@ Recall评估模型召回有多好，其中 $TP + FN$ 是ground truth boxes的数
 最简单的想法是定义一个metric，用一个物体图像作为template，通过sliding window扫过整张图片，
 measure每个位置和template的similarity，其中high correlation的region认为是object：
 
-![Old one-stage detectors: template + sliding window](/images/blog/cv3-note1/oldtime_one_stage.png)
+![Old one-stage detectors: template + sliding window](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/oldtime_one_stage.png)
 
 我们定义matching函数为 $L(x_0, y_0) = d(I_{(x_0, y_0)}, T)$，其中 $d$ 是distance
 （或similarity）metric，$I_{(x_0, y_0)}$ 是以 $(x_0, y_0)$ 为位置的image region，
@@ -140,7 +139,7 @@ No. SSD是distance，要**最小化**；NCC是similarity，要**最大化**。�
 新的one-stage detectors不再用template做sliding window，而是先对RGB pixel values做
 **feature extraction**，再在feature上同时做classification和localization：
 
-![New one-stage detectors: feature extraction](/images/blog/cv3-note1/new_one_stage.png)
+![New one-stage detectors: feature extraction](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/new_one_stage.png)
 
 idea是learn feature-based classifiers **invariant to natural object changes**。
 但随之而来的问题是features are not always linearly separable，单个简单分类器不够用，
@@ -153,14 +152,14 @@ idea是learn feature-based classifiers **invariant to natural object changes**�
    threshold就构成一个weak learner $h_i(\cdot)$。借助**integral image**（积分图），
    任意矩形的像素和只需4次查表，所以这些feature可以在常数时间内算出。
 
-    ![Haar-like features as weak learners](/images/blog/cv3-note1/Haar-like-features.png)
+    ![Haar-like features as weak learners](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/Haar-like-features.png)
 
 2. 然后按下图的步骤用**AdaBoost**训练。AdaBoost的思想：每一轮在当前样本权重下，
    从所有候选weak learner中找到error最低的那个并保存；然后**提高被它分错的样本的
    权重**（update the priority of the data samples），让下一轮的weak learner专注于
    难例；重复N轮。
 
-    ![Viola–Jones training procedure (AdaBoost)](/images/blog/cv3-note1/Viola-Jones_detector.png)
+    ![Viola–Jones training procedure (AdaBoost)](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/Viola-Jones_detector.png)
 
 3. 最终的strong classifier是所有weak learners的**linear combination**（每个learner
    的权重和它的准确率相关）。

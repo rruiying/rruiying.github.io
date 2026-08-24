@@ -6,7 +6,7 @@ const POSTS = [
     "title": "Fundamentals of Artificial Intelligence (IN2406) — Notes",
     "date": "2026-08-24",
     "categories": [
-      "Course notes/Algorithms/IN2406"
+      "Course notes/Algorithms/Fundamentals of Artificial Intelligence (IN2406)"
     ],
     "tags": [
       "algorithms",
@@ -22,61 +22,95 @@ const POSTS = [
     "summary": "Notes for Fundamentals of Artificial Intelligence (IN2406) at TUM — rational agents, search, constraint satisfaction, logic, planning, and probabilistic reasoning."
   },
   {
-    "title": "GAMES101 — Modern Computer Graphics: Notes",
+    "title": "GAMES103 — Physically-Based Animation Note1: Intro and Math Basics",
     "date": "2026-08-24",
     "categories": [
-      "Course notes/Computer Graphics/GAMES101"
-    ],
-    "tags": [
-      "Computer Graphics",
-      "rendering",
-      "GAMES101"
-    ],
-    "url": "posts/games101.html",
-    "updated": "2026-08-24",
-    "words": 3,
-    "minutes": 1,
-    "summary": "Notes for GAMES101 (Introduction to Modern Computer Graphics) — transformations, rasterization, shading, geometry, ray tracing, and animation."
-  },
-  {
-    "title": "GAMES102 — Geometric Modeling and Processing: Notes",
-    "date": "2026-08-24",
-    "categories": [
-      "Course notes/Computer Graphics/GAMES102"
-    ],
-    "tags": [
-      "Computer Graphics",
-      "geometry processing",
-      "GAMES102"
-    ],
-    "url": "posts/games102.html",
-    "updated": "2026-08-24",
-    "words": 3,
-    "minutes": 1,
-    "summary": "Notes for GAMES102 (Geometric Modeling and Processing)."
-  },
-  {
-    "title": "GAMES103 — Physically-Based Animation: Notes",
-    "date": "2026-08-24",
-    "categories": [
-      "Course notes/Computer Graphics/GAMES103"
+      "Course notes/Computer Graphics/Animation/Games103"
     ],
     "tags": [
       "Computer Graphics",
       "physics simulation",
       "GAMES103"
     ],
-    "url": "posts/games103.html",
+    "url": "posts/games103-note1.html",
     "updated": "2026-08-24",
-    "words": 3,
+    "words": 855,
+    "minutes": 3,
+    "summary": "GAMES103 note 1 — what physics-based animation is, the graphics pipeline, and the math toolbox of vectors, matrices and calculus for simulation."
+  },
+  {
+    "title": "GAMES103 — Physically-Based Animation Note2: Rigid Body Dynamics and Contacts",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computer Graphics/Animation/Games103"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "physics simulation",
+      "GAMES103"
+    ],
+    "url": "posts/games103-note2.html",
+    "updated": "2026-08-24",
+    "words": 38,
     "minutes": 1,
-    "summary": "Notes for GAMES103 (Intro to Physics-Based Computer Animation) — rigid bodies, mass-spring systems, PBD, FEM, and fluids."
+    "summary": "GAMES103 note 2 — rigid body dynamics — state integration, rotation representations, and contact handling."
+  },
+  {
+    "title": "GAMES103 — Physically-Based Animation Note3: Cloth",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computer Graphics/Animation/Games103"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "physics simulation",
+      "GAMES103"
+    ],
+    "url": "posts/games103-note3.html",
+    "updated": "2026-08-24",
+    "words": 60,
+    "minutes": 1,
+    "summary": "GAMES103 note 3 — cloth simulation — mass-spring systems, implicit integration, and strain limiting."
+  },
+  {
+    "title": "GAMES103 — Physically-Based Animation Note4: Linear Finite Element Method",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computer Graphics/Animation/Games103"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "physics simulation",
+      "GAMES103"
+    ],
+    "url": "posts/games103-note4.html",
+    "updated": "2026-08-24",
+    "words": 38,
+    "minutes": 1,
+    "summary": "GAMES103 note 4 — the linear finite element method for elastic solids."
+  },
+  {
+    "title": "GAMES103 — Physically-Based Animation Note5: Fluid",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computer Graphics/Animation/Games103"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "physics simulation",
+      "GAMES103"
+    ],
+    "url": "posts/games103-note5.html",
+    "updated": "2026-08-24",
+    "words": 45,
+    "minutes": 1,
+    "summary": "GAMES103 note 5 — fluid simulation — height fields, Eulerian grids, and SPH."
   },
   {
     "title": "GAMES105 — Computer Character Animation: Notes",
     "date": "2026-08-24",
     "categories": [
-      "Course notes/Computer Graphics/GAMES105"
+      "Course notes/Computer Graphics/Animation/Games105"
     ],
     "tags": [
       "Computer Graphics",
@@ -91,44 +125,27 @@ const POSTS = [
     "summary": "Notes for GAMES105 (Fundamentals of Computer Character Animation) — forward/inverse kinematics, motion capture data, and physics-based character control."
   },
   {
-    "title": "GAMES202 — Real-Time High Quality Rendering: Notes",
+    "title": "GAMES102 — Geometric Modeling and Processing: Notes",
     "date": "2026-08-24",
     "categories": [
-      "Course notes/Computer Graphics/GAMES202"
+      "Course notes/Computer Graphics/Geometry/Games102"
     ],
     "tags": [
       "Computer Graphics",
-      "real-time rendering",
-      "GAMES202"
+      "geometry processing",
+      "GAMES102"
     ],
-    "url": "posts/games202.html",
+    "url": "posts/games102.html",
     "updated": "2026-08-24",
     "words": 3,
     "minutes": 1,
-    "summary": "Notes for GAMES202 (Real-Time High Quality Rendering) — shadows, environment lighting, global illumination, and real-time ray tracing."
-  },
-  {
-    "title": "GAMES204 — Computational Imaging: Notes",
-    "date": "2026-08-24",
-    "categories": [
-      "Course notes/Computer Graphics/GAMES204"
-    ],
-    "tags": [
-      "Computer Graphics",
-      "computational imaging",
-      "GAMES204"
-    ],
-    "url": "posts/games204.html",
-    "updated": "2026-08-24",
-    "words": 3,
-    "minutes": 1,
-    "summary": "Notes for GAMES204 (Computational Imaging)."
+    "summary": "Notes for GAMES102 (Geometric Modeling and Processing)."
   },
   {
     "title": "GAMES301 — Surface Parameterization: Notes",
     "date": "2026-08-24",
     "categories": [
-      "Course notes/Computer Graphics/GAMES301"
+      "Course notes/Computer Graphics/Geometry/Games301"
     ],
     "tags": [
       "Computer Graphics",
@@ -145,7 +162,7 @@ const POSTS = [
     "title": "GAMES302 — Isogeometric Analysis: Notes",
     "date": "2026-08-24",
     "categories": [
-      "Course notes/Computer Graphics/GAMES302"
+      "Course notes/Computer Graphics/Geometry/Games302"
     ],
     "tags": [
       "Computer Graphics",
@@ -160,10 +177,61 @@ const POSTS = [
     "summary": "Notes for GAMES302 (Isogeometric Analysis) — splines and NURBS as a unified representation for geometric modeling and numerical simulation."
   },
   {
+    "title": "GAMES101 — Modern Computer Graphics: Notes",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games101"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "rendering",
+      "GAMES101"
+    ],
+    "url": "posts/games101.html",
+    "updated": "2026-08-24",
+    "words": 3,
+    "minutes": 1,
+    "summary": "Notes for GAMES101 (Introduction to Modern Computer Graphics) — transformations, rasterization, shading, geometry, ray tracing, and animation."
+  },
+  {
+    "title": "GAMES202 — Real-Time High Quality Rendering: Notes",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games202"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "real-time rendering",
+      "GAMES202"
+    ],
+    "url": "posts/games202.html",
+    "updated": "2026-08-24",
+    "words": 3,
+    "minutes": 1,
+    "summary": "Notes for GAMES202 (Real-Time High Quality Rendering) — shadows, environment lighting, global illumination, and real-time ray tracing."
+  },
+  {
+    "title": "GAMES204 — Computational Imaging: Notes",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games204"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "computational imaging",
+      "GAMES204"
+    ],
+    "url": "posts/games204.html",
+    "updated": "2026-08-24",
+    "words": 3,
+    "minutes": 1,
+    "summary": "Notes for GAMES204 (Computational Imaging)."
+  },
+  {
     "title": "Machine Learning (IN2064) — Notes",
     "date": "2026-08-24",
     "categories": [
-      "Course notes/Machine Learning/IN2064"
+      "Course notes/Machine Learning/Machine Learning (IN2064)"
     ],
     "tags": [
       "machine learning",
@@ -181,7 +249,7 @@ const POSTS = [
     "title": "Robotics (IN2067) — Notes 1",
     "date": "2026-08-24",
     "categories": [
-      "Course notes/Robotics/IN2067"
+      "Course notes/Robotics/Robotics (IN2067)"
     ],
     "tags": [
       "robotics",
@@ -210,7 +278,7 @@ const POSTS = [
       "video object segmentation"
     ],
     "url": "posts/cv3-image-segmentation.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-23",
     "words": 261,
     "minutes": 2,
     "summary": "Third notes for CV3 at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval."
@@ -230,7 +298,7 @@ const POSTS = [
       "semi-supervised learning"
     ],
     "url": "posts/cv3-modern-approaches.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-23",
     "words": 348,
     "minutes": 2,
     "summary": "Fourth notes for CV3 at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
@@ -249,7 +317,7 @@ const POSTS = [
       "MOT"
     ],
     "url": "posts/cv3-object-tracking.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-23",
     "words": 707,
     "minutes": 4,
     "summary": "Second notes for CV3 at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated."
@@ -267,7 +335,7 @@ const POSTS = [
       "object detection"
     ],
     "url": "posts/cv3-object-detection.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-20",
     "words": 1705,
     "minutes": 7,
     "summary": "First notes for CV3 (Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."
