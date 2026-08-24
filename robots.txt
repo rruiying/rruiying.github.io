@@ -2,3 +2,5 @@
 # Pages themselves stay indexable.
 User-agent: *
 Disallow: /images/
+
+Sitemap: https://rruiying.github.io/sitemap.xml

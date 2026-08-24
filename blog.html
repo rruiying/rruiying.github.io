@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog — Rui Ying</title>
     <meta name="description" content="Notes, course write-ups and reading logs by Rui Ying.">
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,37 +27,34 @@
 
             <header class="blog-header">
                 <h1 class="blog-title">Blog</h1>
-                <p class="blog-subtitle">
-                    Course notes, reading logs and things I want to remember.
-                </p>
+                <p class="blog-subtitle">Course notes, paper summaries and things worth remembering.</p>
             </header>
 
-            <!-- Search -->
-            <div class="blog-searchbar">
-                <svg class="search-icon" viewBox="0 0 20 20" aria-hidden="true">
-                    <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
-                    <line x1="12.8" y1="12.8" x2="17" y2="17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-                <input type="search" id="blog-search" class="blog-search"
-                       placeholder="Search titles, summaries, tags&hellip;" autocomplete="off"
-                       aria-label="Search posts">
+            <div class="blog-layout">
+
+                <!-- Folder tree -->
+                <aside class="blog-tree" aria-label="Post folders">
+                    <div class="blog-tree-title">FOLDERS</div>
+                    <div id="blog-tree"></div>
+                </aside>
+
+                <!-- List -->
+                <section>
+                    <div class="blog-controls">
+                        <input type="search" id="blog-search" class="blog-search"
+                               placeholder="Search…" autocomplete="off" aria-label="Search posts">
+                        <select id="blog-sort" class="blog-sort" aria-label="Sort posts">
+                            <option value="date-desc">Newest first</option>
+                            <option value="date-asc">Oldest first</option>
+                            <option value="title-asc">Title A–Z</option>
+                            <option value="title-desc">Title Z–A</option>
+                        </select>
+                    </div>
+                    <div class="blog-count" id="blog-count"></div>
+                    <div class="blog-list" id="blog-list"></div>
+                </section>
+
             </div>
-
-            <!-- Filters (left) + sort (right) -->
-            <div class="blog-toolbar">
-                <div class="blog-filters" id="blog-filters" role="group" aria-label="Filter by category"></div>
-                <select id="blog-sort" class="blog-sort" aria-label="Sort posts">
-                    <option value="date-desc">Newest first</option>
-                    <option value="date-asc">Oldest first</option>
-                    <option value="title-asc">Title A &rarr; Z</option>
-                    <option value="title-desc">Title Z &rarr; A</option>
-                    <option value="category-asc">By category</option>
-                </select>
-            </div>
-
-            <div class="blog-count" id="blog-count"></div>
-
-            <div class="blog-list" id="blog-list"></div>
 
         </main>
 
@@ -71,140 +68,159 @@
     (function () {
         "use strict";
 
-        var listEl    = document.getElementById("blog-list");
-        var countEl   = document.getElementById("blog-count");
-        var filtersEl = document.getElementById("blog-filters");
-        var searchEl  = document.getElementById("blog-search");
-        var sortEl    = document.getElementById("blog-sort");
+        var treeEl   = document.getElementById("blog-tree");
+        var listEl   = document.getElementById("blog-list");
+        var countEl  = document.getElementById("blog-count");
+        var searchEl = document.getElementById("blog-search");
+        var sortEl   = document.getElementById("blog-sort");
 
         var posts = (typeof POSTS !== "undefined" ? POSTS : []).slice();
-        var activeCategory = "All";
+        var activeFolder = "All";
 
-        // ── Category chips ────────────────────────────────────────────────
         function cats(p) {
             var c = p.categories || (p.category ? [p.category] : []);
             return c.length ? c : ["Uncategorised"];
         }
 
-        var categories = ["All"].concat(
-            posts.reduce(function (acc, p) { return acc.concat(cats(p)); }, [])
-                 .filter(function (c, i, a) { return a.indexOf(c) === i; })
-                 .sort(function (a, b) { return a.localeCompare(b); })
-        );
-
-        categories.forEach(function (cat) {
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "chip" + (cat === activeCategory ? " active" : "");
-            btn.textContent = cat;
-            btn.addEventListener("click", function () {
-                activeCategory = cat;
-                Array.prototype.forEach.call(filtersEl.children, function (c) {
-                    c.classList.toggle("active", c === btn);
-                });
-                render();
+        // ── Folder tree ──────────────────────────────────────────────────
+        var folders = {};
+        posts.forEach(function (p) {
+            cats(p).forEach(function (c) {
+                (folders[c] = folders[c] || []).push(p);
             });
-            filtersEl.appendChild(btn);
+        });
+        Object.keys(folders).forEach(function (c) {
+            folders[c].sort(function (a, b) {
+                return (b.date || "").localeCompare(a.date || "");
+            });
         });
 
-        // ── Helpers ───────────────────────────────────────────────────────
+        function setActive(name) {
+            activeFolder = name;
+            Array.prototype.forEach.call(
+                treeEl.querySelectorAll(".tree-item"),
+                function (el) {
+                    el.classList.toggle("active", el.getAttribute("data-folder") === name);
+                }
+            );
+            render();
+        }
+
+        function buildTree() {
+            // "All posts" root
+            var all = document.createElement("button");
+            all.type = "button";
+            all.className = "tree-item active";
+            all.setAttribute("data-folder", "All");
+            all.innerHTML = '<span class="tree-caret"></span><span class="tree-icon">🗂</span>' +
+                '<span class="tree-name">All posts</span><span class="tree-count">' + posts.length + "</span>";
+            all.addEventListener("click", function () { setActive("All"); });
+            treeEl.appendChild(all);
+
+            Object.keys(folders).sort().forEach(function (name) {
+                var btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "tree-item tree-folder open";
+                btn.setAttribute("data-folder", name);
+                btn.innerHTML = '<span class="tree-caret">▸</span><span class="tree-icon">📁</span>' +
+                    '<span class="tree-name"></span><span class="tree-count">' + folders[name].length + "</span>";
+                btn.querySelector(".tree-name").textContent = name;
+
+                btn.addEventListener("click", function () {
+                    if (activeFolder === name) {
+                        btn.classList.toggle("open");     // second click folds/unfolds
+                    } else {
+                        btn.classList.add("open");
+                        setActive(name);
+                    }
+                });
+                treeEl.appendChild(btn);
+
+                var ul = document.createElement("ul");
+                ul.className = "tree-posts";
+                folders[name].forEach(function (p) {
+                    var li = document.createElement("li");
+                    var a = document.createElement("a");
+                    a.href = p.url;
+                    a.textContent = p.title;
+                    a.title = p.title;
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                });
+                treeEl.appendChild(ul);
+            });
+        }
+
+        // ── List ─────────────────────────────────────────────────────────
         function haystack(p) {
-            return [p.title, p.summary]
-                .concat(cats(p))
-                .concat(p.tags || [])
-                .join(" ")
-                .toLowerCase();
+            return [p.title, p.summary].concat(cats(p)).concat(p.tags || [])
+                .join(" ").toLowerCase();
         }
 
         function formatDate(iso) {
             var d = new Date(iso + "T00:00:00");
             if (isNaN(d)) { return iso; }
-            return d.toLocaleDateString("en-GB", {
-                year: "numeric", month: "short", day: "numeric"
-            });
+            return d.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
         }
 
         var comparators = {
-            "date-desc":     function (a, b) { return (b.date || "").localeCompare(a.date || ""); },
-            "date-asc":      function (a, b) { return (a.date || "").localeCompare(b.date || ""); },
-            "title-asc":     function (a, b) { return a.title.localeCompare(b.title); },
-            "title-desc":    function (a, b) { return b.title.localeCompare(a.title); },
-            "category-asc":  function (a, b) {
-                var c = cats(a)[0].localeCompare(cats(b)[0]);
-                return c !== 0 ? c : (b.date || "").localeCompare(a.date || "");
-            }
+            "date-desc":  function (a, b) { return (b.date || "").localeCompare(a.date || ""); },
+            "date-asc":   function (a, b) { return (a.date || "").localeCompare(b.date || ""); },
+            "title-asc":  function (a, b) { return a.title.localeCompare(b.title); },
+            "title-desc": function (a, b) { return b.title.localeCompare(a.title); }
         };
 
-        // ── Render ────────────────────────────────────────────────────────
         function render() {
             var q = searchEl.value.trim().toLowerCase();
             var terms = q ? q.split(/\s+/) : [];
 
             var shown = posts.filter(function (p) {
-                if (activeCategory !== "All" && cats(p).indexOf(activeCategory) === -1) { return false; }
+                if (activeFolder !== "All" && cats(p).indexOf(activeFolder) === -1) { return false; }
                 if (!terms.length) { return true; }
                 var h = haystack(p);
                 return terms.every(function (t) { return h.indexOf(t) !== -1; });
             });
 
             shown.sort(comparators[sortEl.value] || comparators["date-desc"]);
-
             listEl.innerHTML = "";
 
             if (!shown.length) {
                 var none = document.createElement("p");
                 none.className = "empty-note";
-                none.textContent = posts.length
-                    ? "No posts match that search."
-                    : "No posts yet.";
+                none.textContent = posts.length ? "No posts match." : "No posts yet.";
                 listEl.appendChild(none);
                 countEl.textContent = "";
                 return;
             }
 
-            countEl.textContent = shown.length + (shown.length === 1 ? " post" : " posts");
+            countEl.textContent = shown.length + (shown.length === 1 ? " post" : " posts") +
+                (activeFolder !== "All" ? " in " + activeFolder : "");
 
             shown.forEach(function (p) {
-                var card = document.createElement("a");
-                card.className = "post-card" + (p.image ? "" : " no-image");
-                card.href = p.url;
-
-                if (p.image) {
-                    var thumb = document.createElement("div");
-                    thumb.className = "post-thumb";
-                    var img = document.createElement("img");
-                    img.src = p.image;
-                    img.alt = "";
-                    img.loading = "lazy";
-                    thumb.appendChild(img);
-                    card.appendChild(thumb);
-                }
-
-                var body = document.createElement("div");
-                body.className = "post-body";
+                var art = document.createElement("article");
+                art.className = "post-item";
 
                 var meta = document.createElement("div");
                 meta.className = "post-meta";
-                if (p.category) {
-                    var cs = document.createElement("span");
-                    cs.className = "post-category";
-                    cs.textContent = p.category;
-                    meta.appendChild(cs);
-                    meta.appendChild(document.createTextNode(" · "));
-                }
-                meta.appendChild(document.createTextNode(formatDate(p.date)));
-                body.appendChild(meta);
+                var bits = [formatDate(p.date)];
+                bits.push(cats(p).join(" / "));
+                if (p.minutes) { bits.push(p.minutes + " min read"); }
+                meta.textContent = bits.join("  ·  ");
+                art.appendChild(meta);
 
                 var h = document.createElement("h3");
                 h.className = "post-title";
-                h.textContent = p.title;
-                body.appendChild(h);
+                var a = document.createElement("a");
+                a.href = p.url;
+                a.textContent = p.title;
+                h.appendChild(a);
+                art.appendChild(h);
 
                 if (p.summary) {
-                    var s = document.createElement("p");
-                    s.className = "post-summary";
-                    s.textContent = p.summary;
-                    body.appendChild(s);
+                    var sm = document.createElement("p");
+                    sm.className = "post-summary";
+                    sm.textContent = p.summary;
+                    art.appendChild(sm);
                 }
 
                 if (p.tags && p.tags.length) {
@@ -216,14 +232,14 @@
                         tag.textContent = t;
                         tw.appendChild(tag);
                     });
-                    body.appendChild(tw);
+                    art.appendChild(tw);
                 }
 
-                card.appendChild(body);
-                listEl.appendChild(card);
+                listEl.appendChild(art);
             });
         }
 
+        buildTree();
         searchEl.addEventListener("input", render);
         sortEl.addEventListener("change", render);
         render();
