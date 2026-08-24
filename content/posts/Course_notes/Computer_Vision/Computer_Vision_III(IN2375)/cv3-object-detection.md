@@ -250,3 +250,21 @@ idea是learn feature-based classifiers **invariant to natural object changes**�
 ## 9. Spatial transformers
 
 *(…)*
+
+## References
+
+- Viola & Jones. [Rapid Object Detection using a Boosted Cascade of Simple Features](https://www.cs.cmu.edu/~efros/courses/LBMV07/Papers/viola-cvpr-01.pdf). CVPR 2001.
+- Dalal & Triggs. [Histograms of Oriented Gradients for Human Detection](https://lear.inrialpes.fr/people/triggs/pubs/Dalal-cvpr05.pdf). CVPR 2005.
+- Sermanet et al. [OverFeat: Integrated Recognition, Localization and Detection using Convolutional Networks](https://arxiv.org/abs/1312.6229). ICLR 2014.
+- Uijlings et al. [Selective Search for Object Recognition](https://link.springer.com/article/10.1007/s11263-013-0620-5). IJCV 2013.
+- Zitnick & Dollár. [Edge Boxes: Locating Object Proposals from Edges](https://www.microsoft.com/en-us/research/publication/edge-boxes-locating-object-proposals-from-edges/). ECCV 2014.
+- Girshick et al. [Rich feature hierarchies (R-CNN)](https://arxiv.org/abs/1311.2524). CVPR 2014.
+- He et al. [Spatial Pyramid Pooling (SPPNet)](https://arxiv.org/abs/1406.4729). ECCV 2014.
+- Girshick. [Fast R-CNN](https://arxiv.org/abs/1504.08083). ICCV 2015.
+- Ren et al. [Faster R-CNN](https://arxiv.org/abs/1506.01497). NeurIPS 2015.
+- Redmon et al. [You Only Look Once (YOLO)](https://arxiv.org/abs/1506.02640). CVPR 2016.
+- Liu et al. [SSD: Single Shot MultiBox Detector](https://arxiv.org/abs/1512.02325). ECCV 2016.
+- Lin et al. [Focal Loss for Dense Object Detection (RetinaNet)](https://arxiv.org/abs/1708.02002). ICCV 2017.
+- Law & Deng. [CornerNet: Detecting Objects as Paired Keypoints](https://arxiv.org/abs/1808.01244). ECCV 2018.
+- Zhou et al. [Objects as Points (CenterNet)](https://arxiv.org/abs/1904.07850). arXiv 2019.
+- Jaderberg et al. [Spatial Transformer Networks](https://arxiv.org/abs/1506.02025). NeurIPS 2015.

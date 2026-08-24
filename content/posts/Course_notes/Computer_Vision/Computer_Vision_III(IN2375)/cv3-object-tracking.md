@@ -145,3 +145,11 @@ What assumptions are necessary?
 ## 6. MOT evaluation
 
 *(MOTA, IDF1, HOTA, identity switches …)*
+
+## References
+
+- Held et al. [Learning to Track at 100 FPS with Deep Regression Networks (GOTURN)](https://arxiv.org/abs/1604.01802). ECCV 2016.
+- Nam & Han. [Learning Multi-Domain Convolutional Neural Networks for Visual Tracking (MDNet)](https://arxiv.org/abs/1510.07945). CVPR 2016.
+- Bergmann et al. [Tracking without bells and whistles (Tracktor)](https://arxiv.org/abs/1903.05625). ICCV 2019.
+- Zhang, Li & Nevatia. [Global Data Association for Multi-Object Tracking Using Network Flows](https://ieeexplore.ieee.org/document/4587584). CVPR 2008.
+- Brasó & Leal-Taixé. [Learning a Neural Solver for Multiple Object Tracking (MPN)](https://arxiv.org/abs/1912.07515). CVPR 2020.

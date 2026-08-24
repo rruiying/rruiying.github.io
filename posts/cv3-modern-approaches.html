@@ -36,13 +36,12 @@
                 <div class="post-toc-title">Contents</div>
                 <ul>
                 <li class="toc-h2"><a href="#1-transformers">1. Transformers</a></li>
-                <li class="toc-h3"><a href="#11-from-correlation-layers-to-attention">1.1 From correlation layers to attention</a></li>
+                <li class="toc-h3"><a href="#11-motivation-from-correlation-layers-to-attention">1.1 Motivation: From correlation layers to attention</a></li>
                 <li class="toc-h3"><a href="#12-attention-and-self-attention">1.2 Attention and self-attention</a></li>
                 <li class="toc-h3"><a href="#13-positional-encoding">1.3 Positional encoding</a></li>
                 <li class="toc-h3"><a href="#14-vit">1.4 ViT</a></li>
                 <li class="toc-h3"><a href="#15-swin-transformer">1.5 Swin Transformer</a></li>
                 <li class="toc-h3"><a href="#16-detr">1.6 DETR</a></li>
-                <li class="toc-h3"><a href="#17-maskformer-and-mask2former">1.7 MaskFormer and Mask2Former</a></li>
                 <li class="toc-h2"><a href="#2-unsupervised-self-supervised-learning">2. Unsupervised (self-supervised) learning</a></li>
                 <li class="toc-h3"><a href="#21-pretext-tasks">2.1 Pretext tasks</a></li>
                 <li class="toc-h3"><a href="#22-contrastive-learning">2.2 Contrastive learning</a></li>
@@ -59,6 +58,7 @@
                 <li class="toc-h3"><a href="#36-intrinsically-semi-supervised-methods">3.6 Intrinsically semi-supervised methods</a></li>
                 <li class="toc-h3"><a href="#37-learning-from-synthetic-data">3.7 Learning from synthetic data</a></li>
                 <li class="toc-h3"><a href="#38-consistency-regularisation">3.8 Consistency regularisation</a></li>
+                <li class="toc-h2"><a href="#references">References</a></li>
                 </ul>
             </nav>
         </aside>
@@ -71,7 +71,7 @@
                 <span>Published 23 August 2026</span> ·
                 <span>Updated 24 August 2026</span> ·
                 <span class="post-category">Course notes › Computer Vision › Computer Vision III (IN2375)</span> ·
-                <span>348 words · 2 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>2,849 words · 11 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
@@ -96,20 +96,191 @@ successors, pseudo-labels) to <strong>intrinsically semi-supervised</strong> met
 (entropy minimisation, virtual adversarial training), learning from synthetic
 data with <strong>domain alignment</strong>, and <strong>consistency regularisation</strong>.</p>
 <h2 id="1-transformers">1. Transformers</h2>
-<h3 id="11-from-correlation-layers-to-attention">1.1 From correlation layers to attention</h3>
-<p><em>(…)</em></p>
+<h3 id="11-motivation-from-correlation-layers-to-attention">1.1 Motivation: From correlation layers to attention</h3>
+<p>CNN encode的是<strong>local context</strong>：每一层卷积只看kernel覆盖的邻域，receptive field
+随着网络深度单调增长。这带来几个问题：</p>
+<ol>
+<li>想要long-range的context aggregation就必须堆深度，而<strong>深度越大越难训练</strong></li>
+<li>receptive field是由每层的kernel size<strong>设计死的</strong>——这是一种inductive bias
+   （认为图片信息集中在局部邻域），网络只能关注设计好的区域</li>
+<li>我们希望<strong>在同一层内就有显式的non-local feature interactions</strong></li>
+</ol>
+<p>那么：可不可以让网络<strong>自己学习它的receptive field</strong>？</p>
+<p><strong>Recap：卷积其实就是矩阵乘法（im2col）</strong>——把每个local patch拉平成列，
+和拉平的filter做dot product：</p>
+<figure><img alt="Convolution as matrix multiplication (im2col)" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/im2col.png" loading="lazy" decoding="async" width="890" height="455"><figcaption>Convolution as matrix multiplication (im2col)</figcaption></figure>
+<p>而在video object segmentation里我们已经见过<strong>correlation layer</strong>：把两个feature map
+拉平，两两做dot product得到相似度矩阵 <span class="arithmatex">\(s_{ij} = f_i^\top f_j\)</span>——注意这是
+<strong>fixed operation，没有可学习的权重</strong>：</p>
+<figure><img alt="Correlation layer: dot products measure feature similarity" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/correlation.png" loading="lazy" decoding="async" width="890" height="455"><figcaption>Correlation layer: dot products measure feature similarity</figcaption></figure>
+<p>把这两件事放在一起：卷积是"feature和<strong>固定filter</strong>做dot product"，correlation是
+"feature和<strong>feature</strong>做dot product"。如果我们直接用correlation的方式让每个位置去
+"查询"所有其他位置，就得到了最朴素的self-attention。</p>
+<p>但把这种simple self-attention用到text上就暴露了问题。比如句子
+<em>"this restaurant was not too terrible"</em>：</p>
+<figure><img alt="Simple self-attention on text" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/text.png" loading="lazy" decoding="async" width="890" height="455"><figcaption>Simple self-attention on text</figcaption></figure>
+<p>"not"直接影响"terrible"的含义，我们希望dot product <span class="arithmatex">\(x_{not}^\top x_{terrible}\)</span> 很大
+——<strong>但simple self-attention里没有任何可学习的参数，这种关系学不到</strong>
+（Problem: How do I learn this?）。解决的直觉：给每个token配上<strong>可学习的线性映射</strong>，
+把同一个token投影成不同的"角色"再做dot product——这就引出了Q、K、V。</p>
 <h3 id="12-attention-and-self-attention">1.2 Attention and self-attention</h3>
-<p><em>(queries / keys / values, multi-head attention …)</em></p>
+<p><strong>Attention的定义</strong>。给定：</p>
+<ul>
+<li>query矩阵 <span class="arithmatex">\(Q \in \mathbb{R}^{S \times n}\)</span>：当前元素（比如当前这个词）</li>
+<li>key矩阵 <span class="arithmatex">\(K \in \mathbb{R}^{T \times n}\)</span>：被比较的元素</li>
+<li>value矩阵 <span class="arithmatex">\(V \in \mathbb{R}^{T \times m}\)</span>：比较的权重对应取出的内容</li>
+</ul>
+<div class="arithmatex">\[\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{n}}\right)V\]</div>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>为什么要除以scaling factor <span class="arithmatex">\(\sqrt{n}\)</span>？</p>
+<p>假设 <span class="arithmatex">\(q_i, k_i \sim \mathcal{N}(0,1)\)</span>，那么 <span class="arithmatex">\(q^\top k = \sum_{i=1}^{n} q_i k_i\)</span> 的
+方差约为 <span class="arithmatex">\(n\)</span>，标准差约 <span class="arithmatex">\(\sqrt{n}\)</span>——n越大，进softmax的数值越大，softmax饱和后
+梯度消失（vanishing gradient）。除以 <span class="arithmatex">\(\sqrt{n}\)</span> 把量级拉回来，所以叫
+<strong>scaled dot-product attention</strong>。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>输出的维度是多少？</p>
+<p><span class="arithmatex">\(\mathbb{R}^{S \times m}\)</span>——"for every query we fetch the corresponding value"：
+S个query，每个query取回一个m维的value加权和。</p>
+<p><strong>Self-attention</strong>就是Q、K、V全部来自同一个输入。输入 <span class="arithmatex">\(X \in \mathbb{R}^{T \times d}\)</span>
+（T个d维token），定义4个可学习的线性映射
+<span class="arithmatex">\(W^Q, W^K \in \mathbb{R}^{d \times n}\)</span>、<span class="arithmatex">\(W^V \in \mathbb{R}^{d \times m}\)</span>、
+<span class="arithmatex">\(W^O \in \mathbb{R}^{m \times d}\)</span>：</p>
+<div class="arithmatex">\[Q := XW^Q, \quad K := XW^K, \quad V := XW^V\]</div>
+<div class="arithmatex">\[Y := \text{Attention}(Q, K, V)\, W^O \in \mathbb{R}^{T \times d}\]</div>
+<p>输入 <span class="arithmatex">\([T \times d]\)</span>、输出 <span class="arithmatex">\([T \times d]\)</span>，可以像卷积层一样<strong>堆叠成深层网络</strong>。
+完整的计算流程（对第三个元素算attention value）：</p>
+<figure><img alt="Self-attention step by step" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/self-attention-steps.png" loading="lazy" decoding="async" width="751" height="477"><figcaption>Self-attention step by step</figcaption></figure>
+<p><strong>复杂度</strong>：需要算 <span class="arithmatex">\(T \times T\)</span> 的pairwise相似度矩阵，所以memory是 <span class="arithmatex">\(O(T^2)\)</span>、
+runtime是 <span class="arithmatex">\(O(T^2 n)\)</span>——<strong>对token数量是二次的</strong>，这个伏笔在Swin那里回收。</p>
+<figure><img alt="Attention complexity and the idea of multiple heads" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/attention-complexity-multihead.png" loading="lazy" decoding="async" width="871" height="999"><figcaption>Attention complexity and the idea of multiple heads</figcaption></figure>
+<p><strong>Multi-head attention</strong>：一个softmax就是一个attention head。把feature维度切给
+Z个head、各自做attention再concatenate（过 <span class="arithmatex">\(W^O\)</span> 投影回d维）：</p>
+<figure><img alt="Multi-head attention" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/multi-head-attention.png" loading="lazy" decoding="async" width="668" height="487"><figcaption>Multi-head attention</figcaption></figure>
+<ul>
+<li>条件：Q、K、V的feature维度要能被head数整除</li>
+<li>Z个head让一个query最多取回Z种不同的value，<strong>建模更复杂的token间关系</strong></li>
+<li>复杂度不增加——实际wall time反而更快（并行）</li>
+</ul>
+<p><strong>Normalisation</strong>：两个标准改进（<a href="https://arxiv.org/abs/1706.03762">Vaswani et al., 2017</a>）：
+<strong>residual connection</strong>（把原始token feature加回去）+
+<strong>layer normalisation</strong>（<a href="https://arxiv.org/abs/1607.06450">Ba et al., 2016</a>，
+每个token feature对自己的均值方差归一化）：</p>
+<div class="arithmatex">\[Y := \text{LayerNorm}(X + \text{MHA}(X))\]</div>
+<p>但还剩一个根本问题：<strong>整套计算里没有位置信息</strong>。self-attention对token是
+permutation-equivariant的——把输入顺序打乱，每个query取回的value完全不变。
+"猫咬狗"和"狗咬猫"在它眼里一样，这显然不行。</p>
 <h3 id="13-positional-encoding">1.3 Positional encoding</h3>
-<p><em>(…)</em></p>
+<p>在<a href="https://arxiv.org/abs/1706.03762">原始论文</a>里，解决办法是给每个token index
+配一个<strong>唯一的位置向量（PE矩阵的一行）</strong>，和input embedding<strong>逐元素相加</strong>：</p>
+<figure><img alt="Positional encoding" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/positional-encoding.png" loading="lazy" decoding="async" width="887" height="474"><figcaption>Positional encoding</figcaption></figure>
+<ul>
+<li>PE引入了spatial affinity的概念（句子里两个词的距离、图片里两个patch的距离），
+  <strong>打破了permutation invariance</strong></li>
+<li>可以是<strong>学出来的</strong>（positional embedding）或<strong>固定的</strong>（positional encoding），
+  绝对或相对位置都行。原论文用固定的sinusoidal编码：</li>
+</ul>
+<div class="arithmatex">\[PE_{(pos, i)} = \begin{cases} \sin\!\left(pos / 10000^{i/d_{model}}\right) &amp; i \text{ even} \\ \cos\!\left(pos / 10000^{(i-1)/d_{model}}\right) &amp; i \text{ odd} \end{cases}\]</div>
+<ul>
+<li>上图右侧热力图：<strong>不同维度对应不同频率</strong>（低维快、高维慢），编码绝对位置</li>
+<li>PE和token同维度（<span class="arithmatex">\(1 \times d_{model}\)</span>），所以可以直接相加</li>
+</ul>
+<p><strong>Self-attention recap</strong>：</p>
+<ul>
+<li>非常versatile：任意token数；head数、feature维度都是design choice</li>
+<li>计算量对token数<strong>二次增长</strong>（pairwise相似度矩阵）</li>
+<li>本身permutation-equivariant，绝对/相对位置靠<strong>PE</strong>补上</li>
+</ul>
 <h3 id="14-vit">1.4 ViT</h3>
-<p><em>(…)</em></p>
+<p>那么transformer能不能搬到视觉上？
+<a href="https://arxiv.org/abs/2010.11929">Dosovitskiy et al., 2020</a> 的
+<strong>ViT (Vision Transformer)</strong>给出了肯定答案：在classification上和CNN有竞争力，
+思路是<strong>把图片切成patch序列，几乎不改NLP的Transformer</strong>：</p>
+<figure><img alt="ViT architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/vit-architecture.png" loading="lazy" decoding="async" width="856" height="475"><figcaption>ViT architecture</figcaption></figure>
+<ol>
+<li>把图片切成固定大小的patch</li>
+<li>每个patch过一个全连接层linearly embed成token</li>
+<li>额外接一个<strong>可学习的[class] token</strong></li>
+<li>加上positional embedding</li>
+<li>喂给标准Transformer encoder</li>
+<li><strong>最后只取[class] token的输出</strong>，过一个MLP head做分类</li>
+</ol>
+<p><strong>实验结论</strong>：</p>
+<ul>
+<li>ViT只有在<strong>超大数据集</strong>（JFT，300M张图）上预训练才好——因为它
+  <strong>没有CNN的inductive bias</strong>：locality（self-attention是全局的）、
+  2D邻域结构（位置关系全靠数据学）、translation invariance</li>
+<li>但意义重大：<strong>language和vision从此用同一套计算框架</strong></li>
+</ul>
 <h3 id="15-swin-transformer">1.5 Swin Transformer</h3>
-<p><em>(shifted windows, hierarchical features …)</em></p>
+<p><strong>ViT的问题</strong>（回顾1.2的伏笔）：</p>
+<figure><img alt="Why ViT scales badly" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/swin-motivation.png" loading="lazy" decoding="async" width="715" height="832"><figcaption>Why ViT scales badly</figcaption></figure>
+<ul>
+<li>self-attention复杂度 <span class="arithmatex">\(O((HW)^2 C)\)</span>——<strong>对图片分辨率二次爆炸</strong></li>
+<li>所有层的token数量不变；而CNN是逐层降分辨率的（省计算、扩receptive field），
+  ViT享受不到这个好处</li>
+</ul>
+<p><a href="https://arxiv.org/abs/2103.14030">Swin Transformer</a>（<strong>S</strong>hifted <strong>Win</strong>dow）
+用三个设计解决，把复杂度降到<strong>线性</strong>：</p>
+<p><strong>① Window attention（解决二次复杂度）</strong>：只在固定大小 <span class="arithmatex">\(M \times M\)</span> 的
+local window内做self-attention。每个window内是 <span class="arithmatex">\(O(M^4 C)\)</span>，全图
+<span class="arithmatex">\(O(HW \cdot M^2 C)\)</span>——M是常数，所以总复杂度 <span class="arithmatex">\(O(HWC)\)</span>，<strong>对分辨率线性</strong>。</p>
+<p><strong>② Shifted windows（解决window割裂全局context）</strong>：naive的固定window会让
+context不再是全局的——相邻window之间永远不交流。解决：<strong>相邻两层交替偏移
+window的划分</strong>，让上一层不同window里的feature在下一层进到同一个window：</p>
+<figure><img alt="Shifted windows" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/swin-shifted-windows.png" loading="lazy" decoding="async" width="724" height="351"><figcaption>Shifted windows</figcaption></figure>
+<p>这样任意分辨率下feature都能逐层聚合全局context。</p>
+<p><strong>③ Patch merging（引入层级/hierarchy）</strong>：像CNN一样逐stage降分辨率——把
+<span class="arithmatex">\(2 \times 2\)</span> 的C维patch拼接成4C维，再线性投影到2C维：分辨率减半、通道翻倍，
+得到 <span class="arithmatex">\(\frac{H}{4} \times \frac{W}{4} \times C \to \frac{H}{32} \times \frac{W}{32} \times 8C\)</span>
+的<strong>层级式backbone</strong>，输出和ResNet等标准backbone兼容，可以直接接
+detection/segmentation的下游头：</p>
+<figure><img alt="Patch merging hierarchy" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/swin-patch-merging.png" loading="lazy" decoding="async" width="722" height="404"><figcaption>Patch merging hierarchy</figcaption></figure>
+<p><strong>结果</strong>：</p>
+<figure><img alt="Swin results on ImageNet" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/swin-results.png" loading="lazy" decoding="async" width="722" height="404"><figcaption>Swin results on ImageNet</figcaption></figure>
+<ul>
+<li>比ViT和不少CNN更快更准（还用着更低的输入分辨率），<strong>不需要大数据集预训练</strong></li>
+<li>ImageNet-1K到22K的scalability更好</li>
+</ul>
+<p><strong>Summary</strong>：Swin把CNN的inductive bias（locality、hierarchy）和Transformer调和到了
+一起；classification / detection / semantic segmentation全面SOTA；线性复杂度；
+证明了Transformer是全能的视觉backbone。ICCV '21 best paper。</p>
 <h3 id="16-detr">1.6 DETR</h3>
-<p><em>(set prediction, bipartite matching loss, object queries …)</em></p>
-<h3 id="17-maskformer-and-mask2former">1.7 MaskFormer and Mask2Former</h3>
-<p><em>(mask classification, masked attention …)</em></p>
+<p>Transformer能不能直接做detection？关键观察：<strong>object detection本质是set
+prediction</strong>——我们不关心bounding box的输出顺序。而Transformer恰好擅长处理
+set。那就直接把detection建模成set prediction！
+（<a href="https://arxiv.org/abs/2005.12872">DETR, Carion et al., 2020</a>）</p>
+<figure><img alt="DETR overview" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-overview.png" loading="lazy" decoding="async" width="722" height="404"><figcaption>DETR overview</figcaption></figure>
+<ul>
+<li>CNN backbone学出2D feature（local feature embeddings）</li>
+<li>Transformer<strong>并行</strong>预测所有bounding box</li>
+<li>训练时用<strong>Hungarian matching</strong>把prediction和ground truth一一对应</li>
+<li><strong>不需要NMS</strong>——空类或低置信度的box直接丢掉即可</li>
+</ul>
+<p><strong>A closer look</strong>：</p>
+<figure><img alt="DETR: a closer look" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-closer-look.png" loading="lazy" decoding="async" width="722" height="404"><figcaption>DETR: a closer look</figcaption></figure>
+<ul>
+<li>feature拉平、加positional encoding后进Transformer encoder（<strong>self-attention</strong>）</li>
+<li>向decoder输入<strong>object queries</strong>（可学习的positional encoding），decoder对
+  encoder输出做<strong>cross-attention</strong></li>
+<li>每个query的输出embedding过共享的FFN，预测一个detection
+  （class logits + 归一化的box坐标）或"no object"类</li>
+</ul>
+<figure><img alt="DETR transformer architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-architecture.png" loading="lazy" decoding="async" width="722" height="404"><figcaption>DETR transformer architecture</figcaption></figure>
+<p>架构和<a href="https://arxiv.org/abs/1706.03762">Vaswani et al., 2017</a>非常接近。</p>
+<p><strong>Loss的问题</strong>：预测是无序的set，必须先用<strong>Hungarian matching</strong>建立prediction和
+GT的一一对应，才能算loss。box regression部分还有额外的坑——常用的L1距离
+（对center/width/height）<strong>惩罚和IoU脱节</strong>：L1相同的预测，IoU可以差很多：</p>
+<figure><img alt="L1 loss does not reflect IoU" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-bbox-loss-problem.png" loading="lazy" decoding="async" width="731" height="397"><figcaption>L1 loss does not reflect IoU</figcaption></figure>
+<p>那直接用IoU做loss呢？也不行——<strong>两个box完全不重叠时IoU恒为0</strong>，无论错得多
+离谱梯度都是0（vanishing gradient）。解决：<strong>GIoU</strong>
+（<a href="https://arxiv.org/abs/1902.09630">Rezatofighi et al., 2019</a>）：</p>
+<div class="arithmatex">\[GIoU = IoU - \frac{|C \setminus (A \cup B)|}{|C|}\]</div>
+<p>其中C是同时包住prediction和GT的最小convex hull。不重叠时GIoU由包络框里的
+"空隙"决定（可以到-1），<strong>预测越远惩罚越大</strong>，梯度不再消失：</p>
+<figure><img alt="GIoU" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-giou.png" loading="lazy" decoding="async" width="731" height="397"><figcaption>GIoU</figcaption></figure>
+<p><strong>结果</strong>：encoder的self-attention就能把instance分开：</p>
+<figure><img alt="DETR qualitative results" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-qualitative.png" loading="lazy" decoding="async" width="731" height="397"><figcaption>DETR qualitative results</figcaption></figure>
+<p><strong>Summary</strong>：架构（相对）简单、检测准确、不需要NMS，小改动就能做panoptic
+segmentation。<strong>问题</strong>：计算和显存开销大（尤其显存）、收敛慢训练久——后续
+<a href="https://arxiv.org/abs/2010.04159">Deformable DETR</a>（ICLR 2021）解决了这两点。</p>
 <h2 id="2-unsupervised-self-supervised-learning">2. Unsupervised (self-supervised) learning</h2>
 <h3 id="21-pretext-tasks">2.1 Pretext tasks</h3>
 <p><em>(rotation, jigsaw puzzle, colorization, SSL on videos …)</em></p>
@@ -141,6 +312,39 @@ cues, contrastive random walk …)</em></p>
 <p><em>(domain alignment …)</em></p>
 <h3 id="38-consistency-regularisation">3.8 Consistency regularisation</h3>
 <p><em>(…)</em></p>
+<h2 id="references">References</h2>
+<p><strong>Transformers</strong></p>
+<ul>
+<li>Vaswani et al. <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>. NeurIPS 2017.</li>
+<li>Ba et al. <a href="https://arxiv.org/abs/1607.06450">Layer Normalization</a>. arXiv 2016.</li>
+<li>Dosovitskiy et al. <a href="https://arxiv.org/abs/2010.11929">An Image is Worth 16x16 Words (ViT)</a>. ICLR 2021.</li>
+<li>Liu et al. <a href="https://arxiv.org/abs/2103.14030">Swin Transformer</a>. ICCV 2021.</li>
+<li>Carion et al. <a href="https://arxiv.org/abs/2005.12872">End-to-End Object Detection with Transformers (DETR)</a>. ECCV 2020.</li>
+<li>Rezatofighi et al. <a href="https://arxiv.org/abs/1902.09630">Generalized Intersection over Union (GIoU)</a>. CVPR 2019.</li>
+<li>Zhu et al. <a href="https://arxiv.org/abs/2010.04159">Deformable DETR</a>. ICLR 2021.</li>
+<li>Cheng et al. <a href="https://arxiv.org/abs/2107.06278">Per-Pixel Classification is Not All You Need (MaskFormer)</a>. NeurIPS 2021.</li>
+<li>Cheng et al. <a href="https://arxiv.org/abs/2112.01527">Masked-attention Mask Transformer (Mask2Former)</a>. CVPR 2022.</li>
+</ul>
+<p><strong>Self-supervised learning</strong></p>
+<ul>
+<li>Gidaris et al. <a href="https://arxiv.org/abs/1803.07728">Unsupervised Representation Learning by Predicting Image Rotations</a>. ICLR 2018.</li>
+<li>Noroozi &amp; Favaro. <a href="https://arxiv.org/abs/1603.09246">Solving Jigsaw Puzzles</a>. ECCV 2016.</li>
+<li>Zhang et al. <a href="https://arxiv.org/abs/1603.08511">Colorful Image Colorization</a>. ECCV 2016.</li>
+<li>Chen et al. <a href="https://arxiv.org/abs/2002.05709">A Simple Framework for Contrastive Learning (SimCLR)</a>. ICML 2020.</li>
+<li>He et al. <a href="https://arxiv.org/abs/1911.05722">Momentum Contrast (MoCo)</a>. CVPR 2020.</li>
+<li>Caron et al. <a href="https://arxiv.org/abs/2104.14294">Emerging Properties in Self-Supervised Vision Transformers (DINO)</a>. ICCV 2021.</li>
+<li>Oquab et al. <a href="https://arxiv.org/abs/2304.07193">DINOv2</a>. arXiv 2023.</li>
+<li>Siméoni et al. <a href="https://arxiv.org/abs/2508.10104">DINOv3</a>. arXiv 2025.</li>
+<li>He et al. <a href="https://arxiv.org/abs/2111.06377">Masked Autoencoders Are Scalable Vision Learners (MAE)</a>. CVPR 2022.</li>
+<li>Jabri et al. <a href="https://arxiv.org/abs/2006.14613">Space-Time Correspondence as a Contrastive Random Walk</a>. NeurIPS 2020.</li>
+</ul>
+<p><strong>Semi-supervised learning</strong></p>
+<ul>
+<li>Kirillov et al. <a href="https://arxiv.org/abs/2304.02643">Segment Anything (SAM)</a>. ICCV 2023.</li>
+<li>Ravi et al. <a href="https://arxiv.org/abs/2408.00714">SAM 2: Segment Anything in Images and Videos</a>. arXiv 2024.</li>
+<li>Miyato et al. <a href="https://arxiv.org/abs/1704.03976">Virtual Adversarial Training</a>. TPAMI 2018.</li>
+<li>van Engelen &amp; Hoos. <a href="https://link.springer.com/article/10.1007/s10994-019-05855-6">A Survey on Semi-Supervised Learning</a>. Machine Learning 2020.</li>
+</ul>
 
             <!-- Share -->
             <div class="post-share">

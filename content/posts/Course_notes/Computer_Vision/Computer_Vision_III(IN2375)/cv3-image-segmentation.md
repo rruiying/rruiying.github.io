@@ -97,3 +97,22 @@ that cast VOS as **pixel-wise retrieval**.
 ### 6.4 Metric-based approaches: pixel-wise retrieval
 
 *(…)*
+
+## References
+
+- Shi & Malik. [Normalized Cuts and Image Segmentation](https://ieeexplore.ieee.org/document/868688). TPAMI 2000.
+- Comaniciu & Meer. [Mean Shift: A Robust Approach Toward Feature Space Analysis](https://ieeexplore.ieee.org/document/1000236). TPAMI 2002.
+- Krähenbühl & Koltun. [Efficient Inference in Fully Connected CRFs](https://arxiv.org/abs/1210.5644). NeurIPS 2011.
+- Long et al. [Fully Convolutional Networks for Semantic Segmentation (FCN)](https://arxiv.org/abs/1411.4038). CVPR 2015.
+- Yu & Koltun. [Multi-Scale Context Aggregation by Dilated Convolutions](https://arxiv.org/abs/1511.07122). ICLR 2016.
+- He et al. [Mask R-CNN](https://arxiv.org/abs/1703.06870). ICCV 2017.
+- Kirillov et al. [PointRend: Image Segmentation as Rendering](https://arxiv.org/abs/1912.08193). CVPR 2020.
+- Kirillov et al. [Panoptic Segmentation](https://arxiv.org/abs/1801.00868). CVPR 2019.
+- Kirillov et al. [Panoptic Feature Pyramid Networks (Panoptic FPN)](https://arxiv.org/abs/1901.02446). CVPR 2019.
+- Li et al. [Fully Convolutional Networks for Panoptic Segmentation (Panoptic FCN)](https://arxiv.org/abs/2012.00720). CVPR 2021.
+- Dosovitskiy et al. [FlowNet: Learning Optical Flow with Convolutional Networks](https://arxiv.org/abs/1504.06852). ICCV 2015.
+- Cheng et al. [SegFlow: Joint Learning for Video Object Segmentation and Optical Flow](https://arxiv.org/abs/1709.06750). ICCV 2017.
+- Caelles et al. [One-Shot Video Object Segmentation (OSVOS)](https://arxiv.org/abs/1611.05198). CVPR 2017.
+- Voigtlaender & Leibe. [Online Adaptation of Convolutional Neural Networks for VOS (OnAVOS)](https://arxiv.org/abs/1706.09364). BMVC 2017.
+- Perazzi et al. [Learning Video Object Segmentation from Static Images (MaskTrack)](https://arxiv.org/abs/1612.02646). CVPR 2017.
+- Jabri et al. [Space-Time Correspondence as a Contrastive Random Walk](https://arxiv.org/abs/2006.14613). NeurIPS 2020.
