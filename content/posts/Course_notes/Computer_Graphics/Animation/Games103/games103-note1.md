@@ -51,7 +51,7 @@ Geometry有三种表示：
 
 ![Animation paradigm](/images/blog/Course_notes/Computer_Graphics/Games103/note1/animation_paradigm.png)
 
-如上图，动画的本质就是一件事：**每过一个time step $\Delta t$，把state更新一次**。
+如上图，动画的本质就是一件事：==每过一个time step $\Delta t$，把state更新一次==。
 从State_0出发，算出$t_1$时刻的State_1，再算State_2……一直推到State_n，
 把这些state连起来播放就是动画。
 

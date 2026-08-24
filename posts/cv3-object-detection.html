@@ -77,7 +77,7 @@
                 <span>Published 20 August 2026</span> ·
                 <span>Updated 24 August 2026</span> ·
                 <span class="post-category">Course notes › Computer Vision › Computer Vision III (IN2375)</span> ·
-                <span>1,705 words · 7 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>1,773 words · 7 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
@@ -99,13 +99,18 @@ focal loss and RetinaNet — and close with keypoint-based detection
 (CornerNet, CenterNet), sequential detection, and spatial transformer
 networks.</p>
 <h2 id="1-motivation">1. Motivation</h2>
-<p>Computer Vision的目标是mimic the human visual system, 发展从mit 1963年project mac到现在是ai的中心。</p>
+<p>Computer Vision的目标是<strong>mimic the human visual system</strong>。这个领域起步很早：
+1963年MIT的Project MAC（下图，也就是后来的CSAIL）就在研究如何让机器"看懂"图像；
+发展到今天，视觉已经是AI的中心课题之一。</p>
 <figure><img alt="MIT Project MAC, 1963 (CSAIL)" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/CSAIL.png" loading="lazy" decoding="async" width="640" height="388"><figcaption>MIT Project MAC, 1963 (CSAIL)</figcaption></figure>
-<p>本课专注rgb image和rgb video的不同颗粒度下的semantic understanding,属于highlevel computer vision. 在object detection任务中我们用bounding box这种coarse的description来localize object.</p>
+<p>本课关注的是RGB image和RGB video在<strong>不同颗粒度下的semantic understanding</strong>，
+属于high-level computer vision：从整张图只给一个label的classification，到本课的
+detection、segmentation、tracking，对图像的理解越来越细。在object detection这一层，
+我们用bounding box这种coarse的description来localize object。</p>
 <h2 id="2-evaluation-how-do-we-measure-a-detector">2. Evaluation: how do we measure a detector?</h2>
 <h3 id="21-region-overlap-iou">2.1 Region overlap: IoU</h3>
 <p>首先我们为了定义两个框之间的关系(Region overlap)引入了Intersection over Union (IoU) or
-Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者并集的面积</p>
+Jaccard Index, 下图IoU中我们看到, <mark>IoU是两者交集的面积除以两者并集的面积</mark></p>
 <figure><img alt="Intersection over Union" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/IoU.png" loading="lazy" decoding="async" width="938" height="525"><figcaption>Intersection over Union</figcaption></figure>
 <h3 id="22-tp-fp-fn-precision-and-recall">2.2 TP / FP / FN, precision and recall</h3>
 <p>在detection的evaluation我们有以下三种情况：</p>
@@ -121,9 +126,9 @@ Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者
 <h3 id="23-what-counts-as-a-positive-match">2.3 What counts as a positive match?</h3>
 <p>那么当我们bounding box框住一片区域，什么是true positive 什么是 false positive?
 我们用IoU作为threshold来评判模型预测的bbox和GT的bbox，例如在MS-COCO和PASCAL VOC中当IoU大于0.5即为positive match.
-同时每一个prediction和gt box是一一对应的，如果有多个那么是存在错误</p>
+同时<mark>每一个prediction和gt box是一一对应的</mark>，如果有多个那么是存在错误</p>
 <h3 id="24-average-precision-ap">2.4 Average precision (AP)</h3>
-<p>结合precision和recall我们得到了average precision(AP)的metric, 横轴用recall竖轴用precision, 在1x1的区域内，面积越大越好</p>
+<p>结合precision和recall我们得到了average precision(AP)的metric, <mark>横轴用recall竖轴用precision, 在1x1的区域内，面积越大越好</mark></p>
 <figure><img alt="Precision–recall curve and AP" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/AP.png" loading="lazy" decoding="async" width="902" height="1052"><figcaption>Precision–recall curve and AP</figcaption></figure>
 <h3 id="25-computing-average-precision">2.5 Computing average precision</h3>
 <ol>
@@ -171,10 +176,10 @@ measure每个位置和template的similarity，其中high correlation的region认
     <strong>Zero-normalised cross-correlation (ZNCC)</strong> 代替：</p>
 <div class="arithmatex">\[d(I, T) = \frac{1}{n} \sum_{x,y} \frac{\big( I(x,y) - \mu_I \big) \big( T(x,y) - \mu_T \big)}{\sigma_I \, \sigma_T}\]</div>
 <p>其中 <span class="arithmatex">\(\mu_I\)</span>、<span class="arithmatex">\(\mu_T\)</span> 分别是image region和template的mean。先减均值再除标准差，
-ZNCC对affine intensity change（gain + offset）都invariant。</p>
+<mark>ZNCC对affine intensity change（gain + offset）都invariant</mark>。</p>
 </li>
 </ol>
-<p><strong>Quiz: Can I just swap SSD with NCC in my code?</strong></p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>Can I just swap SSD with NCC in my code?</p>
 <p>No. SSD是distance，要<strong>最小化</strong>；NCC是similarity，要<strong>最大化</strong>。直接替换会把最差的
 位置当成最好的——需要把argmin改成argmax（或改用 1 − NCC 作为distance）。</p>
 <p>但是template matching有根本性的问题：</p>
@@ -190,7 +195,7 @@ ZNCC对affine intensity change（gain + offset）都invariant。</p>
 <figure><img alt="New one-stage detectors: feature extraction" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/new_one_stage.png" loading="lazy" decoding="async" width="1010" height="370"><figcaption>New one-stage detectors: feature extraction</figcaption></figure>
 <p>idea是learn feature-based classifiers <strong>invariant to natural object changes</strong>。
 但随之而来的问题是features are not always linearly separable，单个简单分类器不够用，
-所以我们learn multiple <strong>weak learners</strong>，组合成一个<strong>strong classifier</strong>（boosting）。</p>
+所以我们<mark>learn multiple weak learners，组合成一个strong classifier</mark>（boosting）。</p>
 <p><strong>Viola–Jones detector</strong>的流程：</p>
 <ol>
 <li>
@@ -214,7 +219,7 @@ ZNCC对affine intensity change（gain + offset）都invariant。</p>
 Haar feature取threshold的一层决策树，简单到单独用几乎没用，但组合起来很强。
 实际检测时VJ还把strong classifiers串成<strong>attentional cascade</strong>：前几级用极少的
 feature快速拒绝绝大多数negative windows，只有全部通过的window才算检测到，
-这是它能real-time的关键。</p>
+<mark>这是它能real-time的关键</mark>。</p>
 </li>
 </ol>
 <p><strong>Viola–Jones的问题：</strong></p>

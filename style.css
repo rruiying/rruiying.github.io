@@ -15,6 +15,9 @@
     --accent-strong: #16334f;
     --nav-bg: rgba(255, 255, 255, 0.92);
     --sel: #d9e2ec;
+    --em: #a13c2f;
+    --hl: #fdf0a8;
+    --quiz: #6a45a8;
 }
 
 [data-theme="dark"] {
@@ -28,6 +31,9 @@
     --accent-strong: #bad1ea;
     --nav-bg: rgba(20, 20, 22, 0.9);
     --sel: #31465e;
+    --em: #e0917f;
+    --hl: #57511f;
+    --quiz: #b39ae0;
 }
 
 * {
@@ -793,6 +799,72 @@ a:hover {
     text-align: center;
 }
 
+
+
+/* ── Emphasis inside posts ──────────────────────────────────────────── */
+.post-page p strong,
+.post-page li strong {
+    color: var(--em);
+    font-weight: 600;
+}
+
+.post-page mark {
+    background: var(--hl);
+    color: var(--ink);
+    padding: 0 4px;
+    border-radius: 3px;
+}
+
+.post-page .admonition {
+    border-left: 3px solid var(--accent);
+    background: var(--paper-deep);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 18px 4px;
+    margin: 0 0 18px;
+}
+
+.post-page .admonition-title {
+    font-family: 'Source Sans 3', 'Noto Sans SC', sans-serif;
+    font-size: 0.7778rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+
+.post-page .admonition p {
+    font-size: 0.8889rem;
+    margin-bottom: 10px;
+}
+
+.post-page .admonition.warning {
+    border-left-color: #b8860b;
+}
+
+.post-page .admonition.warning .admonition-title {
+    color: #b8860b;
+}
+
+
+.post-page .quiz-q {
+    font-family: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    font-weight: 600;
+    color: var(--quiz);
+    margin: 26px 0 10px;
+}
+
+.post-page .quiz-badge {
+    display: inline-block;
+    font-family: 'Source Sans 3', 'Noto Sans SC', sans-serif;
+    font-size: 0.6389rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--paper);
+    background: var(--quiz);
+    border-radius: 3px;
+    padding: 1px 9px 2px;
+    margin-right: 10px;
+    vertical-align: 2px;
+}
 
 /* ── Theme toggle ───────────────────────────────────────────────────── */
 .theme-toggle {

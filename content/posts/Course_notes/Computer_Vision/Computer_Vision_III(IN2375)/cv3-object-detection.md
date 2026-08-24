@@ -22,18 +22,24 @@ focal loss and RetinaNet — and close with keypoint-based detection
 networks.
 
 ## 1. Motivation
-Computer Vision的目标是mimic the human visual system, 发展从mit 1963年project mac到现在是ai的中心。
+
+Computer Vision的目标是**mimic the human visual system**。这个领域起步很早：
+1963年MIT的Project MAC（下图，也就是后来的CSAIL）就在研究如何让机器"看懂"图像；
+发展到今天，视觉已经是AI的中心课题之一。
 
 ![MIT Project MAC, 1963 (CSAIL)](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/CSAIL.png)
 
-本课专注rgb image和rgb video的不同颗粒度下的semantic understanding,属于highlevel computer vision. 在object detection任务中我们用bounding box这种coarse的description来localize object.
+本课关注的是RGB image和RGB video在**不同颗粒度下的semantic understanding**，
+属于high-level computer vision：从整张图只给一个label的classification，到本课的
+detection、segmentation、tracking，对图像的理解越来越细。在object detection这一层，
+我们用bounding box这种coarse的description来localize object。
 
 ## 2. Evaluation: how do we measure a detector?
 
 ### 2.1 Region overlap: IoU
 
 首先我们为了定义两个框之间的关系(Region overlap)引入了Intersection over Union (IoU) or
-Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者并集的面积
+Jaccard Index, 下图IoU中我们看到, ==IoU是两者交集的面积除以两者并集的面积==
 
 ![Intersection over Union](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/IoU.png)
 
@@ -57,11 +63,11 @@ Recall评估模型召回有多好，其中 $TP + FN$ 是ground truth boxes的数
 
 那么当我们bounding box框住一片区域，什么是true positive 什么是 false positive?
 我们用IoU作为threshold来评判模型预测的bbox和GT的bbox，例如在MS-COCO和PASCAL VOC中当IoU大于0.5即为positive match.
-同时每一个prediction和gt box是一一对应的，如果有多个那么是存在错误
+同时==每一个prediction和gt box是一一对应的==，如果有多个那么是存在错误
 
 ### 2.4 Average precision (AP)
 
-结合precision和recall我们得到了average precision(AP)的metric, 横轴用recall竖轴用precision, 在1x1的区域内，面积越大越好
+结合precision和recall我们得到了average precision(AP)的metric, ==横轴用recall竖轴用precision, 在1x1的区域内，面积越大越好==
 
 ![Precision–recall curve and AP](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/AP.png)
 
@@ -119,7 +125,7 @@ $T$ 是template。$d$ 可以用：
     $$d(I, T) = \frac{1}{n} \sum_{x,y} \frac{\big( I(x,y) - \mu_I \big) \big( T(x,y) - \mu_T \big)}{\sigma_I \, \sigma_T}$$
 
     其中 $\mu_I$、$\mu_T$ 分别是image region和template的mean。先减均值再除标准差，
-    ZNCC对affine intensity change（gain + offset）都invariant。
+    ==ZNCC对affine intensity change（gain + offset）都invariant==。
 
 **Quiz: Can I just swap SSD with NCC in my code?**
 
@@ -143,7 +149,7 @@ No. SSD是distance，要**最小化**；NCC是similarity，要**最大化**。�
 
 idea是learn feature-based classifiers **invariant to natural object changes**。
 但随之而来的问题是features are not always linearly separable，单个简单分类器不够用，
-所以我们learn multiple **weak learners**，组合成一个**strong classifier**（boosting）。
+所以我们==learn multiple weak learners，组合成一个strong classifier==（boosting）。
 
 **Viola–Jones detector**的流程：
 
@@ -168,7 +174,7 @@ idea是learn feature-based classifiers **invariant to natural object changes**�
     Haar feature取threshold的一层决策树，简单到单独用几乎没用，但组合起来很强。
     实际检测时VJ还把strong classifiers串成**attentional cascade**：前几级用极少的
     feature快速拒绝绝大多数negative windows，只有全部通过的window才算检测到，
-    这是它能real-time的关键。
+    ==这是它能real-time的关键==。
 
 **Viola–Jones的问题：**
 

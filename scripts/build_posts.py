@@ -354,8 +354,9 @@ def enrich_images(body, source_name):
 def render_body(md_text):
     body = markdown.markdown(
         md_text,
-        extensions=["extra", "sane_lists", "toc", "pymdownx.arithmatex"],
-        extension_configs={"pymdownx.arithmatex": {"generic": True}},
+        extensions=["extra", "sane_lists", "toc", "admonition", "pymdownx.arithmatex", "pymdownx.mark"],
+        extension_configs={"pymdownx.arithmatex": {"generic": True},
+                           "pymdownx.mark": {"smart_mark": False}},
         output_format="html5",
     )
     # Site-absolute image/file paths work when deployed but not when the file
@@ -372,6 +373,14 @@ def render_body(md_text):
         return f"<figure>{img}{caption}</figure>"
 
     body = re.sub(r"<p>(<img [^>]*>)</p>", to_figure, body)
+
+    # A standalone bold paragraph starting with "Quiz" becomes a styled
+    # question line with a QUIZ badge.
+    body = re.sub(
+        r"<p><strong>(?:QUIZ|Quiz)\s*[:：]?\s*(.*?)</strong></p>",
+        r'<p class="quiz-q"><span class="quiz-badge">QUIZ</span>\1</p>',
+        body,
+    )
     return body
 
 

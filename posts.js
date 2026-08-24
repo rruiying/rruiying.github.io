@@ -355,7 +355,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-object-detection.html",
     "updated": "2026-08-24",
-    "words": 1705,
+    "words": 1773,
     "minutes": 7,
     "summary": "First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."
   }
