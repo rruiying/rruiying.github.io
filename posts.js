@@ -16,7 +16,7 @@ const POSTS = [
       "video object segmentation"
     ],
     "url": "posts/cv3-image-segmentation.html",
-    "updated": "2026-08-23",
+    "updated": "2026-08-24",
     "words": 261,
     "minutes": 2,
     "summary": "Third notes for CV3 at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval."
@@ -36,7 +36,7 @@ const POSTS = [
       "semi-supervised learning"
     ],
     "url": "posts/cv3-modern-approaches.html",
-    "updated": "2026-08-23",
+    "updated": "2026-08-24",
     "words": 348,
     "minutes": 2,
     "summary": "Fourth notes for CV3 at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
