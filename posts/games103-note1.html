@@ -53,13 +53,13 @@
             <div class="post-meta">
                 <span>Published 24 August 2026</span> ·
                 <span class="post-category">Course notes › Computer Graphics › Animation › Games103</span> ·
-                <span>855 words · 3 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>854 words · 3 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
 <h2 id="1-intro">1. Intro</h2>
 <h3 id="11">1.1 什么是计算机图形学</h3>
-<p>从<strong>3D digital world到2D digital image是计算机图形学</strong>（rendering干的事），
+<p>从<strong>3D digital world到2D digital image是计算机图形学</strong>（rendering渲染），
 反过来从2D image恢复出3D world是计算机视觉。两者互为逆问题。</p>
 <p>Three areas in Computer Graphics:</p>
 <ol>
@@ -103,21 +103,21 @@
 <p>Geometry有三种表示：</p>
 <ol>
 <li><strong>Mesh</strong>：由vertices（nodes）和elements（triangles, polygons, tetrahedra…）组成，
-   分structured和unstructured mesh。围绕mesh的问题有：<ul>
+   分structured和unstructured mesh。围绕mesh的方向有：<ul>
 <li>Meshing（怎么生成网格，如Delaunay triangulation）</li>
 <li>Simplification / subdivision（简化与细分）</li>
 <li>Mesh optimization（smoothing, flows…）</li>
 <li>Volume mesh（体网格）</li>
 </ul>
 </li>
-<li><strong>Point Cloud</strong>：一堆 <span class="arithmatex">\((x, y, z)\)</span> 点，surface scan扫出来的raw data通常就是它。问题有：<ul>
+<li><strong>Point Cloud</strong>：一堆 <span class="arithmatex">\((x, y, z)\)</span> 点，surface scan扫出来的raw data通常就是它。方向有：<ul>
 <li>Mesh reconstruction from point cloud（从点云重建网格）</li>
 <li>(Re)-sampling（重采样）</li>
 <li>Neighborhood search（邻域查找）</li>
 </ul>
 </li>
 <li><strong>Volumetric Grid</strong>（体素）：用grid把空间切成cell，每个cell存这个位置的物理量，
-   常来自volumetric scan（比如CT）。问题有：<ul>
+   常来自volumetric scan（比如CT）。方向有：<ul>
 <li>Memory cost（内存开销大，可用octree省）</li>
 <li>Volumetric rendering（体渲染）</li>
 </ul>

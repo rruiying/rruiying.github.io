@@ -34,7 +34,7 @@ const POSTS = [
     ],
     "url": "posts/games103-note1.html",
     "updated": "2026-08-24",
-    "words": 855,
+    "words": 854,
     "minutes": 3,
     "summary": "GAMES103 note 1 — what physics-based animation is, the graphics pipeline, and the math toolbox of vectors, matrices and calculus for simulation."
   },
