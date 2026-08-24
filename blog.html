@@ -202,9 +202,11 @@
             return d.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
         }
 
+        function moddate(p) { return p.updated || p.date || ""; }
+
         var comparators = {
-            "date-desc":  function (a, b) { return (b.date || "").localeCompare(a.date || ""); },
-            "date-asc":   function (a, b) { return (a.date || "").localeCompare(b.date || ""); },
+            "date-desc":  function (a, b) { return moddate(b).localeCompare(moddate(a)); },
+            "date-asc":   function (a, b) { return moddate(a).localeCompare(moddate(b)); },
             "title-asc":  function (a, b) { return a.title.localeCompare(b.title); },
             "title-desc": function (a, b) { return b.title.localeCompare(a.title); }
         };
@@ -247,6 +249,9 @@
                 var meta = document.createElement("div");
                 meta.className = "post-meta";
                 var bits = [formatDate(p.date)];
+                if (p.updated && p.updated > p.date) {
+                    bits[0] += " (updated " + formatDate(p.updated) + ")";
+                }
                 bits.push(cats(p).map(function (c) { return segsOf(c).join(" › "); }).join(", "));
                 if (p.minutes) { bits.push(p.minutes + " min read"); }
                 meta.textContent = bits.join("  ·  ");
