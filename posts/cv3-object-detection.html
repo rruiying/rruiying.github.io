@@ -30,6 +30,11 @@
             <h1>Computer Vision III — Notes 1: Object Detection</h1>
             <div class="post-meta">20 August 2026 · <span class="post-category">Course notes</span> · <span class="post-category">Computer Vision</span></div>
 
+<blockquote>
+<p>本文笔记中英混杂，纯英文阅读可使用浏览器自带的翻译功能。
+<em>These notes mix Chinese and English — your browser's built-in translation
+works well if you prefer pure English.</em></p>
+</blockquote>
 <p>These notes deviate from the order of the lecture slides and start from the
 motivation instead. We first look at <strong>how detection is evaluated</strong>, then follow
 the classical single-stage pipeline — from template matching to feature-based
@@ -42,46 +47,162 @@ Faster R-CNN. Finally we return to modern <strong>one-stage</strong> methods —
 focal loss and RetinaNet — and close with keypoint-based detection
 (CornerNet, CenterNet), sequential detection, and spatial transformer
 networks.</p>
-<h2 id="1-evaluation-how-do-we-measure-a-detector">1. Evaluation: how do we measure a detector?</h2>
-<p><em>(IoU, precision / recall, AP and mAP, confidence thresholds …)</em></p>
-<h2 id="2-classical-single-stage-detection">2. Classical single-stage detection</h2>
-<h3 id="21-template-matching">2.1 Template matching</h3>
+<h2 id="1-motivation">1. Motivation</h2>
+<p>Computer Vision的目标是mimic the human visual system, 发展从mit 1963年project mac到现在是ai的中心。</p>
+<p><img alt="MIT Project MAC, 1963 (CSAIL)" src="../images/blog/cv3-note1/CSAIL.png"></p>
+<p>本课专注rgb image和rgb video的不同颗粒度下的semantic understanding,属于highlevel computer vision. 在object detection任务中我们用bounding box这种coarse的description来localize object.</p>
+<h2 id="2-evaluation-how-do-we-measure-a-detector">2. Evaluation: how do we measure a detector?</h2>
+<h3 id="21-region-overlap-iou">2.1 Region overlap: IoU</h3>
+<p>首先我们为了定义两个框之间的关系(Region overlap)引入了Intersection over Union (IoU) or
+Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者并集的面积</p>
+<p><img alt="Intersection over Union" src="../images/blog/cv3-note1/IoU.png"></p>
+<h3 id="22-tp-fp-fn-precision-and-recall">2.2 TP / FP / FN, precision and recall</h3>
+<p>在detection的evaluation我们有以下三种情况：</p>
+<ul>
+<li>TP = True positive表示有物体且正确框住</li>
+<li>FP = False positive表示没有物体但错框</li>
+<li>FN = False negative表示有物体但没有框</li>
+</ul>
+<p>Precision = TP / (TP + FP) 评估模型多precise 其中TP + FP 是predicted boxes的数量</p>
+<p>Recall = TP / (TP + FN) 评估模型召回有多好 其中TP + FN 是ground truth boxes的数量</p>
+<h3 id="23-what-counts-as-a-positive-match">2.3 What counts as a positive match?</h3>
+<p>那么当我们bounding box框住一片区域，什么是true positive 什么是 false positive?
+我们用IoU作为threshold来评判模型预测的bbox和GT的bbox，例如在MS-COCO和PASCAL VOC中当IoU大于0.5即为positive match.
+同时每一个prediction和gt box是一一对应的，如果有多个那么是存在错误</p>
+<h3 id="24-average-precision-ap">2.4 Average precision (AP)</h3>
+<p>结合precision和recall我们得到了average precision(AP)的metric, 横轴用recall竖轴用precision, 在1x1的区域内，面积越大越好</p>
+<p><img alt="Precision–recall curve and AP" src="../images/blog/cv3-note1/AP.png"></p>
+<h3 id="25-computing-average-precision">2.5 Computing average precision</h3>
+<ol>
+<li>Sort the predicted boxes by confidence score.</li>
+<li>For each prediction, find the associated ground truth.
+   <em>Note: the ground truth must not be assigned yet, and the prediction must
+   pass the IoU threshold.</em></li>
+<li>Compute cumulative TP and FP. Example with three predictions:
+   TP = [1, 0, 1], FP = [0, 1, 0] → cTP = [1, 1, 2], cFP = [0, 1, 1].</li>
+<li>Compute precision and recall (#GT = 3, so TP + FN = 3):
+   precision = cTP divided by the prediction index → [1/1, 1/2, 2/3];
+   recall = cTP divided by #GT → [1/3, 1/3, 2/3].</li>
+<li>Plot the precision–recall curve; AP is the area beneath it
+   (numerical integration).</li>
+</ol>
+<h3 id="26-ap-flavours-and-map">2.6 AP flavours and mAP</h3>
+<p><img alt="AP flavours" src="../images/blog/cv3-note1/AP_flavours.png"></p>
+<ul>
+<li>AP may be averaged over multiple IoU thresholds.</li>
+<li>mAP is the average over object categories.</li>
+</ul>
+<h2 id="3-classical-single-stage-detection">3. Classical single-stage detection</h2>
+<h3 id="31-template-matching">3.1 Template matching</h3>
+<p>最简单的想法是定义一个metric，用一个物体图像作为template，通过sliding window扫过整张图片，
+measure每个位置和template的similarity，其中high correlation的region认为是object：</p>
+<p><img alt="Old one-stage detectors: template + sliding window" src="../images/blog/cv3-note1/oldtime_one_stage.png"></p>
+<p>我们定义matching函数为 <code>L(x₀, y₀) = d(I₍ₓ₀,ᵧ₀₎, T)</code>，其中d是distance（或similarity）
+metric，I₍ₓ₀,ᵧ₀₎ 是以 (x₀, y₀) 为位置的image region，T是template。d可以用：</p>
+<ol>
+<li>
+<p><strong>Sum of squared distances (SSD) / mean squared error (MSE)</strong>：</p>
+<p><code>d(I, T) = (1/n) · Σₓ,ᵧ (I(x,y) − T(x,y))²</code></p>
+<p>但是MSE对intensity变化非常敏感：光照变亮、对比度改变都会让distance变大，
+即使物体本身没有变。</p>
+</li>
+<li>
+<p>于是我们做normalization，得到<strong>Normalised cross-correlation (NCC)</strong>：</p>
+<p><code>d(I, T) = (1/n) · Σₓ,ᵧ I(x,y)·T(x,y) / (σ_I σ_T)</code></p>
+<p>其中σ_I和σ_T分别是image region和template的standard deviation。
+除以标准差后，NCC对乘性的contrast变化（gain）invariant。</p>
+</li>
+<li>
+<p>但是NCC依然对加性的brightness偏移（offset）敏感，我们用
+    <strong>Zero-normalised cross-correlation (ZNCC)</strong> 代替：</p>
+<p><code>d(I, T) = (1/n) · Σₓ,ᵧ (I(x,y) − μ_I)(T(x,y) − μ_T) / (σ_I σ_T)</code></p>
+<p>其中μ_I、μ_T分别是image region和template的mean。先减均值再除标准差，
+ZNCC对affine intensity change（gain + offset）都invariant。</p>
+</li>
+</ol>
+<p><strong>Quiz: Can I just swap SSD with NCC in my code?</strong></p>
+<p>No. SSD是distance，要<strong>最小化</strong>；NCC是similarity，要<strong>最大化</strong>。直接替换会把最差的
+位置当成最好的——需要把argmin改成argmax（或改用 1 − NCC 作为distance）。</p>
+<p>但是template matching有根本性的问题：</p>
+<ol>
+<li><strong>(Self-)occlusions</strong>（例如pose变化造成的遮挡），template对不上</li>
+<li><strong>Changes in appearance</strong>：template是固定的，物体外观一变就失效</li>
+<li>目标的<strong>position、scale、aspect ratio全都unknown</strong>，只能对所有组合做
+   brute-force search，非常inefficient</li>
+</ol>
+<h3 id="32-feature-based-detection-violajones">3.2 Feature-based detection: Viola–Jones</h3>
+<p>新的one-stage detectors不再用template做sliding window，而是先对RGB pixel values做
+<strong>feature extraction</strong>，再在feature上同时做classification和localization：</p>
+<p><img alt="New one-stage detectors: feature extraction" src="../images/blog/cv3-note1/new_one_stage.png"></p>
+<p>idea是learn feature-based classifiers <strong>invariant to natural object changes</strong>。
+但随之而来的问题是features are not always linearly separable，单个简单分类器不够用，
+所以我们learn multiple <strong>weak learners</strong>，组合成一个<strong>strong classifier</strong>（boosting）。</p>
+<p><strong>Viola–Jones detector</strong>的流程：</p>
+<ol>
+<li>
+<p>先定义大量的<strong>Haar-like features</strong>：如下图中竖条、横条等黑白矩形组合，
+   feature value = 白色区域像素总和 − 黑色区域像素总和。每个Haar feature配一个
+   threshold就构成一个weak learner <code>hᵢ(·)</code>。借助<strong>integral image</strong>（积分图），
+   任意矩形的像素和只需4次查表，所以这些feature可以在常数时间内算出。</p>
+<p><img alt="Haar-like features as weak learners" src="../images/blog/cv3-note1/Haar-like-features.png"></p>
+</li>
+<li>
+<p>然后按下图的步骤用<strong>AdaBoost</strong>训练。AdaBoost的思想：每一轮在当前样本权重下，
+   从所有候选weak learner中找到error最低的那个并保存；然后<strong>提高被它分错的样本的
+   权重</strong>（update the priority of the data samples），让下一轮的weak learner专注于
+   难例；重复N轮。</p>
+<p><img alt="Viola–Jones training procedure (AdaBoost)" src="../images/blog/cv3-note1/Viola-Jones_detector.png"></p>
+</li>
+<li>
+<p>最终的strong classifier是所有weak learners的<strong>linear combination</strong>（每个learner
+   的权重和它的准确率相关）。</p>
+<p>注意：原始论文里的weak classifier<strong>不是SVM</strong>，而是<strong>decision stump</strong>——对单个
+Haar feature取threshold的一层决策树，简单到单独用几乎没用，但组合起来很强。
+实际检测时VJ还把strong classifiers串成<strong>attentional cascade</strong>：前几级用极少的
+feature快速拒绝绝大多数negative windows，只有全部通过的window才算检测到，
+这是它能real-time的关键。</p>
+</li>
+</ol>
+<p><strong>Viola–Jones的问题：</strong></p>
+<ul>
+<li>Haar features是<strong>hand-crafted</strong>的，表达能力有限，基本只对rigid、frontal的物体
+  （典型：正脸）work</li>
+<li>对<strong>pose / viewpoint变化、形变、遮挡</strong>不robust——侧脸就得另外训练一个detector</li>
+<li>每个类别都要<strong>单独训练</strong>，无法scale到general的多类别object detection</li>
+</ul>
+<h3 id="33-hog-features-and-sliding-windows">3.3 HOG features and sliding windows</h3>
 <p><em>(…)</em></p>
-<h3 id="22-feature-based-detection-violajones">2.2 Feature-based detection: Viola–Jones</h3>
-<p><em>(Haar features, integral image, cascade …)</em></p>
-<h3 id="23-hog-features-and-sliding-windows">2.3 HOG features and sliding windows</h3>
+<h3 id="34-non-maximum-suppression-nms">3.4 Non-maximum suppression (NMS)</h3>
 <p><em>(…)</em></p>
-<h3 id="24-non-maximum-suppression-nms">2.4 Non-maximum suppression (NMS)</h3>
+<h2 id="4-first-deep-one-stage-detector-overfeat">4. First deep one-stage detector: OverFeat</h2>
 <p><em>(…)</em></p>
-<h2 id="3-first-deep-one-stage-detector-overfeat">3. First deep one-stage detector: OverFeat</h2>
+<h2 id="5-object-proposals">5. Object proposals</h2>
+<h3 id="51-selective-search">5.1 Selective search</h3>
 <p><em>(…)</em></p>
-<h2 id="4-object-proposals">4. Object proposals</h2>
-<h3 id="41-selective-search">4.1 Selective search</h3>
+<h3 id="52-edge-boxes">5.2 Edge boxes</h3>
 <p><em>(…)</em></p>
-<h3 id="42-edge-boxes">4.2 Edge boxes</h3>
+<h2 id="6-the-two-stage-r-cnn-family">6. The two-stage R-CNN family</h2>
+<h3 id="61-r-cnn">6.1 R-CNN</h3>
 <p><em>(…)</em></p>
-<h2 id="5-the-two-stage-r-cnn-family">5. The two-stage R-CNN family</h2>
-<h3 id="51-r-cnn">5.1 R-CNN</h3>
+<h3 id="62-sppnet">6.2 SPPNet</h3>
 <p><em>(…)</em></p>
-<h3 id="52-sppnet">5.2 SPPNet</h3>
+<h3 id="63-fast-r-cnn">6.3 Fast R-CNN</h3>
 <p><em>(…)</em></p>
-<h3 id="53-fast-r-cnn">5.3 Fast R-CNN</h3>
+<h3 id="64-rpn-and-faster-r-cnn">6.4 RPN and Faster R-CNN</h3>
 <p><em>(…)</em></p>
-<h3 id="54-rpn-and-faster-r-cnn">5.4 RPN and Faster R-CNN</h3>
+<h2 id="7-modern-one-stage-detectors">7. Modern one-stage detectors</h2>
+<h3 id="71-yolo">7.1 YOLO</h3>
 <p><em>(…)</em></p>
-<h2 id="6-modern-one-stage-detectors">6. Modern one-stage detectors</h2>
-<h3 id="61-yolo">6.1 YOLO</h3>
+<h3 id="72-ssd">7.2 SSD</h3>
 <p><em>(…)</em></p>
-<h3 id="62-ssd">6.2 SSD</h3>
+<h3 id="73-focal-loss-and-retinanet">7.3 Focal loss and RetinaNet</h3>
 <p><em>(…)</em></p>
-<h3 id="63-focal-loss-and-retinanet">6.3 Focal loss and RetinaNet</h3>
+<h2 id="8-beyond-boxes">8. Beyond boxes</h2>
+<h3 id="81-keypoint-based-detection-cornernet-centernet">8.1 Keypoint-based detection: CornerNet, CenterNet</h3>
 <p><em>(…)</em></p>
-<h2 id="7-beyond-boxes">7. Beyond boxes</h2>
-<h3 id="71-keypoint-based-detection-cornernet-centernet">7.1 Keypoint-based detection: CornerNet, CenterNet</h3>
+<h3 id="82-sequential-detection">8.2 Sequential detection</h3>
 <p><em>(…)</em></p>
-<h3 id="72-sequential-detection">7.2 Sequential detection</h3>
-<p><em>(…)</em></p>
-<h2 id="8-spatial-transformers">8. Spatial transformers</h2>
+<h2 id="9-spatial-transformers">9. Spatial transformers</h2>
 <p><em>(…)</em></p>
 
         </main>

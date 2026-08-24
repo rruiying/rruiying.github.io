@@ -156,9 +156,8 @@ def build():
         fail(f"source directory {SRC_DIR} does not exist")
     OUT_DIR.mkdir(exist_ok=True)
 
-    sources = sorted(SRC_DIR.glob("*.md"))
     posts = []
-    for path in sources:
+    for path in sorted(SRC_DIR.glob("*.md")):
         if path.stem.startswith("_") or path.name.lower() == "readme.md":
             continue
         post = parse_source(path)
