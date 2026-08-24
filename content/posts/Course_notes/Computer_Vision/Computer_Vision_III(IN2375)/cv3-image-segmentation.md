@@ -1,8 +1,8 @@
 ---
-title: "Computer Vision III — Notes 3: Image Segmentation"
+title: "Computer Vision III (IN2375) — Notes 3: Image Segmentation"
 date: 2026-08-23
 tags: [Deep learning, Computer Vision, TUM, segmentation, video object segmentation]
-summary: Third notes for CV3 at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval.
+summary: Third notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval.
 ---
 We again build up from classical methods to deep learning. Segmentation begins
 as a grouping problem: **superpixels** and **clustering** — k-means, spectral

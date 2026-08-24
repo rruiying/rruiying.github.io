@@ -1,8 +1,8 @@
 ---
-title: "Computer Vision III — Notes 2: Object Tracking"
+title: "Computer Vision III (IN2375) — Notes 2: Object Tracking"
 date: 2026-08-23
 tags: [Deep learning, Computer Vision, TUM, object tracking, MOT]
-summary: Second notes for CV3 at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated.
+summary: Second notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated.
 ---
 As in the detection notes, we start from the motivation. We first frame
 tracking probabilistically — **Bayesian tracking** and **graphical models** —

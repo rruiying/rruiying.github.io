@@ -1,8 +1,8 @@
 ---
-title: "Computer Vision III — Notes 1: Object Detection"
+title: "Computer Vision III (IN2375) — Notes 1: Object Detection"
 date: 2026-08-20
 tags: [Deep learning, Computer Vision, TUM, object detection]
-summary: First notes for CV3 (Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated.
+summary: First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated.
 ---
 > 本文笔记中英混杂，纯英文阅读可使用浏览器自带的翻译功能。
 > *These notes mix Chinese and English — your browser's built-in translation

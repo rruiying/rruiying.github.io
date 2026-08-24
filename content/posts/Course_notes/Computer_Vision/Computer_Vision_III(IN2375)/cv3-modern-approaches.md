@@ -1,8 +1,8 @@
 ---
-title: "Computer Vision III — Notes 4: Modern Approaches"
+title: "Computer Vision III (IN2375) — Notes 4: Modern Approaches"
 date: 2026-08-23
 tags: [Deep learning, Computer Vision, TUM, transformers, self-supervised learning, semi-supervised learning]
-summary: Fourth notes for CV3 at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation.
+summary: Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation.
 ---
 This chapter covers three modern threads that reshape everything from the
 previous notes. First, **transformers**: the correlation layer we met in video

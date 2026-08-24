@@ -228,6 +228,25 @@ const POSTS = [
     "summary": "Notes for GAMES204 (Computational Imaging)."
   },
   {
+    "title": "3D Computer Vision (IN2228) — Notes 1",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computer Vision/3D Computer Vision (IN2228)"
+    ],
+    "tags": [
+      "Computer Vision",
+      "multiple view geometry",
+      "SLAM",
+      "3D reconstruction",
+      "TUM"
+    ],
+    "url": "posts/3dcv-note1.html",
+    "updated": "2026-08-24",
+    "words": 3,
+    "minutes": 1,
+    "summary": "Notes for 3D Computer Vision (IN2228, formerly Computer Vision II — Multiple View Geometry) at TUM — camera models, epipolar geometry, two-view reconstruction, bundle adjustment, and visual SLAM."
+  },
+  {
     "title": "Machine Learning (IN2064) — Notes",
     "date": "2026-08-24",
     "categories": [
@@ -265,10 +284,10 @@ const POSTS = [
     "summary": "Notes for Robotics (IN2067) at TUM — spatial descriptions, forward and inverse kinematics, dynamics, trajectory generation, and control."
   },
   {
-    "title": "Computer Vision III — Notes 3: Image Segmentation",
+    "title": "Computer Vision III (IN2375) — Notes 3: Image Segmentation",
     "date": "2026-08-23",
     "categories": [
-      "Course notes/Computer Vision/Computer Vision III"
+      "Course notes/Computer Vision/Computer Vision III (IN2375)"
     ],
     "tags": [
       "Deep learning",
@@ -278,16 +297,16 @@ const POSTS = [
       "video object segmentation"
     ],
     "url": "posts/cv3-image-segmentation.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-23",
     "words": 261,
     "minutes": 2,
-    "summary": "Third notes for CV3 at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval."
+    "summary": "Third notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval."
   },
   {
-    "title": "Computer Vision III — Notes 4: Modern Approaches",
+    "title": "Computer Vision III (IN2375) — Notes 4: Modern Approaches",
     "date": "2026-08-23",
     "categories": [
-      "Course notes/Computer Vision/Computer Vision III"
+      "Course notes/Computer Vision/Computer Vision III (IN2375)"
     ],
     "tags": [
       "Deep learning",
@@ -298,16 +317,16 @@ const POSTS = [
       "semi-supervised learning"
     ],
     "url": "posts/cv3-modern-approaches.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-23",
     "words": 348,
     "minutes": 2,
-    "summary": "Fourth notes for CV3 at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
+    "summary": "Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
   },
   {
-    "title": "Computer Vision III — Notes 2: Object Tracking",
+    "title": "Computer Vision III (IN2375) — Notes 2: Object Tracking",
     "date": "2026-08-23",
     "categories": [
-      "Course notes/Computer Vision/Computer Vision III"
+      "Course notes/Computer Vision/Computer Vision III (IN2375)"
     ],
     "tags": [
       "Deep learning",
@@ -317,16 +336,16 @@ const POSTS = [
       "MOT"
     ],
     "url": "posts/cv3-object-tracking.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-23",
     "words": 707,
     "minutes": 4,
-    "summary": "Second notes for CV3 at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated."
+    "summary": "Second notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated."
   },
   {
-    "title": "Computer Vision III — Notes 1: Object Detection",
+    "title": "Computer Vision III (IN2375) — Notes 1: Object Detection",
     "date": "2026-08-20",
     "categories": [
-      "Course notes/Computer Vision/Computer Vision III"
+      "Course notes/Computer Vision/Computer Vision III (IN2375)"
     ],
     "tags": [
       "Deep learning",
@@ -335,9 +354,9 @@ const POSTS = [
       "object detection"
     ],
     "url": "posts/cv3-object-detection.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-20",
     "words": 1705,
     "minutes": 7,
-    "summary": "First notes for CV3 (Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."
+    "summary": "First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."
   }
 ];
