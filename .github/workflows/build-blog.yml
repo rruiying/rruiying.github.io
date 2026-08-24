@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: pip install markdown pyyaml pymdown-extensions
+      - run: pip install markdown pyyaml pymdown-extensions pillow
 
       - run: python scripts/build_posts.py
 

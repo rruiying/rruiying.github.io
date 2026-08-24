@@ -310,6 +310,40 @@ def updated_date(path, meta, published_iso):
     return published_iso
 
 
+def image_size(path):
+    try:
+        from PIL import Image
+        with Image.open(path) as im:
+            return im.size
+    except Exception:
+        return None
+
+
+def enrich_images(body, source_name):
+    """Stamp every post image with its real width/height (no layout shift),
+    lazy loading, and async decoding. Warn about missing files."""
+    def fix(m):
+        tag = m.group(0)
+        sm = re.search(r'src="([^"]+)"', tag)
+        if not sm:
+            return tag
+        src = sm.group(1)
+        if src.startswith("http"):
+            return tag
+        rel = src[3:] if src.startswith("../") else src.lstrip("/")
+        f = ROOT / rel
+        extra = ' loading="lazy" decoding="async"'
+        if f.is_file():
+            wh = image_size(f)
+            if wh:
+                extra += f' width="{wh[0]}" height="{wh[1]}"'
+        else:
+            print(f"warning: {source_name}: image not found: {src}", file=sys.stderr)
+        return tag[:-1] + extra + ">"
+
+    return re.sub(r"<img [^>]*>", fix, body)
+
+
 def render_body(md_text):
     body = markdown.markdown(
         md_text,
@@ -332,6 +366,10 @@ def render_body(md_text):
 
     body = re.sub(r"<p>(<img [^>]*>)</p>", to_figure, body)
     return body
+
+
+def render_post_body(md_text, source_name):
+    return enrich_images(render_body(md_text), source_name)
 
 
 def norm_path(c):
@@ -389,7 +427,7 @@ def build():
         if path.stem.startswith("_") or path.name.lower() == "readme.md":
             continue
         post = parse_source(path)
-        post["body"] = render_body(post["body_md"])
+        post["body"] = render_post_body(post["body_md"], post["slug"])
         post["toc_class"], post["toc_html"] = build_toc(post["body"])
         post["words"], post["minutes"] = count_words(post["body"])
         post["updated"] = updated_date(path, post["meta"], post["date"])

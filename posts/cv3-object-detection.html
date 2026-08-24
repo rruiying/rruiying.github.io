@@ -98,13 +98,13 @@ focal loss and RetinaNet — and close with keypoint-based detection
 networks.</p>
 <h2 id="1-motivation">1. Motivation</h2>
 <p>Computer Vision的目标是mimic the human visual system, 发展从mit 1963年project mac到现在是ai的中心。</p>
-<figure><img alt="MIT Project MAC, 1963 (CSAIL)" src="../images/blog/cv3-note1/CSAIL.png"><figcaption>MIT Project MAC, 1963 (CSAIL)</figcaption></figure>
+<figure><img alt="MIT Project MAC, 1963 (CSAIL)" src="../images/blog/cv3-note1/CSAIL.png" loading="lazy" decoding="async" width="640" height="388"><figcaption>MIT Project MAC, 1963 (CSAIL)</figcaption></figure>
 <p>本课专注rgb image和rgb video的不同颗粒度下的semantic understanding,属于highlevel computer vision. 在object detection任务中我们用bounding box这种coarse的description来localize object.</p>
 <h2 id="2-evaluation-how-do-we-measure-a-detector">2. Evaluation: how do we measure a detector?</h2>
 <h3 id="21-region-overlap-iou">2.1 Region overlap: IoU</h3>
 <p>首先我们为了定义两个框之间的关系(Region overlap)引入了Intersection over Union (IoU) or
 Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者并集的面积</p>
-<figure><img alt="Intersection over Union" src="../images/blog/cv3-note1/IoU.png"><figcaption>Intersection over Union</figcaption></figure>
+<figure><img alt="Intersection over Union" src="../images/blog/cv3-note1/IoU.png" loading="lazy" decoding="async" width="938" height="525"><figcaption>Intersection over Union</figcaption></figure>
 <h3 id="22-tp-fp-fn-precision-and-recall">2.2 TP / FP / FN, precision and recall</h3>
 <p>在detection的evaluation我们有以下三种情况：</p>
 <ul>
@@ -122,7 +122,7 @@ Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者
 同时每一个prediction和gt box是一一对应的，如果有多个那么是存在错误</p>
 <h3 id="24-average-precision-ap">2.4 Average precision (AP)</h3>
 <p>结合precision和recall我们得到了average precision(AP)的metric, 横轴用recall竖轴用precision, 在1x1的区域内，面积越大越好</p>
-<figure><img alt="Precision–recall curve and AP" src="../images/blog/cv3-note1/AP.png"><figcaption>Precision–recall curve and AP</figcaption></figure>
+<figure><img alt="Precision–recall curve and AP" src="../images/blog/cv3-note1/AP.png" loading="lazy" decoding="async" width="902" height="1052"><figcaption>Precision–recall curve and AP</figcaption></figure>
 <h3 id="25-computing-average-precision">2.5 Computing average precision</h3>
 <ol>
 <li>Sort the predicted boxes by confidence score.</li>
@@ -138,7 +138,7 @@ Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者
    (numerical integration).</li>
 </ol>
 <h3 id="26-ap-flavours-and-map">2.6 AP flavours and mAP</h3>
-<figure><img alt="AP flavours" src="../images/blog/cv3-note1/AP_flavours.png"><figcaption>AP flavours</figcaption></figure>
+<figure><img alt="AP flavours" src="../images/blog/cv3-note1/AP_flavours.png" loading="lazy" decoding="async" width="804" height="265"><figcaption>AP flavours</figcaption></figure>
 <ul>
 <li>AP may be averaged over multiple IoU thresholds.</li>
 <li>mAP is the average over object categories.</li>
@@ -147,7 +147,7 @@ Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者
 <h3 id="31-template-matching">3.1 Template matching</h3>
 <p>最简单的想法是定义一个metric，用一个物体图像作为template，通过sliding window扫过整张图片，
 measure每个位置和template的similarity，其中high correlation的region认为是object：</p>
-<figure><img alt="Old one-stage detectors: template + sliding window" src="../images/blog/cv3-note1/oldtime_one_stage.png"><figcaption>Old one-stage detectors: template + sliding window</figcaption></figure>
+<figure><img alt="Old one-stage detectors: template + sliding window" src="../images/blog/cv3-note1/oldtime_one_stage.png" loading="lazy" decoding="async" width="972" height="347"><figcaption>Old one-stage detectors: template + sliding window</figcaption></figure>
 <p>我们定义matching函数为 <span class="arithmatex">\(L(x_0, y_0) = d(I_{(x_0, y_0)}, T)\)</span>，其中 <span class="arithmatex">\(d\)</span> 是distance
 （或similarity）metric，<span class="arithmatex">\(I_{(x_0, y_0)}\)</span> 是以 <span class="arithmatex">\((x_0, y_0)\)</span> 为位置的image region，
 <span class="arithmatex">\(T\)</span> 是template。<span class="arithmatex">\(d\)</span> 可以用：</p>
@@ -185,7 +185,7 @@ ZNCC对affine intensity change（gain + offset）都invariant。</p>
 <h3 id="32-feature-based-detection-violajones">3.2 Feature-based detection: Viola–Jones</h3>
 <p>新的one-stage detectors不再用template做sliding window，而是先对RGB pixel values做
 <strong>feature extraction</strong>，再在feature上同时做classification和localization：</p>
-<figure><img alt="New one-stage detectors: feature extraction" src="../images/blog/cv3-note1/new_one_stage.png"><figcaption>New one-stage detectors: feature extraction</figcaption></figure>
+<figure><img alt="New one-stage detectors: feature extraction" src="../images/blog/cv3-note1/new_one_stage.png" loading="lazy" decoding="async" width="1010" height="370"><figcaption>New one-stage detectors: feature extraction</figcaption></figure>
 <p>idea是learn feature-based classifiers <strong>invariant to natural object changes</strong>。
 但随之而来的问题是features are not always linearly separable，单个简单分类器不够用，
 所以我们learn multiple <strong>weak learners</strong>，组合成一个<strong>strong classifier</strong>（boosting）。</p>
@@ -196,14 +196,14 @@ ZNCC对affine intensity change（gain + offset）都invariant。</p>
    feature value = 白色区域像素总和 − 黑色区域像素总和。每个Haar feature配一个
    threshold就构成一个weak learner <span class="arithmatex">\(h_i(\cdot)\)</span>。借助<strong>integral image</strong>（积分图），
    任意矩形的像素和只需4次查表，所以这些feature可以在常数时间内算出。</p>
-<figure><img alt="Haar-like features as weak learners" src="../images/blog/cv3-note1/Haar-like-features.png"><figcaption>Haar-like features as weak learners</figcaption></figure>
+<figure><img alt="Haar-like features as weak learners" src="../images/blog/cv3-note1/Haar-like-features.png" loading="lazy" decoding="async" width="815" height="546"><figcaption>Haar-like features as weak learners</figcaption></figure>
 </li>
 <li>
 <p>然后按下图的步骤用<strong>AdaBoost</strong>训练。AdaBoost的思想：每一轮在当前样本权重下，
    从所有候选weak learner中找到error最低的那个并保存；然后<strong>提高被它分错的样本的
    权重</strong>（update the priority of the data samples），让下一轮的weak learner专注于
    难例；重复N轮。</p>
-<figure><img alt="Viola–Jones training procedure (AdaBoost)" src="../images/blog/cv3-note1/Viola-Jones_detector.png"><figcaption>Viola–Jones training procedure (AdaBoost)</figcaption></figure>
+<figure><img alt="Viola–Jones training procedure (AdaBoost)" src="../images/blog/cv3-note1/Viola-Jones_detector.png" loading="lazy" decoding="async" width="1071" height="480"><figcaption>Viola–Jones training procedure (AdaBoost)</figcaption></figure>
 </li>
 <li>
 <p>最终的strong classifier是所有weak learners的<strong>linear combination</strong>（每个learner
