@@ -7,12 +7,12 @@
     <title>Computer Vision III — Notes 1: Object Detection — Rui Ying</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../style.css">
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 </head>
 <body>
 
     <nav class="topnav">
         <div class="topnav-inner">
-            <a class="topnav-brand" href="../index.html">Rui Ying</a>
             <ul class="topnav-links">
                 <li><a href="../index.html#about">About me</a></li>
                 <li><a href="../index.html#news">News</a></li>
@@ -67,7 +67,7 @@
                 <span>Published 20 August 2026</span> ·
                 <span>Updated 24 August 2026</span> ·
                 <span class="post-category">Course notes</span> · <span class="post-category">Computer Vision</span> ·
-                <span>1,654 words · 7 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>1,705 words · 7 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
@@ -104,8 +104,10 @@ Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者
 <li>FP = False positive表示没有物体但错框</li>
 <li>FN = False negative表示有物体但没有框</li>
 </ul>
-<p>Precision = TP / (TP + FP) 评估模型多precise 其中TP + FP 是predicted boxes的数量</p>
-<p>Recall = TP / (TP + FN) 评估模型召回有多好 其中TP + FN 是ground truth boxes的数量</p>
+<div class="arithmatex">\[\text{Precision} = \frac{TP}{TP + FP}\]</div>
+<p>Precision评估模型多precise，其中 <span class="arithmatex">\(TP + FP\)</span> 是predicted boxes的数量。</p>
+<div class="arithmatex">\[\text{Recall} = \frac{TP}{TP + FN}\]</div>
+<p>Recall评估模型召回有多好，其中 <span class="arithmatex">\(TP + FN\)</span> 是ground truth boxes的数量。</p>
 <h3 id="23-what-counts-as-a-positive-match">2.3 What counts as a positive match?</h3>
 <p>那么当我们bounding box框住一片区域，什么是true positive 什么是 false positive?
 我们用IoU作为threshold来评判模型预测的bbox和GT的bbox，例如在MS-COCO和PASCAL VOC中当IoU大于0.5即为positive match.
@@ -138,26 +140,27 @@ Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者
 <p>最简单的想法是定义一个metric，用一个物体图像作为template，通过sliding window扫过整张图片，
 measure每个位置和template的similarity，其中high correlation的region认为是object：</p>
 <figure><img alt="Old one-stage detectors: template + sliding window" src="../images/blog/cv3-note1/oldtime_one_stage.png"><figcaption>Old one-stage detectors: template + sliding window</figcaption></figure>
-<p>我们定义matching函数为 <code>L(x₀, y₀) = d(I₍ₓ₀,ᵧ₀₎, T)</code>，其中d是distance（或similarity）
-metric，I₍ₓ₀,ᵧ₀₎ 是以 (x₀, y₀) 为位置的image region，T是template。d可以用：</p>
+<p>我们定义matching函数为 <span class="arithmatex">\(L(x_0, y_0) = d(I_{(x_0, y_0)}, T)\)</span>，其中 <span class="arithmatex">\(d\)</span> 是distance
+（或similarity）metric，<span class="arithmatex">\(I_{(x_0, y_0)}\)</span> 是以 <span class="arithmatex">\((x_0, y_0)\)</span> 为位置的image region，
+<span class="arithmatex">\(T\)</span> 是template。<span class="arithmatex">\(d\)</span> 可以用：</p>
 <ol>
 <li>
 <p><strong>Sum of squared distances (SSD) / mean squared error (MSE)</strong>：</p>
-<p><code>d(I, T) = (1/n) · Σₓ,ᵧ (I(x,y) − T(x,y))²</code></p>
+<div class="arithmatex">\[d(I, T) = \frac{1}{n} \sum_{x,y} \big( I(x,y) - T(x,y) \big)^2\]</div>
 <p>但是MSE对intensity变化非常敏感：光照变亮、对比度改变都会让distance变大，
 即使物体本身没有变。</p>
 </li>
 <li>
 <p>于是我们做normalization，得到<strong>Normalised cross-correlation (NCC)</strong>：</p>
-<p><code>d(I, T) = (1/n) · Σₓ,ᵧ I(x,y)·T(x,y) / (σ_I σ_T)</code></p>
-<p>其中σ_I和σ_T分别是image region和template的standard deviation。
+<div class="arithmatex">\[d(I, T) = \frac{1}{n} \sum_{x,y} \frac{I(x,y) \, T(x,y)}{\sigma_I \, \sigma_T}\]</div>
+<p>其中 <span class="arithmatex">\(\sigma_I\)</span> 和 <span class="arithmatex">\(\sigma_T\)</span> 分别是image region和template的standard deviation。
 除以标准差后，NCC对乘性的contrast变化（gain）invariant。</p>
 </li>
 <li>
 <p>但是NCC依然对加性的brightness偏移（offset）敏感，我们用
     <strong>Zero-normalised cross-correlation (ZNCC)</strong> 代替：</p>
-<p><code>d(I, T) = (1/n) · Σₓ,ᵧ (I(x,y) − μ_I)(T(x,y) − μ_T) / (σ_I σ_T)</code></p>
-<p>其中μ_I、μ_T分别是image region和template的mean。先减均值再除标准差，
+<div class="arithmatex">\[d(I, T) = \frac{1}{n} \sum_{x,y} \frac{\big( I(x,y) - \mu_I \big) \big( T(x,y) - \mu_T \big)}{\sigma_I \, \sigma_T}\]</div>
+<p>其中 <span class="arithmatex">\(\mu_I\)</span>、<span class="arithmatex">\(\mu_T\)</span> 分别是image region和template的mean。先减均值再除标准差，
 ZNCC对affine intensity change（gain + offset）都invariant。</p>
 </li>
 </ol>
@@ -183,7 +186,7 @@ ZNCC对affine intensity change（gain + offset）都invariant。</p>
 <li>
 <p>先定义大量的<strong>Haar-like features</strong>：如下图中竖条、横条等黑白矩形组合，
    feature value = 白色区域像素总和 − 黑色区域像素总和。每个Haar feature配一个
-   threshold就构成一个weak learner <code>hᵢ(·)</code>。借助<strong>integral image</strong>（积分图），
+   threshold就构成一个weak learner <span class="arithmatex">\(h_i(\cdot)\)</span>。借助<strong>integral image</strong>（积分图），
    任意矩形的像素和只需4次查表，所以这些feature可以在常数时间内算出。</p>
 <figure><img alt="Haar-like features as weak learners" src="../images/blog/cv3-note1/Haar-like-features.png"><figcaption>Haar-like features as weak learners</figcaption></figure>
 </li>

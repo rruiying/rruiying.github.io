@@ -45,12 +45,12 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
     <title>{title_esc} — Rui Ying</title>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@300;400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../style.css">
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 </head>
 <body>
 
     <nav class="topnav">
         <div class="topnav-inner">
-            <a class="topnav-brand" href="../index.html">Rui Ying</a>
             <ul class="topnav-links">
                 <li><a href="../index.html#about">About me</a></li>
                 <li><a href="../index.html#news">News</a></li>
@@ -237,7 +237,8 @@ def updated_date(path, meta, published_iso):
 def render_body(md_text):
     body = markdown.markdown(
         md_text,
-        extensions=["extra", "sane_lists", "toc"],
+        extensions=["extra", "sane_lists", "toc", "pymdownx.arithmatex"],
+        extension_configs={"pymdownx.arithmatex": {"generic": True}},
         output_format="html5",
     )
     # Site-absolute image/file paths work when deployed but not when the file

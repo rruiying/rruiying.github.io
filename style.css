@@ -20,6 +20,7 @@
 }
 
 html {
+    font-size: 112.5%;   /* 18px base — every rem in this sheet scales from here */
     scroll-behavior: smooth;
     scroll-padding-top: 76px;
 }
@@ -69,7 +70,7 @@ a:hover {
     display: flex;
     flex-direction: row;          /* never stacks vertically */
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 16px;
 }
 
@@ -756,6 +757,15 @@ a:hover {
     .post-toc {
         display: none;
     }
+}
+
+
+/* MathJax display equations scroll instead of overflowing */
+.post-page mjx-container[display="true"] {
+    display: block;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 0;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

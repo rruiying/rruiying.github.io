@@ -46,9 +46,13 @@ Jaccard Index, 下图IoU中我们看到, IoU是两者交集的面积除以两者
 - FP = False positive表示没有物体但错框
 - FN = False negative表示有物体但没有框
 
-Precision = TP / (TP + FP) 评估模型多precise 其中TP + FP 是predicted boxes的数量
+$$\text{Precision} = \frac{TP}{TP + FP}$$
 
-Recall = TP / (TP + FN) 评估模型召回有多好 其中TP + FN 是ground truth boxes的数量
+Precision评估模型多precise，其中 $TP + FP$ 是predicted boxes的数量。
+
+$$\text{Recall} = \frac{TP}{TP + FN}$$
+
+Recall评估模型召回有多好，其中 $TP + FN$ 是ground truth boxes的数量。
 
 ### 2.3 What counts as a positive match?
 
@@ -92,29 +96,30 @@ measure每个位置和template的similarity，其中high correlation的region认
 
 ![Old one-stage detectors: template + sliding window](/images/blog/cv3-note1/oldtime_one_stage.png)
 
-我们定义matching函数为 `L(x₀, y₀) = d(I₍ₓ₀,ᵧ₀₎, T)`，其中d是distance（或similarity）
-metric，I₍ₓ₀,ᵧ₀₎ 是以 (x₀, y₀) 为位置的image region，T是template。d可以用：
+我们定义matching函数为 $L(x_0, y_0) = d(I_{(x_0, y_0)}, T)$，其中 $d$ 是distance
+（或similarity）metric，$I_{(x_0, y_0)}$ 是以 $(x_0, y_0)$ 为位置的image region，
+$T$ 是template。$d$ 可以用：
 
 1. **Sum of squared distances (SSD) / mean squared error (MSE)**：
 
-    `d(I, T) = (1/n) · Σₓ,ᵧ (I(x,y) − T(x,y))²`
+    $$d(I, T) = \frac{1}{n} \sum_{x,y} \big( I(x,y) - T(x,y) \big)^2$$
 
     但是MSE对intensity变化非常敏感：光照变亮、对比度改变都会让distance变大，
     即使物体本身没有变。
 
 2. 于是我们做normalization，得到**Normalised cross-correlation (NCC)**：
 
-    `d(I, T) = (1/n) · Σₓ,ᵧ I(x,y)·T(x,y) / (σ_I σ_T)`
+    $$d(I, T) = \frac{1}{n} \sum_{x,y} \frac{I(x,y) \, T(x,y)}{\sigma_I \, \sigma_T}$$
 
-    其中σ_I和σ_T分别是image region和template的standard deviation。
+    其中 $\sigma_I$ 和 $\sigma_T$ 分别是image region和template的standard deviation。
     除以标准差后，NCC对乘性的contrast变化（gain）invariant。
 
 3. 但是NCC依然对加性的brightness偏移（offset）敏感，我们用
     **Zero-normalised cross-correlation (ZNCC)** 代替：
 
-    `d(I, T) = (1/n) · Σₓ,ᵧ (I(x,y) − μ_I)(T(x,y) − μ_T) / (σ_I σ_T)`
+    $$d(I, T) = \frac{1}{n} \sum_{x,y} \frac{\big( I(x,y) - \mu_I \big) \big( T(x,y) - \mu_T \big)}{\sigma_I \, \sigma_T}$$
 
-    其中μ_I、μ_T分别是image region和template的mean。先减均值再除标准差，
+    其中 $\mu_I$、$\mu_T$ 分别是image region和template的mean。先减均值再除标准差，
     ZNCC对affine intensity change（gain + offset）都invariant。
 
 **Quiz: Can I just swap SSD with NCC in my code?**
@@ -145,7 +150,7 @@ idea是learn feature-based classifiers **invariant to natural object changes**�
 
 1. 先定义大量的**Haar-like features**：如下图中竖条、横条等黑白矩形组合，
    feature value = 白色区域像素总和 − 黑色区域像素总和。每个Haar feature配一个
-   threshold就构成一个weak learner `hᵢ(·)`。借助**integral image**（积分图），
+   threshold就构成一个weak learner $h_i(\cdot)$。借助**integral image**（积分图），
    任意矩形的像素和只需4次查表，所以这些feature可以在常数时间内算出。
 
     ![Haar-like features as weak learners](/images/blog/cv3-note1/Haar-like-features.png)
