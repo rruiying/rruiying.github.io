@@ -4,55 +4,63 @@ date: 2026-08-23
 tags: [Deep learning, Computer Vision, TUM, transformers, self-supervised learning, semi-supervised learning]
 summary: Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation.
 ---
-This chapter covers three modern threads that reshape everything from the
-previous notes. First, **transformers**: the correlation layer we met in video
-object segmentation already compares features against features, which is
+This note covers the last three lectures.
+
+First we introduce **transformers** by extending the idea from correlation layer we met in video object segmentation already compares features against features, which is
 exactly what **attention** generalises. From there we develop
 **self-attention** and **positional encoding**, scale up to the **ViT** and
-**Swin Transformer** backbones, and let transformers reshape the tasks
-themselves — **DETR** casts detection as set prediction, **MaskFormer** and
-**Mask2Former** unify segmentation as mask classification. Second,
-**unsupervised (self-supervised) learning** in three waves: **pretext tasks**
-(rotation, jigsaw puzzles, colorization, SSL on videos), **contrastive
-learning** (SimCLR, MoCo), and **non-contrastive methods** (DINO and its
-successors, masked autoencoders) — plus how SSL models are evaluated and what
-they enable downstream, from semantic segmentation to segmentation from motion
-cues and the contrastive random walk. Third, **semi-supervised learning**:
-starting from the semi-supervised loss and its three assumptions (smoothness,
-low density, manifold), we organise the field along two taxonomies — from
-unsupervised preprocessing and **self-training** (OnAVOS, SAM and its
-successors, pseudo-labels) to **intrinsically semi-supervised** methods
-(entropy minimisation, virtual adversarial training), learning from synthetic
-data with **domain alignment**, and **consistency regularisation**.
+**Swin Transformer** backbones, and  we see how transformers reshape the traditional computer vision tasks.  **DETR** casts detection as set prediction, **MaskFormer** and
+**Mask2Former** unify segmentation as mask classification. 
+
+Second, we see **unsupervised (self-supervised) learning** in three categories: 1. solve the **pretext tasks** (rotation, jigsaw puzzles, colorization, SSL on videos), 2. extend of metric learning to unsupervised **contrastive learning** (SimCLR, MoCo), and **non-contrastive methods** (DINO and its successors, masked autoencoders)， plus how SSL models are evaluated and what they enable downstream, from semantic segmentation to segmentation from motion cues and the contrastive random walk. 
+
+Third, **semi-supervised learning**: starting from the semi-supervised loss and its three assumptions (smoothness,low density, manifold), we see how to get expansive data and organise the field along two taxonomies — from unsupervised preprocessing and **self-training** (OnAVOS, SAM and its successors, pseudo-labels) to **intrinsically semi-supervised** methods (entropy minimisation, virtual adversarial training), learning from synthetic data with **domain alignment**, and **consistency regularisation**.
 
 ## 1. Transformers
 
 ### 1.1 Motivation: From correlation layers to attention
 
 CNN encode的是**local context**：每一层卷积只看kernel覆盖的邻域，receptive field
-随着网络深度单调增长。这带来几个问题：
+随着网络深度单调增长,那么我们就想到可以用卷积来聚合long-range的context, 但是这带来几个问题：
 
-1. 想要long-range的context aggregation就必须堆深度，而**深度越大越难训练**
-2. receptive field是由每层的kernel size**设计死的**，这本身是一种inductive bias
+1. 想要long-range的context aggregation就必须堆深度，但**深度越大越难训练**
+2. receptive field是由每层固定的**kernel size**决定的，这本身是一种inductive bias
    （认为图片信息集中在局部邻域），所以网络只能关注设计好的区域
 3. 我们希望**在同一层内就有显式的non-local feature interactions**
 
 那么：可不可以让网络**自己学习它的receptive field**？
 
-**Recap：卷积其实就是矩阵乘法（im2col）**。做法是把每个local patch拉平成列，
+在回答这个问题之前，我们先回顾一下**convlution**和**correlation layer**
+
+**Recap：卷积其实就是矩阵乘法（im2col）**。做法是把每个local patch flatten 成列，
 和拉平的filter做dot product：
 
 ![Convolution as matrix multiplication (im2col)](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/im2col.png)
 
 而在video object segmentation里我们已经见过**correlation layer**：把两个feature map
 拉平，两两做dot product得到相似度矩阵 $s_{ij} = f_i^\top f_j$ 
-在correlation layer的计算中是**fixed operation，没有可学习的权重**：
+值得注意的是 在correlation layer的计算中是**fixed operation，没有可学习的权重**：
 
 ![Correlation layer: dot products measure feature similarity](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/correlation.png)
 
-把这两件事放在一起：卷积是"feature和**固定filter**做dot product"，correlation是
-"feature和**feature**做dot product"。如果我们直接用correlation的方式让每个位置去
-"查询"所有其他位置，就得到了最朴素的self-attention。
+既然卷积是"feature和**固定filter**做dot product"，correlation是
+"feature和**feature**做dot product"，那么我们想：如果先得到每个位置的feature
+（这些feature可以由convolution提取local context），然后让每个位置和所有其他
+位置的feature做correlation，得到相似度，再用这些相似度**加权聚合（weighted
+aggregation）**其他位置的feature，这就是最朴素的self-attention思想。
+
+那么把correlation layer的思路总结起来。我们为了得到相似度，先用来自第一个
+feature map的一个input vector $x_i$ 与来自第二个feature map的input vector $x_j$
+做dot product，得到一个scalar（标量），这一步被称作**feature matching**。
+这个scalar $w'_{ij}$ 表示了 $i$ 和 $j$ 的相似度（在
+[note 3](cv3-image-segmentation.html)我们解释了为什么向量的dot (inner) product
+代表相似度）。虽然向量点乘是对称的（$x_1^\top x_2$ 和 $x_2^\top x_1$ 是同一个
+scalar），但是矩阵行列顺序会有变化，所以matching score矩阵代表**F1对F2**的相似度。
+
+在attention中，我们希望用这个相似度作为权重（归一化处理后）再乘上F2的矩阵
+用于聚合信息（aggregate the information），相当于对F2进行加权求和，表示F1
+关注了F2的哪些信息，这就是最simple的attention；当两份feature来自同一个
+input（F1 = F2）时，就是simple self-attention。
 
 但把这种simple self-attention用到text上就暴露了问题。比如句子
 *"this restaurant was not too terrible"*：
@@ -66,6 +74,8 @@ CNN encode的是**local context**：每一层卷积只看kernel覆盖的邻域�
 
 ### 1.2 Attention and self-attention
 
+从1.1得知，我们如果想让F1关注聚合F2，需要一个来自F1的向量和一个来自F2的向量复制两份。
+那么如果我们希望input可以关注聚合自己的信息呢？那么同样的我们就需要复制三份，所以
 **每个input vector同时扮演三个角色**：
 
 - **query**：拿去和别人比较（"我在找什么"）
@@ -75,6 +85,8 @@ CNN encode的是**local context**：每一层卷积只看kernel覆盖的邻域�
 在1.1的simple self-attention里，三个角色都是同一个 $x$：
 
 $$w'_{ij} = \underbrace{x_i^\top}_{\text{query}} \underbrace{x_j}_{\text{key}}, \qquad y_i = \sum_j w_{ij} \underbrace{x_j}_{\text{value}}$$
+
+（$w_{ij}$ 是原始分数 $w'_{ij}$ 沿 $j$ 做softmax归一化后的权重，下同。）
 
 现在引入**trainable weights and biases**，让每个角色有自己的投影：
 
@@ -425,14 +437,16 @@ things/stuff的区分**，这些概念被queries抽象掉了。
 
 ### 1.9 Conclusions and what came after
 
-**课程给的结论**（润色版）：Transformer先革了NLP的命，然后通过ViT和DETR把
+**结论**：Transformer先革了NLP的命，然后通过ViT和DETR把
 冲击带进了视觉。作为CNN的补充，它在classification、detection、tracking、
 image generation上都达到了SOTA。但要泼一盆冷水：这些成绩往往是用**更大的
 算力预算**换来的，GPU更大、训练更久。
 
-**这份课件停在了2021年**，下面把detection/segmentation这条transformer主线
-往后补到今天（这部分是我自己整理的，不在课件里；backbone预训练和SSL的
-进展放在第2、3章，这里不重复）：
+**这份课件停在了2021年**，下面把detection、segmentation和tracking这几条
+transformer主线往后补到今天（这部分是我自己整理的，不在课件里；backbone
+预训练和SSL的进展放在第2、3章，这里不重复）。
+
+**Detection / Segmentation这条线：**
 
 - **2020，[DETR](https://arxiv.org/abs/2005.12872)**：开创set prediction范式。
   问题：收敛极慢（500 epochs）、小物体差
@@ -465,9 +479,47 @@ image generation上都达到了SOTA。但要泼一盆冷水：这些成绩往往
 - **2024–2025，[DEIM](https://arxiv.org/abs/2412.04234)**：matching带来的收敛慢
   问题仍在，DEIM用改进的稠密匹配监督进一步加速收敛（CVPR 2025）
 
-到我写这篇笔记的2026年，实时检测基本是RT-DETR/D-FINE/DEIM这条DETR系
-路线和YOLO系并立；matching的稳定性、小物体、以及开放词汇检测（open-vocabulary，
-和后面章节的预训练话题有关，这里按下不表）仍然是open problems。
+**Tracking这条线**（回忆note 2的分类：**online**只能看当前和过去帧、边看边出
+结果，**offline**拿到整段视频后全局优化）：
+
+- **2021，[TransTrack](https://arxiv.org/abs/2012.15460)**（online）：最早把DETR
+  搬进MOT的尝试之一，两个decoder分别做detect和track，特征跨帧传递。
+  问题：本质还是"检测+关联"两步，端到端得不彻底
+- **2022，[TrackFormer](https://arxiv.org/abs/2101.02702)**（online）：提出
+  **track query**，每个已有轨迹用一个query在下一帧里"续命"，新目标由普通
+  object query发现，检测和跟踪同一个decoder完成，Hungarian matching只在
+  新生目标上做。问题：query之间抢容量，遮挡后re-ID弱
+- **2022，[MOTR](https://arxiv.org/abs/2105.03247)**（online）：把端到端做到最彻底，
+  track query自回归地跨帧传播，连关联规则都不要了。问题：跟踪学好了，
+  **检测明显掉点**，detect query和track query互相打架
+- **2022，[GTR](https://arxiv.org/abs/2203.13250)**（offline/近线，clip级）：一次吃
+  一段clip，在窗口内用transformer做**全局关联**，是offline思想在transformer
+  时代的直接翻版
+- **2022，[ByteTrack](https://arxiv.org/abs/2110.06864)**（online，非transformer）：
+  一盆冷水式的reality check：不用任何端到端花活，**强检测器 + Kalman +
+  低分框二次关联**就在MOT17/20上吊打了当时所有端到端方法。结论和note 2
+  的直觉一致：**MOT的第一要素仍是检测质量**
+- **2023，[MOTRv2](https://arxiv.org/abs/2211.09791)**（online）：接受现实，
+  用YOLOX的proposal给MOTR补检测短板，端到端路线追回一城
+- **2023，[SUSHI](https://arxiv.org/abs/2212.03038)**（offline）：note 2里MPN那条
+  graph路线的正统续作（同一个组的工作），用**层级图**统一短时和长时关联，
+  证明offline图方法在长遮挡场景仍然最强
+- **2024，[MOTIP](https://arxiv.org/abs/2403.16848)**（online）：换个角度，
+  把association干脆建模成**ID prediction**，给每个目标直接预测身份编号，
+  简化了整个端到端管线
+
+单目标跟踪（SOT）这边同样被transformer重写，代表作
+[STARK](https://arxiv.org/abs/2103.17154)和
+[MixFormer](https://arxiv.org/abs/2203.11082)（SOT按定义都是online），
+思路都是把template和search region丢进同一个attention里做关系建模，
+正好是note 2里GOTURN"比较两帧"思想的attention版。
+
+到我写这篇笔记的2026年：检测上，实时赛道基本是RT-DETR/D-FINE/DEIM这条
+DETR系路线和YOLO系并立；跟踪上，**端到端（tracking-by-attention）和
+tracking-by-detection之争还没有定论**，检测器的强弱仍然主导benchmark，
+长遮挡下offline图方法保持优势。matching的稳定性、小物体、以及开放词汇
+检测（open-vocabulary，和后面章节的预训练话题有关，这里按下不表）
+仍然是open problems。
 回头看整章的主线其实就一句话：**attention把"和谁比较、取什么信息"变成了
 可学习的，然后detection和segmentation都被改写成了set prediction**。
 
