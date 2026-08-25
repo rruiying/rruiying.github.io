@@ -46,12 +46,13 @@
                 <li class="toc-h3"><a href="#18-mask2former">1.8 Mask2Former</a></li>
                 <li class="toc-h3"><a href="#19-conclusions-and-what-came-after">1.9 Conclusions and what came after</a></li>
                 <li class="toc-h2"><a href="#2-unsupervised-self-supervised-learning">2. Unsupervised (self-supervised) learning</a></li>
-                <li class="toc-h3"><a href="#21-pretext-tasks">2.1 Pretext tasks</a></li>
-                <li class="toc-h3"><a href="#22-contrastive-learning">2.2 Contrastive learning</a></li>
-                <li class="toc-h3"><a href="#23-non-contrastive-learning">2.3 Non-contrastive learning</a></li>
-                <li class="toc-h3"><a href="#24-evaluating-ssl-models">2.4 Evaluating SSL models</a></li>
-                <li class="toc-h3"><a href="#25-downstream-applications">2.5 Downstream applications</a></li>
-                <li class="toc-h3"><a href="#26-additional-reading">2.6 Additional reading</a></li>
+                <li class="toc-h3"><a href="#21-motivation-learning-without-labels">2.1 Motivation: learning without labels</a></li>
+                <li class="toc-h3"><a href="#22-pretext-tasks">2.2 Pretext tasks</a></li>
+                <li class="toc-h3"><a href="#23-contrastive-learning">2.3 Contrastive learning</a></li>
+                <li class="toc-h3"><a href="#24-non-contrastive-learning">2.4 Non-contrastive learning</a></li>
+                <li class="toc-h3"><a href="#25-evaluating-ssl-models">2.5 Evaluating SSL models</a></li>
+                <li class="toc-h3"><a href="#26-downstream-applications">2.6 Downstream applications</a></li>
+                <li class="toc-h3"><a href="#27-additional-reading">2.7 Additional reading</a></li>
                 <li class="toc-h2"><a href="#3-semi-supervised-learning">3. Semi-supervised learning</a></li>
                 <li class="toc-h3"><a href="#31-the-semi-supervised-loss">3.1 The semi-supervised loss</a></li>
                 <li class="toc-h3"><a href="#32-three-assumptions">3.2 Three assumptions</a></li>
@@ -74,7 +75,7 @@
                 <span>Published 23 August 2026</span> ·
                 <span>Updated 25 August 2026</span> ·
                 <span class="post-category">Course notes › Computer Vision › Computer Vision III (IN2375)</span> ·
-                <span>7,215 words · 27 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>11,249 words · 40 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
@@ -508,7 +509,7 @@ image generation上都达到了SOTA。但这些成绩往往是用<strong>更大�
   把association干脆建模成<strong>ID prediction</strong>，给每个目标直接预测身份编号，
   简化了整个端到端管线</li>
 </ul>
-<p>单目标跟踪（SOT）这边同样被transformer重写，代表作
+<p>单目标跟踪（SOT）同样被transformer重写，代表作
 <a href="https://arxiv.org/abs/2103.17154">STARK</a>和
 <a href="https://arxiv.org/abs/2203.11082">MixFormer</a>（SOT按定义都是online），
 思路都是把template和search region丢进同一个attention里做关系建模，
@@ -518,18 +519,295 @@ tracking-by-detection之争还没有定论</strong>，检测器的强弱仍然�
 长遮挡下offline图方法保持优势。matching的稳定性、小物体、以及开放词汇
 检测（open-vocabulary）仍然是open problems。</p>
 <h2 id="2-unsupervised-self-supervised-learning">2. Unsupervised (self-supervised) learning</h2>
-<h3 id="21-pretext-tasks">2.1 Pretext tasks</h3>
-<p><em>(rotation, jigsaw puzzle, colorization, SSL on videos …)</em></p>
-<h3 id="22-contrastive-learning">2.2 Contrastive learning</h3>
-<p><em>(SimCLR, MoCo …)</em></p>
-<h3 id="23-non-contrastive-learning">2.3 Non-contrastive learning</h3>
-<p><em>(DINO, DINOv2, DINOv3, masked autoencoders …)</em></p>
-<h3 id="24-evaluating-ssl-models">2.4 Evaluating SSL models</h3>
-<p><em>(linear probing, fine-tuning, k-NN …)</em></p>
-<h3 id="25-downstream-applications">2.5 Downstream applications</h3>
-<p><em>(semantic segmentation, self-supervision in videos, segmentation from motion
-cues, contrastive random walk …)</em></p>
-<h3 id="26-additional-reading">2.6 Additional reading</h3>
+<h3 id="21-motivation-learning-without-labels">2.1 Motivation: learning without labels</h3>
+<p>标签很贵：分类标签还好，detection的box、segmentation的per-pixel mask越来越贵，
+而互联网上无标签的图片和视频几乎无限。所以我们想在没有标签的情况下，
+学一个<strong>compact yet descriptive</strong>的representation。</p>
+<p><strong>用信息论看这件事</strong>。记数据为 <span class="arithmatex">\(X\)</span>、representation为 <span class="arithmatex">\(Z\)</span>、（未来下游任务的）
+标签为 <span class="arithmatex">\(Y\)</span>，理想的目标是：</p>
+<div class="arithmatex">\[\mathcal{L} = I(X; Z) - \beta\, I(Z; Y)\]</div>
+<ul>
+<li><span class="arithmatex">\(I(X;Z)\)</span> 要<strong>最小化</strong>：<span class="arithmatex">\(Z\)</span> 对 <span class="arithmatex">\(X\)</span> 压缩得越狠越好（compact）</li>
+<li><span class="arithmatex">\(I(Z;Y)\)</span> 要<strong>最大化</strong>：<span class="arithmatex">\(Z\)</span> 里要保住和 <span class="arithmatex">\(Y\)</span> 有关的信息（descriptive）</li>
+<li>Recap互信息：<span class="arithmatex">\(I(X;Y) = H(X) - H(X \mid Y)\)</span>，即观察到 <span class="arithmatex">\(Y\)</span> 之后
+  <span class="arithmatex">\(X\)</span> 的熵少了多少bit；<span class="arithmatex">\(H(X \mid Y)\)</span> 是知道 <span class="arithmatex">\(Y\)</span> 后 <span class="arithmatex">\(X\)</span> 剩下的熵</li>
+</ul>
+<p>最优的 <span class="arithmatex">\(Z^*\)</span> 叫<strong>minimal sufficient statistic</strong>：刚好够用、一点不多。</p>
+<figure><img alt="SSL through the lens of information theory" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/ssl-information-theory.png" loading="lazy" decoding="async" width="863" height="468"><figcaption>SSL through the lens of information theory</figcaption></figure>
+<p><strong>Quiz: <span class="arithmatex">\(X\)</span> 是{猫, 狗, 鹦鹉, 鸡}的图片，<span class="arithmatex">\(Y\)</span> 是类别标签，<span class="arithmatex">\(Z\)</span> = 腿的数量，
+这个representation怎么样？</strong></p>
+<p>压缩性极好（一张图压成一个数字），但是压过头了：猫和狗都是4条腿、
+鹦鹉和鸡都是2条腿，<span class="arithmatex">\(Z\)</span> 里丢掉了区分 <span class="arithmatex">\(Y\)</span> 所需的信息，<span class="arithmatex">\(I(Z;Y)\)</span> 太小。
+好的representation要在两项之间平衡。</p>
+<p><strong>理想图景</strong>：无标签数据训练一个模型，输出通用的representation，
+下游每个任务只需要接一个<strong>浅层的head</strong>（比如线性分类器）：</p>
+<figure><img alt="Unlabelled data to a general-purpose representation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/ssl-representation.png" loading="lazy" decoding="async" width="861" height="301"><figcaption>Unlabelled data to a general-purpose representation</figcaption></figure>
+<p>理想情况下embedding是<strong>线性可分</strong>的，那么只要很少的标注数据训练一个
+linear probe就能分类。这就是SSL的价值主张：<strong>representation学好了，
+下游只需要很少的标签</strong>。</p>
+<p>怎么在没标签时定义训练目标？<strong>Goal: 设计一个和目标任务有某种关联的
+training objective</strong>，希望模型在它上面训练时顺便学到对目标任务有用的东西。
+按此课程分成三类：<strong>pretext tasks</strong>、<strong>contrastive learning</strong>、
+<strong>non-contrastive learning</strong>。</p>
+<h3 id="22-pretext-tasks">2.2 Pretext tasks</h3>
+<p>第一波的思路：人为设计一个"借口任务"，标签从数据自动生成。</p>
+<p><strong>Rotation</strong>（<a href="https://arxiv.org/abs/1803.07728">Gidaris et al., 2018</a>）：
+把图片旋转0°/90°/180°/270°，网络做4分类猜转了多少：</p>
+<figure><img alt="Pretext task: rotation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/pretext-rotation.png" loading="lazy" decoding="async" width="857" height="456"><figcaption>Pretext task: rotation</figcaption></figure>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>我们总是希望这个loss越低越好吗？</p>
+<p>不是。<strong>pretext loss低不代表representation好</strong>，模型可能靠捷径把任务做好了
+但什么语义都没学到。这个任务的前提是数据集有<strong>photographic bias</strong>：
+拍出来的物体有主流朝向（天在上、地在下），判断旋转才需要理解物体。
+如果物体没有canonical pose，旋转角度就没有意义，比如卫星图。一个思想实验：
+把所有旋转过的图片也加进原数据集，旋转标签直接变得不可定义。</p>
+<p><strong>Jigsaw puzzle</strong>（<a href="https://arxiv.org/abs/1603.09246">Noroozi &amp; Favaro, 2016</a>）：
+切成3×3的patch打乱，让网络恢复空间关系：</p>
+<figure><img alt="Pretext task: jigsaw" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/pretext-jigsaw.png" loading="lazy" decoding="async" width="875" height="463"><figcaption>Pretext task: jigsaw</figcaption></figure>
+<p>任务被建模成<strong>分类问题</strong>：每一种排列（permutation）定义一个类。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>9块的拼图要定义多少个类？</p>
+<p>全排列是 <span class="arithmatex">\(9! = 362880\)</span> 个，太多了。所以从中挑出64个（彼此差异最大的）
+排列组成permutation set，做<strong>64分类</strong>：</p>
+<figure><img alt="Jigsaw as classification over a permutation set" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/pretext-jigsaw-classes.png" loading="lazy" decoding="async" width="875" height="463"><figcaption>Jigsaw as classification over a permutation set</figcaption></figure>
+<p><strong>Colorization</strong>（<a href="https://arxiv.org/abs/1603.08511">Zhang et al., 2016</a>）：
+输入灰度图预测颜色，intuition是上对颜色需要语义理解（草是绿的）：</p>
+<figure><img alt="Colorization architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/pretext-colorization.png" loading="lazy" decoding="async" width="875" height="463"><figcaption>Colorization architecture</figcaption></figure>
+<p>几个nuance：</p>
+<ul>
+<li>这<strong>不是</strong>从灰度图回归RGB。因为着色是<strong>multimodal</strong>的（苹果可以是红的
+  也可以是绿的），RGB的 <span class="arithmatex">\(p(C \mid L)\)</span> 不是一个单峰分布，用MSE回归只会取
+  各种可能颜色的平均，得到一张灰扑扑的图</li>
+<li>所以在<strong>Lab色彩空间</strong>操作：L是perceptual lightness，a、b是两条对立色轴
+  （green-magenta、blue-yellow，opponent color theory）。选Lab是因为
+  <strong>Lab里的欧氏距离在感知上更有意义</strong>（RGB里数值距离相同的两对颜色，
+  人眼看差别可以差很多）</li>
+<li>把着色建模成对量化后的 <span class="arithmatex">\((a,b)\)</span> 的<strong>多项分类</strong>问题，而不是回归</li>
+</ul>
+<p>这个方法还有个直接的下游应用：给老的黑白照片上色。</p>
+<p><strong>SSL on videos</strong>：视频比图片多了免费的时间结构。例子：判断一段视频是在
+<strong>正放还是倒放</strong>（arrow of time）。因为要判断时间方向，模型必须理解重力、
+因果、摩擦这些物理常识（水往下流、碎片不会自己拼回去）。实现上用两路CNN
+（输入RGB加optical flow），接一个fwd/bwd分类器。</p>
+<p><strong>Pretext tasks的问题</strong>：特征质量完全取决于任务设计，模型非常擅长
+<strong>走捷径</strong>（比如靠镜头色差判断patch位置），而且"会拼图"不代表"懂分类"，
+pretext任务和下游任务经常不对齐。</p>
+<h3 id="23-contrastive-learning">2.3 Contrastive learning</h3>
+<p><strong>先recall <a href="cv3-object-tracking.html">note 2</a>的metric learning</strong>（当时用于ReID）。
+triplet loss：</p>
+<div class="arithmatex">\[\mathcal{L}(A, B, C) = \max\big(0,\; \|f(A) - f(B)\|^2 - \|f(A) - f(C)\|^2 + m\big)\]</div>
+<p>拉近anchor和positive（<span class="arithmatex">\(A\)</span>、<span class="arithmatex">\(B\)</span>），推远anchor和negative（<span class="arithmatex">\(A\)</span>、<span class="arithmatex">\(C\)</span>），
+margin <span class="arithmatex">\(m\)</span> 控制推开多远。但metric learning<strong>需要标签</strong>来定义谁是正对、
+谁是负对。</p>
+<p><strong>Contrastive learning就是metric learning的无监督扩展</strong>，正负对不再靠标签：</p>
+<ul>
+<li>对同一张图做<strong>data augmentation</strong>（裁剪等）得到的两个view是<strong>positive pair</strong></li>
+<li><strong>其他图片</strong>统统当<strong>negative pairs</strong>（很多个）</li>
+</ul>
+<figure><img alt="Positive and negative pairs" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/contrastive-pairs.png" loading="lazy" decoding="async" width="772" height="472"><figcaption>Positive and negative pairs</figcaption></figure>
+<p><strong>形式化</strong>。encoder把每张图变成一个特征向量 <span class="arithmatex">\(z_x = f(x) \in \mathbb{R}^d\)</span>，
+用<strong>cosine similarity</strong>度量：</p>
+<div class="arithmatex">\[d(x, y) = \frac{x \cdot y}{\|x\| \|y\|} \in [-1, 1]\]</div>
+<p>对一组 <span class="arithmatex">\(\{x, y^+, \{y_i^-\}_{i=1,\dots,n}\}\)</span> 计算<strong>contrastive score</strong>（softmax形式）：</p>
+<div class="arithmatex">\[s(x) = \frac{e^{d(x, y^+)/\tau}}{e^{d(x, y^+)/\tau} + \sum_{i=1}^{n} e^{d(x, y_i^-)/\tau}}\]</div>
+<p>损失就是 <span class="arithmatex">\(\mathcal{L} = -\log s(x)\)</span>。逐项观察：</p>
+<ul>
+<li><span class="arithmatex">\(s(x) \in (0, 1)\)</span>：接近1表示positive比所有negative都近得多（我们想要的），
+  接近0表示有negative比positive还近</li>
+<li><strong>temperature <span class="arithmatex">\(\tau\)</span></strong>（超参，通常0.01到1.0）：<span class="arithmatex">\(\tau\)</span> 越小softmax越尖锐，
+  可以理解成一个<strong>soft margin</strong>，作用类似triplet loss里的 <span class="arithmatex">\(m\)</span></li>
+</ul>
+<p><strong>几何直觉</strong>。因为特征做了归一化，每个embedding都是高维<strong>单位球面</strong>上的
+一个点。contrastive learning的目标就是把同类的点在球面上聚成cluster
+（alignment），同时让所有点铺满球面（uniformity）
+（<a href="https://arxiv.org/abs/2005.10242">Wang &amp; Isola, 2020</a>）。聚好之后，
+<strong>球面上的点就线性可分了</strong>，正好对上2.1的理想图景：</p>
+<figure><img alt="Clustering on the hypersphere" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/contrastive-hypersphere.png" loading="lazy" decoding="async" width="869" height="472"><figcaption>Clustering on the hypersphere</figcaption></figure>
+<p><strong>SimCLR</strong>（<a href="https://arxiv.org/abs/2002.05709">Chen et al., 2020</a>）：
+最简洁的实现：</p>
+<figure><img alt="SimCLR framework" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/simclr.png" loading="lazy" decoding="async" width="869" height="483"><figcaption>SimCLR framework</figcaption></figure>
+<ul>
+<li>同一个encoder <span class="arithmatex">\(f(\cdot)\)</span> 处理两个augmented view得到 <span class="arithmatex">\(h\)</span>，再过一个
+  <strong>projection head</strong> <span class="arithmatex">\(g(\cdot)\)</span>（MLP）得到 <span class="arithmatex">\(z\)</span>，contrastive loss算在 <span class="arithmatex">\(z\)</span> 上</li>
+<li><strong>Quiz: 为什么loss不直接算在 <span class="arithmatex">\(h\)</span> 上？</strong> 因为contrastive loss对特征有
+  几何上的强约束（球面聚类），会挤掉一些信息；让 <span class="arithmatex">\(z\)</span> 去承受这个约束，
+  <span class="arithmatex">\(h\)</span> 就能保留更完整的信息给下游用</li>
+<li><strong>augmentation的组合</strong>至关重要（crop、color jitter、blur等）：</li>
+</ul>
+<figure><img alt="SimCLR augmentations" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/simclr-augmentations.png" loading="lazy" decoding="async" width="869" height="483"><figcaption>SimCLR augmentations</figcaption></figure>
+<ul>
+<li>最好的结果需要<strong>巨大的batch</strong>（8192，等于16382个negative pairs），
+  因为negatives来自当前batch。<strong>为什么需要大batch？</strong>直觉：更多的
+  negative样本降低梯度的方差，训练更稳</li>
+</ul>
+<p><strong>MoCo</strong>（<a href="https://arxiv.org/abs/1911.05722">He et al., 2020</a>）：解决
+"要多negatives就要大batch占显存"的问题。对比三种机制：</p>
+<figure><img alt="Three contrastive mechanisms" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/moco-mechanisms.png" loading="lazy" decoding="async" width="869" height="483"><figcaption>Three contrastive mechanisms</figcaption></figure>
+<ul>
+<li><strong>end-to-end</strong>（SimCLR式）：两个encoder都反向传播，negatives只能来自
+  当前batch，显存和batch绑死</li>
+<li><strong>memory bank</strong>：把历史特征存起来采样当negatives，省显存，但bank里的
+  特征是很久以前的旧encoder算的，和当前特征<strong>不一致</strong></li>
+<li><strong>MoCo</strong>：一个<strong>queue</strong>存最近若干batch的key（FIFO，新batch的key入队、
+  最老的出队），配一个<strong>momentum encoder</strong>算key：</li>
+</ul>
+<figure><img alt="MoCo" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/moco.png" loading="lazy" decoding="async" width="869" height="500"><figcaption>MoCo</figcaption></figure>
+<div class="arithmatex">\[\theta_k \leftarrow m\,\theta_k + (1 - m)\,\theta_q, \qquad m \in (0, 1)\]</div>
+<p>key encoder不做梯度更新，而是query encoder的<strong>EMA（指数滑动平均）</strong>，
+变化很慢，所以queue里不同时刻的key仍然基本一致。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span><span class="arithmatex">\(m\)</span> 怎么设？太大/太小会怎样？</p>
+<p><span class="arithmatex">\(m\)</span> 太小的话key encoder变化太快，queue里的key互相不一致，等于回到
+memory bank的毛病；太大（比如0.9999999）的话key encoder几乎不动，
+跟不上query encoder学到的新特征。实验里 <span class="arithmatex">\(m = 0.999\)</span> 附近最好，
+<span class="arithmatex">\(m = 0\)</span> 直接训练失败：</p>
+<figure><img alt="MoCo results: more negatives help, momentum matters" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/moco-results.png" loading="lazy" decoding="async" width="897" height="491"><figcaption>MoCo results: more negatives help, momentum matters</figcaption></figure>
+<p>结果图的另一个信息：<strong>negatives数量 <span class="arithmatex">\(K\)</span> 越大，representation质量越好</strong>，
+而MoCo的 <span class="arithmatex">\(K\)</span> 不受GPU显存限制。</p>
+<h3 id="24-non-contrastive-learning">2.4 Non-contrastive learning</h3>
+<p>下一个问题：<strong>能不能连negatives都不要？</strong>直接做会<strong>collapse</strong>：只要求两个
+view相似的话，把所有输入都映射到同一个点就是完美解。所以这一族方法的
+核心都在<strong>怎么防collapse</strong>。</p>
+<p><strong>DINO</strong>（<a href="https://arxiv.org/abs/2104.14294">Caron et al., 2021</a>），
+名字是<strong>self-di</strong>stillation with <strong>no</strong> labels：</p>
+<figure><img alt="DINO: self-distillation with no labels" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/dino.png" loading="lazy" decoding="async" width="897" height="503"><figcaption>DINO: self-distillation with no labels</figcaption></figure>
+<ul>
+<li><strong>student和teacher</strong>是同一个架构。图片做两组augmentation：<strong>global views</strong>
+  （大crop）和<strong>local views</strong>（小crop）。student看所有views，
+  <strong>teacher只看global views</strong>，student要去匹配teacher的输出分布
+  （local-to-global：从局部猜整体，逼出语义）</li>
+<li>loss是所有valid pair上的交叉熵 <span class="arithmatex">\(-p_t \log p_s\)</span></li>
+<li>teacher是student的<strong>EMA</strong>（在MoCo里已经见过，只是换了个名字），
+  <strong>梯度不穿过teacher</strong>（stop-gradient）</li>
+<li>防collapse靠teacher侧的两个操作互相制衡：<strong>centering</strong>（减去输出的
+  moving average，避免某一维独大、所有数据挤进一个prototype）和
+  <strong>sharpening</strong>（低temperature，避免输出变成均匀分布）。只用其中一个
+  都会塌，两个一起用刚好平衡</li>
+<li>有趣的现象：<strong>teacher的表现始终好于student</strong>（EMA相当于student的
+  ensemble），所以student永远有一个更强的老师可以学</li>
+</ul>
+<figure><img alt="DINO details: centering, sharpening, pseudocode" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/dino-details.png" loading="lazy" decoding="async" width="884" height="571"><figcaption>DINO details: centering, sharpening, pseudocode</figcaption></figure>
+<p><strong>最惊艳的发现</strong>：看ViT最后一层[CLS] token的self-attention map，
+<strong>没有用任何标签，它自己长成了物体的分割图</strong>，而且不同的head关注不同的
+语义部件：</p>
+<figure><img alt="DINO attention maps" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/dino-attention-maps.png" loading="lazy" decoding="async" width="875" height="989"><figcaption>DINO attention maps</figcaption></figure>
+<p>attention map在时间上也很稳定（对视频逐帧算，物体的mask一直跟着物体走）。</p>
+<p><strong>DINOv2</strong>（<a href="https://arxiv.org/abs/2304.07193">Oquab et al., 2023</a>）：
+把DINO配方规模化：</p>
+<figure><img alt="DINOv2: data curation pipeline" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/dinov2.png" loading="lazy" decoding="async" width="870" height="467"><figcaption>DINOv2: data curation pipeline</figcaption></figure>
+<ul>
+<li>比DINO快2倍、省3倍显存；技术上是已有技巧的组合（noisy student、
+  iBOT式的patch目标、adaptive resolution）</li>
+<li><strong>先训一个大模型，再蒸馏给小模型</strong></li>
+<li>关键是<strong>data curation</strong>：从海量未筛选数据出发，去重，再用一个小而
+  多样的核心集做retrieval扩充，得到大而干净的训练集</li>
+</ul>
+<p>frozen特征直接可用于part segmentation、深度估计、semantic segmentation：</p>
+<figure><img alt="DINOv2 frozen features on dense tasks" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/dinov2-dense.png" loading="lazy" decoding="async" width="858" height="476"><figcaption>DINOv2 frozen features on dense tasks</figcaption></figure>
+<p><strong>DINOv3</strong>（<a href="https://arxiv.org/abs/2508.10104">Siméoni et al., 2025</a>）：
+继续放大到<strong>7B参数、17亿图片</strong>。新的训练目标<strong>Gram anchoring</strong>：
+长时间训练后相邻patch的特征会互相污染（dense特征退化），Gram anchoring
+把patch之间的相对结构锚住，高分辨率下的feature map干净得多：</p>
+<figure><img alt="DINOv3: Gram anchoring stabilises dense features" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/dinov3.png" loading="lazy" decoding="async" width="858" height="476"><figcaption>DINOv3: Gram anchoring stabilises dense features</figcaption></figure>
+<p><strong>MAE</strong>（<a href="https://arxiv.org/abs/2111.06377">He et al., 2022</a>）：完全不同的
+路线，transformer加<strong>重建loss</strong>：</p>
+<figure><img alt="Masked autoencoders" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/mae.png" loading="lazy" decoding="async" width="858" height="476"><figcaption>Masked autoencoders</figcaption></figure>
+<ul>
+<li>随机mask掉大部分patch，<strong>encoder只看可见的patch</strong>；被mask的位置补上
+  mask token（带positional encoding）交给一个轻量decoder重建像素</li>
+<li><strong>Remarks</strong>（几个重要细节）：<ul>
+<li><strong>masking比例要高（75%以上）</strong>。因为图像冗余度高、相邻像素强相关，
+  比例低的话靠插值就能重建，学不到语义</li>
+<li>loss<strong>只算被mask的patch</strong>（和denoising autoencoder不同）</li>
+<li>重建目标是<strong>per-patch归一化的像素</strong>（每个patch减均值除标准差），
+  让模型关注结构而不是绝对亮度和对比度</li>
+<li>为什么有效？原论文说得很含糊（"rich hidden representation"）</li>
+</ul>
+</li>
+<li>变体：重建目标换成<strong>HoG特征</strong>而不是像素
+  （<a href="https://arxiv.org/abs/2112.09133">Wei et al., 2022</a>，HoG就是
+  <a href="cv3-object-detection.html">note 1</a>里的那个HOG），效果更好</li>
+</ul>
+<p><strong>统一的视角：multiview assumption</strong>。为什么MAE和contrastive殊途同归？
+因为它们共享同一个假设：<strong>任何一个view（crop或者没被mask的部分）都包含
+下游任务所需的足够信息</strong>，所以 <span class="arithmatex">\(f(A) \approx f(B) \approx \mathcal{I}\)</span>。
+crop和masking只是制造view的两种方式：</p>
+<figure><img alt="The multiview assumption unifies contrastive learning and MAE" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/multiview-assumption.png" loading="lazy" decoding="async" width="858" height="476"><figcaption>The multiview assumption unifies contrastive learning and MAE</figcaption></figure>
+<p>实践上的区别还是有的：contrastive/distillation学<strong>invariance</strong>，
+linear probing强；MAE学<strong>重建</strong>，frozen特征偏低层，但fine-tune之后很强。</p>
+<h3 id="25-evaluating-ssl-models">2.5 Evaluating SSL models</h3>
+<p>SSL训练完没有accuracy可看，标准做法是接下游任务（如分类）评估：</p>
+<ol>
+<li><strong>Fine-tuning</strong>：全部或最后几层跟着下游任务微调。优点是<strong>任务性能最好</strong>；
+   缺点是模型变得task-specific，不能复用给其他任务</li>
+<li><strong>Linear probing</strong>：encoder完全冻住，只训练一个新的线性投影。优点是
+   <strong>一个模型配多个线性头就能服务多个任务</strong>；缺点是准确率通常低于fine-tune</li>
+<li><strong>k-NN classification</strong>：连线性头都不训练。把有标签的数据投影进embedding
+   空间，测试样本按k个最近邻的类别投票。优点是<strong>完全不需要学习</strong>；
+   缺点是预测开销大（<span class="arithmatex">\(O(Nd)\)</span>，和标注集大小成线性）</li>
+</ol>
+<p>注意这几个协议经常互相不一致（linear probe强不代表fine-tune强），
+读论文对比时要看清楚用的是哪一个。</p>
+<h3 id="26-downstream-applications">2.6 Downstream applications</h3>
+<p><strong>DINO特征里编码了什么？</strong>它几乎<strong>开箱即用地提供semantic correspondence</strong>：
+在两张不同的图里（豹和黑猫），同一个语义部位的特征相似度最高，similarity
+map直接可以拿来配对（<a href="https://arxiv.org/abs/2112.05814">Amir et al., 2021</a>）：</p>
+<figure><img alt="DINO features give semantic correspondence" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/dino-correspondence.png" loading="lazy" decoding="async" width="883" height="470"><figcaption>DINO features give semantic correspondence</figcaption></figure>
+<p>但也有短板：<strong>特征缺少几何理解</strong>，比如经常分不清左腿和右腿
+（语义上它们确实是同一种东西）：</p>
+<figure><img alt="Failure: lack of geometric understanding" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/dino-correspondence-failure.png" loading="lazy" decoding="async" width="883" height="470"><figcaption>Failure: lack of geometric understanding</figcaption></figure>
+<p><strong>Part co-segmentation</strong>：把多张图的deep ViT特征放在一起聚类，
+同一个语义部件（不同动物的头、腿）自动聚到一起：</p>
+<figure><img alt="Part co-segmentation from DINO features" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/part-cosegmentation.png" loading="lazy" decoding="async" width="883" height="470"><figcaption>Part co-segmentation from DINO features</figcaption></figure>
+<p><strong>Unsupervised semantic segmentation（STEGO）</strong>
+（<a href="https://arxiv.org/abs/2203.08414">Hamilton et al., 2022</a>）：连"stuff"背景
+也能聚类，得到完整的semantic segmentation：</p>
+<figure><img alt="STEGO: unsupervised semantic segmentation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/stego-example.png" loading="lazy" decoding="async" width="883" height="470"><figcaption>STEGO: unsupervised semantic segmentation</figcaption></figure>
+<p>思路：在冻住的DINO特征之上学一个<strong>更低维的embedding</strong>，让在这个空间里
+聚类就能得到semantic mask。设 <span class="arithmatex">\(F\)</span> 是原始DINO特征的pixel级cosine相似度，
+<span class="arithmatex">\(S\)</span> 是新embedding的相似度，loss是</p>
+<div class="arithmatex">\[\mathcal{L} = -\sum (F - b) \odot \max(S, 0)\]</div>
+<p><span class="arithmatex">\(b\)</span> 是一个阈值超参：<span class="arithmatex">\(F_{ij} &gt; b\)</span> 的（原特征认为相似的）pixel对会把 <span class="arithmatex">\(S_{ij}\)</span>
+往上推，<span class="arithmatex">\(F_{ij} &lt; b\)</span> 的往下压。本质是<strong>学 <span class="arithmatex">\(S\)</span> 去模仿并放大 <span class="arithmatex">\(F\)</span> 里已有的
+相关性模式</strong>：</p>
+<figure><img alt="STEGO architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/stego.png" loading="lazy" decoding="async" width="883" height="470"><figcaption>STEGO architecture</figcaption></figure>
+<p><strong>视频里的self-supervision</strong>有两类问题：给一段视频，用motion cues把物体
+<strong>分割</strong>出来；给一个视频数据集，学会<strong>跟踪</strong>。</p>
+<p><strong>Segmentation from motion cues</strong>
+（<a href="https://arxiv.org/abs/1901.03360">Yang et al., 2019</a>）：idea是
+<strong>如果object mask是对的，物体的optical flow就无法从周围环境重建出来</strong>。
+训练两个网络对抗：</p>
+<ul>
+<li>网络 <span class="arithmatex">\(G\)</span>：给图片和flow，预测object mask（前景/背景）</li>
+<li>网络 <span class="arithmatex">\(I\)</span>：给被mask挖掉的flow和完整图片，重建原始的flow</li>
+</ul>
+<p>case A（mask不准）：物体的一部分flow漏在mask外面，<span class="arithmatex">\(I\)</span> 看得到线索，
+重建很容易，说明mask不好：</p>
+<figure><img alt="Motion cues, case A: bad mask, easy reconstruction" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/motion-cues-caseA.png" loading="lazy" decoding="async" width="883" height="487"><figcaption>Motion cues, case A: bad mask, easy reconstruction</figcaption></figure>
+<p>case B（mask准确）：物体的flow被完整挖掉，<span class="arithmatex">\(I\)</span> 完全猜不到物体怎么动，
+重建失败，说明mask把"一起动的东西"抓全了：</p>
+<figure><img alt="Motion cues, case B: good mask, hard reconstruction" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/motion-cues-caseB.png" loading="lazy" decoding="async" width="889" height="505"><figcaption>Motion cues, case B: good mask, hard reconstruction</figcaption></figure>
+<p>所以训练是个<strong>min-max游戏</strong>：<span class="arithmatex">\(I\)</span> 最小化重建误差，<span class="arithmatex">\(G\)</span> 最大化它。
+这正是Gestalt的<strong>common fate</strong>原则（一起动的属于同一个物体）的实现，
+完全不需要标签。</p>
+<p><strong>Contrastive random walk</strong>
+（<a href="https://arxiv.org/abs/2006.14613">Jabri et al., 2020</a>）：学跨帧
+correspondence的自监督方法。把视频构造成<strong>回文</strong>
+<span class="arithmatex">\(t_1, \dots, t_{N-1}, t_N, t_{N-1}, \dots, t_1\)</span>，把每帧切成patch当图的节点：</p>
+<figure><img alt="Contrastive random walk: cycle consistency on a palindrome" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/crw.png" loading="lazy" decoding="async" width="889" height="505"><figcaption>Contrastive random walk: cycle consistency on a palindrome</figcaption></figure>
+<p>形式化：</p>
+<ul>
+<li>相邻帧的<strong>affinity</strong>用学出来的特征算：<span class="arithmatex">\(A_{t:t+1} = F_t F_{t+1}^\top\)</span>，
+  <span class="arithmatex">\(F_t \in \mathbb{R}^{N \times d}\)</span></li>
+<li>给 <span class="arithmatex">\(t=0\)</span> 的每个patch一个唯一的one-hot标签 <span class="arithmatex">\(L \in \mathbb{R}^{N \times N}\)</span></li>
+<li>沿时间向前再向后<strong>传播标签</strong>：<span class="arithmatex">\(L_{t+1} = \text{softmax}(A)\, L_t\)</span></li>
+<li><strong>cycle consistency</strong>：走完一圈回来，每个标签应该回到出发的位置，
+  在 <span class="arithmatex">\(L_T\)</span> 上用cross-entropy（初始标签就是ground truth，免费的）</li>
+</ul>
+<figure><img alt="Contrastive random walk, formalised" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/crw-formal.png" loading="lazy" decoding="async" width="887" height="477"><figcaption>Contrastive random walk, formalised</figcaption></figure>
+<p>训练时还有个trick叫<strong>edge dropout</strong>：随机剪掉一些边，逼着模型学出替代的
+context路径，相当于强化common fate（单条路径记不住了，只能靠"整个物体
+一起动"这种更稳的信号）。学好的特征直接做dense tracking，也就是
+<a href="cv3-image-segmentation.html">note 3</a>里VOS的label propagation：</p>
+<figure><img alt="Dense tracking with CRW features" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/crw-tracking.png" loading="lazy" decoding="async" width="887" height="477"><figcaption>Dense tracking with CRW features</figcaption></figure>
+<h3 id="27-additional-reading">2.7 Additional reading</h3>
 <p><em>(…)</em></p>
 <h2 id="3-semi-supervised-learning">3. Semi-supervised learning</h2>
 <h3 id="31-the-semi-supervised-loss">3.1 The semi-supervised loss</h3>
@@ -574,6 +852,13 @@ cues, contrastive random walk …)</em></p>
 <li>Siméoni et al. <a href="https://arxiv.org/abs/2508.10104">DINOv3</a>. arXiv 2025.</li>
 <li>He et al. <a href="https://arxiv.org/abs/2111.06377">Masked Autoencoders Are Scalable Vision Learners (MAE)</a>. CVPR 2022.</li>
 <li>Jabri et al. <a href="https://arxiv.org/abs/2006.14613">Space-Time Correspondence as a Contrastive Random Walk</a>. NeurIPS 2020.</li>
+<li>Wang &amp; Isola. <a href="https://arxiv.org/abs/2005.10242">Alignment and Uniformity on the Hypersphere</a>. ICML 2020.</li>
+<li>Wei et al. <a href="https://arxiv.org/abs/2112.09133">Masked Feature Prediction for Self-Supervised Visual Pre-Training</a>. CVPR 2022.</li>
+<li>Wei et al. <a href="https://openaccess.thecvf.com/content_cvpr_2018/papers/Wei_Learning_and_Using_CVPR_2018_paper.pdf">Learning and Using the Arrow of Time</a>. CVPR 2018.</li>
+<li>Amir et al. <a href="https://arxiv.org/abs/2112.05814">Deep ViT Features as Dense Visual Descriptors</a>. 2021.</li>
+<li>Hamilton et al. <a href="https://arxiv.org/abs/2203.08414">Unsupervised Semantic Segmentation by Distilling Feature Correspondences (STEGO)</a>. ICLR 2022.</li>
+<li>Yang et al. <a href="https://arxiv.org/abs/1901.03360">Unsupervised Moving Object Detection via Contextual Information Separation</a>. CVPR 2019.</li>
+<li>Shwartz-Ziv &amp; LeCun. <a href="https://arxiv.org/abs/2304.09355">To Compress or Not to Compress — SSL and Information Theory: A Review</a>. 2023.</li>
 </ul>
 <p><strong>Semi-supervised learning</strong></p>
 <ul>

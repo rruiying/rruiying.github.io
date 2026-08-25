@@ -35,7 +35,7 @@ const POSTS = [
     ],
     "url": "posts/games103-note1.html",
     "updated": "2026-08-25",
-    "mtime": "2026-08-25T10:22:12+02:00",
+    "mtime": "2026-08-25T10:24:57+02:00",
     "words": 856,
     "minutes": 3,
     "summary": "GAMES103 note 1 — what physics-based animation is, the graphics pipeline, and the math toolbox of vectors, matrices and calculus for simulation."
@@ -335,9 +335,9 @@ const POSTS = [
     ],
     "url": "posts/cv3-modern-approaches.html",
     "updated": "2026-08-25",
-    "mtime": "2026-08-25T10:22:12+02:00",
-    "words": 7215,
-    "minutes": 27,
+    "mtime": "2026-08-25T11:20:26+02:00",
+    "words": 11249,
+    "minutes": 40,
     "summary": "Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
   },
   {
