@@ -77,8 +77,8 @@ Geometry有三种表示：
 
 红圈是**本课会讲的内容**：
 
-- 用**mesh**做刚体contacts、cloth、elastic软体，对应note 2（刚体）、note 3（布料）、note 4（FEM弹性体）
-- 用**particle和grid**做流体（实时烟雾、水波、飞溅），对应note 5
+- 用**mesh**做刚体contacts、cloth、elastic软体，对应[note 2](games103-note2.html)（刚体）、[note 3](games103-note3.html)（布料）、[note 4](games103-note4.html)（FEM弹性体）
+- 用**particle和grid**做流体（实时烟雾、水波、飞溅），对应[note 5](games103-note5.html)
 
 打星号的（meshless fracture、用grid处理cloth/hair contact）属于进阶话题，课上不展开。
 

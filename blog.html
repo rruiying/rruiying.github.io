@@ -202,7 +202,7 @@
             return d.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" });
         }
 
-        function moddate(p) { return p.updated || p.date || ""; }
+        function moddate(p) { return p.mtime || p.updated || p.date || ""; }
 
         var comparators = {
             "date-desc":  function (a, b) { return moddate(b).localeCompare(moddate(a)); },

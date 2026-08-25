@@ -17,6 +17,7 @@ const POSTS = [
     ],
     "url": "posts/foAI.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for Fundamentals of Artificial Intelligence (IN2406) at TUM — rational agents, search, constraint satisfaction, logic, planning, and probabilistic reasoning."
@@ -33,7 +34,8 @@ const POSTS = [
       "GAMES103"
     ],
     "url": "posts/games103-note1.html",
-    "updated": "2026-08-24",
+    "updated": "2026-08-25",
+    "mtime": "2026-08-25T10:22:12+02:00",
     "words": 856,
     "minutes": 3,
     "summary": "GAMES103 note 1 — what physics-based animation is, the graphics pipeline, and the math toolbox of vectors, matrices and calculus for simulation."
@@ -51,6 +53,7 @@ const POSTS = [
     ],
     "url": "posts/games103-note2.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 38,
     "minutes": 1,
     "summary": "GAMES103 note 2 — rigid body dynamics — state integration, rotation representations, and contact handling."
@@ -68,6 +71,7 @@ const POSTS = [
     ],
     "url": "posts/games103-note3.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 60,
     "minutes": 1,
     "summary": "GAMES103 note 3 — cloth simulation — mass-spring systems, implicit integration, and strain limiting."
@@ -85,6 +89,7 @@ const POSTS = [
     ],
     "url": "posts/games103-note4.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 38,
     "minutes": 1,
     "summary": "GAMES103 note 4 — the linear finite element method for elastic solids."
@@ -102,6 +107,7 @@ const POSTS = [
     ],
     "url": "posts/games103-note5.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 45,
     "minutes": 1,
     "summary": "GAMES103 note 5 — fluid simulation — height fields, Eulerian grids, and SPH."
@@ -120,6 +126,7 @@ const POSTS = [
     ],
     "url": "posts/games105.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for GAMES105 (Fundamentals of Computer Character Animation) — forward/inverse kinematics, motion capture data, and physics-based character control."
@@ -137,6 +144,7 @@ const POSTS = [
     ],
     "url": "posts/games102.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for GAMES102 (Geometric Modeling and Processing)."
@@ -154,6 +162,7 @@ const POSTS = [
     ],
     "url": "posts/games301.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for GAMES301 (Surface Parameterization)."
@@ -172,6 +181,7 @@ const POSTS = [
     ],
     "url": "posts/games302.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for GAMES302 (Isogeometric Analysis) — splines and NURBS as a unified representation for geometric modeling and numerical simulation."
@@ -189,6 +199,7 @@ const POSTS = [
     ],
     "url": "posts/games101.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for GAMES101 (Introduction to Modern Computer Graphics) — transformations, rasterization, shading, geometry, ray tracing, and animation."
@@ -206,6 +217,7 @@ const POSTS = [
     ],
     "url": "posts/games202.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for GAMES202 (Real-Time High Quality Rendering) — shadows, environment lighting, global illumination, and real-time ray tracing."
@@ -223,6 +235,7 @@ const POSTS = [
     ],
     "url": "posts/games204.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for GAMES204 (Computational Imaging)."
@@ -242,6 +255,7 @@ const POSTS = [
     ],
     "url": "posts/3dcv-note1.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T19:07:37+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for 3D Computer Vision (IN2228, formerly Computer Vision II — Multiple View Geometry) at TUM — camera models, epipolar geometry, two-view reconstruction, bundle adjustment, and visual SLAM."
@@ -260,6 +274,7 @@ const POSTS = [
     ],
     "url": "posts/machine-learning.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for Machine Learning (IN2064) at TUM — regression, classification, probabilistic models, optimization, kernels, and deep learning basics."
@@ -279,6 +294,7 @@ const POSTS = [
     ],
     "url": "posts/robotics.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T16:39:11+02:00",
     "words": 3,
     "minutes": 1,
     "summary": "Notes for Robotics (IN2067) at TUM — spatial descriptions, forward and inverse kinematics, dynamics, trajectory generation, and control."
@@ -298,6 +314,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-image-segmentation.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T21:04:39+02:00",
     "words": 441,
     "minutes": 3,
     "summary": "Third notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval."
@@ -318,7 +335,8 @@ const POSTS = [
     ],
     "url": "posts/cv3-modern-approaches.html",
     "updated": "2026-08-25",
-    "words": 7221,
+    "mtime": "2026-08-25T10:22:12+02:00",
+    "words": 7215,
     "minutes": 27,
     "summary": "Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
   },
@@ -337,6 +355,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-object-tracking.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T21:04:39+02:00",
     "words": 775,
     "minutes": 4,
     "summary": "Second notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated."
@@ -355,6 +374,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-object-detection.html",
     "updated": "2026-08-24",
+    "mtime": "2026-08-24T21:54:46+02:00",
     "words": 1929,
     "minutes": 8,
     "summary": "First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."

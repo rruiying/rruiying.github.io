@@ -297,6 +297,26 @@ def count_words(body_html):
     return cjk + latin, minutes
 
 
+def updated_stamp(path, published_iso):
+    """Full ISO timestamp used only for fine-grained sorting (never shown)."""
+    try:
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--", str(path)],
+            capture_output=True, text=True, cwd=ROOT, timeout=10,
+        ).stdout.strip()
+        if dirty:
+            return datetime.now().astimezone().isoformat(timespec="seconds")
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%cI", "--", str(path)],
+            capture_output=True, text=True, cwd=ROOT, timeout=10,
+        ).stdout.strip()
+        if out:
+            return out
+    except Exception:
+        pass
+    return published_iso + "T00:00:00"
+
+
 def updated_date(path, meta, published_iso):
     """Explicit 'updated' front matter wins; else the file's last git commit."""
     u = meta.get("updated")
@@ -467,6 +487,7 @@ def build():
         post["toc_class"], post["toc_html"] = build_toc(post["body"])
         post["words"], post["minutes"] = count_words(post["body"])
         post["updated"] = updated_date(path, post["meta"], post["date"])
+        post["mtime"] = updated_stamp(path, post["date"])
         posts.append(post)
 
     # ── Pass 2: render pages (needs the full list for related posts) ──
@@ -523,6 +544,7 @@ def build():
             "tags": p["tags"],
             "url": f"posts/{p['slug']}.html",
             "updated": p["updated"],
+            "mtime": p["mtime"],
             "words": p["words"],
             "minutes": p["minutes"],
             "summary": p["summary"],

@@ -308,10 +308,10 @@ Overview像上图所示。
 
 架构和[Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)非常接近。
 
-**但是什么样的Loss才可以学习** 因为模型输出的是**无序的set**，N个query各吐出一个预测，没有任何顺序信息，我们不知道**哪个预测该和哪个ground truth box配对**。配对错了，loss就惩罚一个其实预测得不错的query、奖励一个预测得差的，导致模型学习collapse, 因此算loss之前必须先解决GT和预测的assignment问题。那么我们从之前note2想到了用Hungarian matching的方法。
+**但是什么样的Loss才可以学习** 因为模型输出的是**无序的set**，N个query各吐出一个预测，没有任何顺序信息，我们不知道**哪个预测该和哪个ground truth box配对**。配对错了，loss就惩罚一个其实预测得不错的query、奖励一个预测得差的，导致模型学习collapse, 因此算loss之前必须先解决GT和预测的assignment问题。那么我们从之前[note 2](cv3-object-tracking.html)想到了用Hungarian matching的方法。
 
 **为什么用Hungarian matching呢？** 我们需要的是prediction和GT之间**代价最小的
-一一对应**，loss需要综合分类置信度和box的接近程度。这正是经典的bipartite matching问题，Hungarian算法可以在多项式时间内给出最优解，在note 2的MOT里我们已经用过它做data association。匹配好之后，每对之间正常算分类loss和box loss，没匹配到GT的query学"no object"类。
+一一对应**，loss需要综合分类置信度和box的接近程度。这正是经典的bipartite matching问题，Hungarian算法可以在多项式时间内给出最优解，在[note 2](cv3-object-tracking.html)的MOT里我们已经用过它做data association。匹配好之后，每对之间正常算分类loss和box loss，没匹配到GT的query学"no object"类。
 
 **完整的loss（Hungarian loss）**：
 
@@ -362,7 +362,7 @@ segmentation。但是DETR还有以下**问题**：计算和显存开销大（尤
 
 那么transformer能不能用于semantic和panoptic segmentation？
 
-**Recall: Panoptic FCN**（note 3）：Panoptic FCN已经是一个统一semantic和panoptic的模型，
+**Recall: Panoptic FCN**（[note 3](cv3-image-segmentation.html)）：Panoptic FCN已经是一个统一semantic和panoptic的模型，
 idea是为每个thing/stuff生成一组**kernel**，拿kernel去和encoded feature做卷积，
 每个kernel"印"出一张mask。MaskFormer从这里得到的idea是：
 **这些kernel不用hand-crafted生成机制，直接用Transformer的learnable queries算出来**
@@ -441,7 +441,7 @@ masked attention之后，让query先从图像取到信息、再互相交流。
 **改动② 多尺度特征**。pixel decoder输出多个分辨率的feature，**轮流（round-robin）
 喂给连续的decoder层**，因为将高分辨率传递进去，所以小物体有信息被传递。
 
-**改动③ 训练效率**。mask loss不再在全图上算，而是学note 3里PointRend的思路，
+**改动③ 训练效率**。mask loss不再在全图上算，而是学[note 3](cv3-image-segmentation.html)里PointRend的思路，
 **只在K个importance-sampled的点上算**，显存降到约1/3。
 
 **结果**：三个任务同时超过各自的专用SOTA（对比数字见上表），真正做到了
@@ -463,10 +463,9 @@ things/stuff的区分**，这些概念被queries抽象掉了。
 image generation上都达到了SOTA。但这些成绩往往是用**更大的
 算力预算**换来的，GPU更大、训练更久。
 
-**从课件里的经典transformer架构至今**，下面把detection、segmentation和tracking这几条
-transformer主线理清。
+下面把tranditional computer vision tasks:detection、segmentation和tracking在transformer架构上的主线从课件里的经典transformer架构至今理清。
 
-**Detection / Segmentation这条线：**
+**Detection / Segmentation：**
 
 - **2020，[DETR](https://arxiv.org/abs/2005.12872)**：开创set prediction范式。
   问题：收敛极慢（500 epochs）、小物体差
@@ -499,7 +498,7 @@ transformer主线理清。
 - **2024–2025，[DEIM](https://arxiv.org/abs/2412.04234)**：matching带来的收敛慢
   问题仍在，DEIM用改进的稠密匹配监督进一步加速收敛（CVPR 2025）
 
-**Tracking这条线**（回忆note 2的分类：**online**只能看当前和过去帧、边看边出
+**Tracking**（回忆[note 2](cv3-object-tracking.html)的分类：**online**只能看当前和过去帧、边看边出
 结果，**offline**拿到整段视频后全局优化）：
 
 - **2021，[TransTrack](https://arxiv.org/abs/2012.15460)**（online）：最早把DETR
@@ -517,11 +516,11 @@ transformer主线理清。
   时代的直接翻版
 - **2022，[ByteTrack](https://arxiv.org/abs/2110.06864)**（online，非transformer）：
   一盆冷水式的reality check：不用任何端到端花活，**强检测器 + Kalman +
-  低分框二次关联**就在MOT17/20上吊打了当时所有端到端方法。结论和note 2
+  低分框二次关联**就在MOT17/20上吊打了当时所有端到端方法。结论和[note 2](cv3-object-tracking.html)
   的直觉一致：**MOT的第一要素仍是检测质量**
 - **2023，[MOTRv2](https://arxiv.org/abs/2211.09791)**（online）：接受现实，
   用YOLOX的proposal给MOTR补检测短板，端到端路线追回一城
-- **2023，[SUSHI](https://arxiv.org/abs/2212.03038)**（offline）：note 2里MPN那条
+- **2023，[SUSHI](https://arxiv.org/abs/2212.03038)**（offline）：[note 2](cv3-object-tracking.html)里MPN那条
   graph路线的正统续作（同一个组的工作），用**层级图**统一短时和长时关联，
   证明offline图方法在长遮挡场景仍然最强
 - **2024，[MOTIP](https://arxiv.org/abs/2403.16848)**（online）：换个角度，
@@ -532,9 +531,9 @@ transformer主线理清。
 [STARK](https://arxiv.org/abs/2103.17154)和
 [MixFormer](https://arxiv.org/abs/2203.11082)（SOT按定义都是online），
 思路都是把template和search region丢进同一个attention里做关系建模，
-正好是note 2里GOTURN"比较两帧"思想的attention版。
+正好是[note 2](cv3-object-tracking.html)里GOTURN"比较两帧"思想的attention版。
 
-到我写这篇笔记的2026年：detection task实时赛道基本是RT-DETR/D-FINE/DEIM这条DETR系路线和YOLO系并立；segmentationn task **mask classification已经成为默认范式**，query-based的通用架构（Mask2Former、OneFormer、Mask DINO这条线）取代了per-pixel和per-task的专用模型，问题依然是小物体和细边界、视频分割的时序一致性，以及实时化，因为这套架构至今仍然又大又慢；promptable和open-vocabulary的分割（SAM那条线）依赖大规模预训练，属于后面章节的话题会在后面章节描述。跟踪上，**端到端（tracking-by-attention）和
+到2026年：detection task实时赛道基本是RT-DETR/D-FINE/DEIM这条DETR系路线和YOLO系并立；segmentationn task **mask classification已经成为默认范式**，query-based的通用架构（Mask2Former、OneFormer、Mask DINO这条线）取代了per-pixel和per-task的专用模型，问题依然是小物体和细边界、视频分割的时序一致性，以及实时化，因为这套架构至今仍然又大又慢；promptable和open-vocabulary的分割（SAM那条线）依赖大规模预训练，属于后面章节的话题会在后面章节描述。跟踪上，**端到端（tracking-by-attention）和
 tracking-by-detection之争还没有定论**，检测器的强弱仍然主导benchmark，
 长遮挡下offline图方法保持优势。matching的稳定性、小物体、以及开放词汇
 检测（open-vocabulary）仍然是open problems。
