@@ -171,8 +171,38 @@ permutation-equivariant的：把输入顺序打乱，每个query取回的value�
 
 $$PE_{(pos, i)} = \begin{cases} \sin\!\left(pos / 10000^{i/d_{model}}\right) & i \text{ even} \\ \cos\!\left(pos / 10000^{(i-1)/d_{model}}\right) & i \text{ odd} \end{cases}$$
 
-- 上图右侧热力图：**不同维度对应不同频率**（低维快、高维慢），编码绝对位置
 - PE和token同维度（$1 \times d_{model}$），所以可以直接相加
+- sinusoidal对在feature的不同维度随着position的变换展现出不同的频率，如上图
+  右侧热力图，**不同维度对应不同频率**（低维快、高维慢），用频率的快慢编码了
+  绝对位置。同时又具有非常好的**相对位置**性质：$PE(k+r) = M(r)\, PE(k)$，
+  其中 $M(r)$ 是一个块对角的旋转矩阵，推导如下
+
+把feature维度**两两一组**看，第 $i$ 组的频率记为
+$\omega_i = 10000^{-2i/d_{model}}$，位置 $k$ 在这一组上的编码就是一个二维向量：
+
+$$PE_i(k) = \begin{pmatrix} \sin(\omega_i k) \\ \cos(\omega_i k) \end{pmatrix}$$
+
+对任意偏移 $r$，用三角函数的**和角公式**展开：
+
+$$\begin{aligned} \sin\big(\omega_i (k+r)\big) &= \sin(\omega_i k)\cos(\omega_i r) + \cos(\omega_i k)\sin(\omega_i r) \\ \cos\big(\omega_i (k+r)\big) &= \cos(\omega_i k)\cos(\omega_i r) - \sin(\omega_i k)\sin(\omega_i r) \end{aligned}$$
+
+写成矩阵形式：
+
+$$PE_i(k+r) = \underbrace{\begin{pmatrix} \cos(\omega_i r) & \sin(\omega_i r) \\ -\sin(\omega_i r) & \cos(\omega_i r) \end{pmatrix}}_{M_i(r)\text{：二维旋转矩阵}} PE_i(k)$$
+
+关键在于 $M_i(r)$ **只依赖偏移 $r$ 和频率 $\omega_i$，完全不依赖绝对位置 $k$**。
+把 $d_{model}/2$ 个组拼起来，就得到 $PE(k+r) = M(r)\, PE(k)$，$M(r)$ 是由这些
+$2\times 2$ 旋转块组成的**块对角矩阵**。
+
+这个性质为什么好？因为"差 $r$ 个位置"对PE来说是一个**固定的线性变换**，
+所以网络想学"关注前面第 $r$ 个token"这类相对关系时，不需要管自己在哪个
+绝对位置。再看两个PE的点积：
+
+$$PE(k)^\top PE(k+r) = \sum_i \big[\sin(\omega_i k)\sin(\omega_i(k{+}r)) + \cos(\omega_i k)\cos(\omega_i(k{+}r))\big] = \sum_i \cos(\omega_i r)$$
+
+结果**只和 $r$ 有关**，也就是说attention的相似度天然能感知相对距离。
+这个"位置差 = 旋转"的思想后来被RoPE（rotary position embedding）
+直接发扬光大，如今的大语言模型基本都在用它的后代。
 
 **Self-attention recap**：
 
@@ -180,9 +210,7 @@ $$PE_{(pos, i)} = \begin{cases} \sin\!\left(pos / 10000^{i/d_{model}}\right) & i
 - 计算量对token数**二次增长**（pairwise相似度矩阵）
 - 本身permutation-equivariant，绝对/相对位置靠**PE**补上
 
-推荐一个交互式可视化：[Transformer Explainer](https://poloclub.github.io/transformer-explainer/)。
-可以在浏览器里输入一句话，逐步看Q/K/V怎么算、attention矩阵长什么样、
-每个head在关注什么，比静态公式直观得多。
+Transformer交互式可视化：[Transformer Explainer](https://poloclub.github.io/transformer-explainer/)。
 
 ### 1.4 ViT
 
@@ -193,6 +221,7 @@ $$PE_{(pos, i)} = \begin{cases} \sin\!\left(pos / 10000^{i/d_{model}}\right) & i
 
 ![ViT architecture](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/vit-architecture.png)
 
+做法是：
 1. 把图片切成固定大小的patch
 2. 每个patch过一个全连接层linearly embed成token
 3. 额外接一个**可学习的[class] token**
@@ -204,23 +233,24 @@ $$PE_{(pos, i)} = \begin{cases} \sin\!\left(pos / 10000^{i/d_{model}}\right) & i
 
 - ViT只有在**超大数据集**（JFT，300M张图）上预训练才好，因为它
   **没有CNN的inductive bias**：locality（self-attention是全局的）、
-  2D邻域结构（位置关系全靠数据学）、translation invariance
-- 但意义重大：**language和vision从此用同一套计算框架**
+  2D邻域结构（位置关系通过学习得到）、translation invariance
+- 但很重要的是：**vision可以和language共用一套computational framework：transformer**
 
 ### 1.5 Swin Transformer
 
-**ViT的问题**（回顾1.2的伏笔）：
+**ViT的问题**：
 
 ![Why ViT scales badly](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/swin-motivation.png)
 
+为什么ViT没法很好的scale? 有以下原因
 - self-attention复杂度是 $O((HW)^2 C)$，**对图片分辨率二次爆炸**
 - 所有层的token数量不变；而CNN是逐层降分辨率的（省计算、扩receptive field），
   ViT享受不到这个好处
 
 [Swin Transformer](https://arxiv.org/abs/2103.14030)（**S**hifted **Win**dow）
-用三个设计解决，把复杂度降到**线性**：
+Swin Transformer用了三个设计解决，把复杂度降到**线性**：
 
-**① Window attention（解决二次复杂度）**：只在固定大小 $M \times M$ 的
+**① Window attention（解决二次复杂度）**：取代对全图做self-attention, 只在固定大小 $M \times M$ 的
 local window内做self-attention。每个window内是 $O(M^4 C)$，全图
 $O(HW \cdot M^2 C)$。因为M是常数，所以总复杂度是 $O(HWC)$，**对分辨率线性**。
 
@@ -244,8 +274,8 @@ detection/segmentation的下游头：
 
 ![Swin results on ImageNet](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/swin-results.png)
 
-- 比ViT和不少CNN更快更准（还用着更低的输入分辨率），**不需要大数据集预训练**
-- ImageNet-1K到22K的scalability更好
+- 比ViT和不少CNN更快更准（还用着更低的输入分辨率），更有意义的是**不需要大数据集预训练**
+- ImageNet-1K到22K的scalability要更好
 
 **Summary**：Swin把CNN的inductive bias（locality、hierarchy）和Transformer调和到了
 一起；classification / detection / semantic segmentation全面SOTA；线性复杂度；
@@ -253,50 +283,42 @@ detection/segmentation的下游头：
 
 ### 1.6 DETR
 
-Transformer能不能直接做detection？关键观察：**object detection本质是set
+那么Transformer能不能直接做detection任务？ 我们知道**object detection本质是set
 prediction**，我们并不关心bounding box的输出顺序。而Transformer恰好擅长处理
-set。那就直接把detection建模成set prediction！
+set，所以自然可以让transformer来做set prediction任务：
 （[DETR, Carion et al., 2020](https://arxiv.org/abs/2005.12872)）
 
 ![DETR overview](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-overview.png)
 
-- CNN backbone学出2D feature（local feature embeddings）
-- Transformer**并行**预测所有bounding box
-- 训练时用**Hungarian matching**把prediction和ground truth一一对应
-- **不需要NMS**，空类或低置信度的box直接丢掉即可
+Overview像上图所示。
+- CNN backbone 提取 2D feature map，也就是图片每个区域的 local feature embedding，并加上 positional encoding
+- Transformer encoder-decoder 接收这些 feature；decoder 使用一组固定数量的 **learnable object queries**，**并行**地产生固定数量的 object predictions。每个 prediction 同时输出 **class + bounding box**
+- 训练时使用**Hungarian bipartite matching**，在 predictions 和 ground-truth objects 之间寻找一对一的最优匹配，再对匹配结果计算 classification loss 和 bounding-box loss
+- **不需要 NMS**。因为 Hungarian matching + set prediction 训练方式会鼓励模型对一个真实物体只产生一个 prediction。没有匹配到真实物体的 query 被训练成特殊的 **“no-object”** class；推理时将 no-object / 置信度很低的 predictions 丢弃即可
 
 **A closer look**：
 
 ![DETR: a closer look](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-closer-look.png)
 
-- feature拉平、加positional encoding后进Transformer encoder（**self-attention**）
-- 向decoder输入**object queries**（可学习的positional encoding），decoder对
-  encoder输出做**cross-attention**
-- 每个query的输出embedding过共享的FFN，预测一个detection
-  （class logits + 归一化的box坐标）或"no object"类
+- CNN backbone 提取的2D feature经过拉平、加positional encoding后进Transformer encoder（**self-attention**）
+- Transformer decoder 输入固定数量的**learnable object queries**（可学习的positional encoding）， query之间先做self-attention，再通过cross-attention从encoder feature中检索与各自相关的object information
+- 每个query的输出embedding经过共享的classification head和box regression head，预测一个object detection（class + normalized box），或者no-object
 
 ![DETR transformer architecture](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-architecture.png)
 
 架构和[Vaswani et al., 2017](https://arxiv.org/abs/1706.03762)非常接近。
 
-**Loss为什么有问题？** 模型输出的是**无序的set**：N个query各吐出一个预测，
-但没有任何顺序约定，所以我们不知道**哪个预测该和哪个GT box配对**。配对错了，
-loss就会惩罚一个其实预测得不错的query、奖励一个预测得差的，梯度方向全乱。
-因此算loss之前必须先解决assignment问题。
+**但是什么样的Loss才可以学习** 因为模型输出的是**无序的set**，N个query各吐出一个预测，没有任何顺序信息，我们不知道**哪个预测该和哪个ground truth box配对**。配对错了，loss就惩罚一个其实预测得不错的query、奖励一个预测得差的，导致模型学习collapse, 因此算loss之前必须先解决GT和预测的assignment问题。那么我们从之前note2想到了用Hungarian matching的方法。
 
-**为什么用Hungarian matching？** 我们需要的是prediction和GT之间**代价最小的
-一一对应**（cost综合了分类置信度和box的接近程度）。这正是经典的bipartite
-matching问题，Hungarian算法可以在多项式时间内给出最优解，
-在note 2的MOT里我们已经用过它做data association。匹配好之后，
-每对之间正常算分类loss和box loss，没匹配到GT的query学"no object"类。
+**为什么用Hungarian matching呢？** 我们需要的是prediction和GT之间**代价最小的
+一一对应**，loss需要综合分类置信度和box的接近程度。这正是经典的bipartite matching问题，Hungarian算法可以在多项式时间内给出最优解，在note 2的MOT里我们已经用过它做data association。匹配好之后，每对之间正常算分类loss和box loss，没匹配到GT的query学"no object"类。
 
 **完整的loss（Hungarian loss）**：
 
 $$\mathcal{L}_{\text{Hungarian}}(y, \hat{y}) = \sum_{i=1}^{N} \left[ -\log \hat{p}_{\hat{\sigma}(i)}(c_i) + \mathbb{1}_{\{c_i \neq \varnothing\}} \mathcal{L}_{\text{box}}\big(b_i, \hat{b}_{\hat{\sigma}(i)}\big) \right]$$
 
-逐项解释：
 
-- $\hat{\sigma}$：第一步Hungarian matching算出的**optimal assignment**，
+- $\hat{\sigma}$：Hungarian matching算出的**optimal assignment** in the first step，
   $\hat{\sigma}(i)$ 就是分配给第 $i$ 个GT的那个prediction
 - $-\log \hat{p}_{\hat{\sigma}(i)}(c_i)$：**classification loss**，即该prediction
   给真实类别 $c_i$ 的概率取负对数。注意GT集合里补了empty（$\varnothing$，no object），
@@ -312,13 +334,13 @@ $$\mathcal{L}_{\text{box}}\big(b_i, \hat{b}_{\sigma(i)}\big) = \lambda_{\text{io
 - $\mathcal{L}_{\text{iou}}$：generalised IoU项，**关心的是overlap的质量**
 - $\lambda_{\text{iou}}, \lambda_{\text{L1}}$：两个超参，平衡两项
 
-为什么要两个一起用？因为L1单独用有坑：它的**惩罚和IoU脱节**，
+**为什么同时需要L1和GIoU呢？**因为L1单独用有坑：它的**惩罚和IoU脱节**，
 L1相同的预测，IoU可以差很多：
 
 ![L1 loss does not reflect IoU](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-bbox-loss-problem.png)
 
-那直接用IoU做loss呢？也不行，因为**两个box完全不重叠时IoU恒为0**，无论错得多
-离谱梯度都是0（vanishing gradient）。解决：**GIoU**
+**为什么是GIoU而不是用IoU呢？**因为**两个box完全不重叠时IoU恒为0**，无论错得多
+离谱梯度都是0（vanishing gradient）。所以我们需要**GIoU**
 （[Rezatofighi et al., 2019](https://arxiv.org/abs/1902.09630)）：
 
 $$GIoU = IoU - \frac{|C \setminus (A \cup B)|}{|C|}$$
@@ -333,22 +355,22 @@ $$GIoU = IoU - \frac{|C \setminus (A \cup B)|}{|C|}$$
 ![DETR qualitative results](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/detr-qualitative.png)
 
 **Summary**：架构（相对）简单、检测准确、不需要NMS，小改动就能做panoptic
-segmentation。**问题**：计算和显存开销大（尤其显存）、收敛慢训练久，后来的
+segmentation。但是DETR还有以下**问题**：计算和显存开销大（尤其显存）、收敛慢训练久，后来的
 [Deformable DETR](https://arxiv.org/abs/2010.04159)（ICLR 2021）解决了这两点。
 
 ### 1.7 MaskFormer
 
 那么transformer能不能用于semantic和panoptic segmentation？
 
-**先回顾Panoptic FCN**（note 3）：它已经是一个统一semantic和panoptic的模型，
-思路是为每个thing/stuff生成一组**kernel**，拿kernel去和encoded feature做卷积，
+**Recall: Panoptic FCN**（note 3）：Panoptic FCN已经是一个统一semantic和panoptic的模型，
+idea是为每个thing/stuff生成一组**kernel**，拿kernel去和encoded feature做卷积，
 每个kernel"印"出一张mask。MaskFormer从这里得到的idea是：
-**这些kernel何必手工设计生成机制，直接用Transformer的learnable queries算出来**
+**这些kernel不用hand-crafted生成机制，直接用Transformer的learnable queries算出来**
 （[Cheng et al., 2021](https://arxiv.org/abs/2107.06278)）。
 
 ![MaskFormer architecture, and the Panoptic FCN idea it builds on](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/maskformer.png)
 
-架构分三个模块：
+架构有以下三个模块：
 
 1. **Pixel-level module**：backbone提取image features $\mathcal{F}$，
    pixel decoder上采样得到per-pixel embeddings
@@ -368,8 +390,7 @@ classification**：不再像FCN那样对每个pixel做分类（per-pixel classif
 mask接binary mask loss。semantic segmentation的inference只需把class概率和
 mask做矩阵乘、丢掉"no object"即可，所以**一个模型统一了semantic和panoptic**。
 
-**MaskFormer设计上的问题**（课件没讲，这里补上）：它几乎原样继承了DETR的
-训练机制，所以也继承了DETR的毛病：
+**但是MaskFormer还有以下问题**：它几乎原样继承了DETR的训练机制，所以也继承了DETR的毛病：
 
 1. **cross-attention是全局的**：每个query一开始要在整张feature map上"漫游"，
    很久才学会聚焦到自己负责的物体上，所以**收敛慢、训练贵**（300 epochs起步）
@@ -386,14 +407,16 @@ mask做矩阵乘、丢掉"no object"即可，所以**一个模型统一了semant
 | Semantic (mIoU) | 57.0 (BEiT) | 55.6 | **57.7** |
 
 MaskFormer的panoptic和semantic都不错，但instance比专用模型低了整整9个点，
-"统一模型"的说法当时还站不住。
+"transformer统一segmentation任务"的说法当时还站不住。
 
 ### 1.8 Mask2Former
 
-为了解决上面这些问题（聚焦慢、单尺度、训练贵、instance差），
+![Mask2Former architecture: multi-scale features + masked attention](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/mask2former-architecture.png)
+
+为了解决上面这些问题，
 [Mask2Former](https://arxiv.org/abs/2112.01527)对MaskFormer做了三处关键改动：
 
-![Mask2Former architecture: multi-scale features + masked attention](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/mask2former-architecture.png)
+![Masked attention](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/masked-attention.png)
 
 **改动① Masked attention（最核心）**。idea是把cross-attention**约束在当前query
 对应的前景区域内**。对比标准attention：
@@ -408,7 +431,6 @@ $$\boldsymbol{\mathcal{M}}_{l-1}(x, y) = \begin{cases} 0 & \text{if } \mathbf{M}
 （正常参与attention），mask外加 $-\infty$（softmax后权重为0，等于被剪掉）。
 这样query不再全图漫游，只在和自己高度相关的context里取信息，收敛快非常多。
 
-![Masked attention](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/masked-attention.png)
 
 这个设计过程本身有两个问题要解决：一是**第一层还没有mask可用**，
 解决办法是用初始query $\mathbf{X}_0$ 先预测一个粗mask来启动；二是**mask预测
@@ -417,7 +439,7 @@ $$\boldsymbol{\mathcal{M}}_{l-1}(x, y) = \begin{cases} 0 & \text{if } \mathbf{M}
 masked attention之后，让query先从图像取到信息、再互相交流。
 
 **改动② 多尺度特征**。pixel decoder输出多个分辨率的feature，**轮流（round-robin）
-喂给连续的decoder层**，高分辨率层专门救小物体。
+喂给连续的decoder层**，因为将高分辨率传递进去，所以小物体有信息被传递。
 
 **改动③ 训练效率**。mask loss不再在全图上算，而是学note 3里PointRend的思路，
 **只在K个importance-sampled的点上算**，显存降到约1/3。
@@ -430,21 +452,19 @@ things/stuff的区分**，这些概念被queries抽象掉了。
 
 **Mask2Former还有什么问题**：
 
-- 架构统一了，但**每个任务仍要单独训练一个模型**（semantic/instance/panoptic
-  三份权重），后来的OneFormer就是冲着这个来的
+- segmentation不同颗粒度的transformer架构统一了，但**每个任务仍要单独训练一个模型**（semantic/instance/panoptic 三份权重），后来的OneFormer解决了这个问题
 - 小物体虽有改善，仍是短板；显存和算力开销依然不小
 - masked attention依赖mask质量，早期层mask差时会浪费一部分容量
 
 ### 1.9 Conclusions and what came after
 
-**结论**：Transformer先革了NLP的命，然后通过ViT和DETR把
+**结论**：Transformer作为序列式模型，先在NLP方面发挥作用，然后通过ViT和DETR把
 冲击带进了视觉。作为CNN的补充，它在classification、detection、tracking、
-image generation上都达到了SOTA。但要泼一盆冷水：这些成绩往往是用**更大的
+image generation上都达到了SOTA。但这些成绩往往是用**更大的
 算力预算**换来的，GPU更大、训练更久。
 
-**这份课件停在了2021年**，下面把detection、segmentation和tracking这几条
-transformer主线往后补到今天（这部分是我自己整理的，不在课件里；backbone
-预训练和SSL的进展放在第2、3章，这里不重复）。
+**从课件里的经典transformer架构至今**，下面把detection、segmentation和tracking这几条
+transformer主线理清。
 
 **Detection / Segmentation这条线：**
 
@@ -514,16 +534,10 @@ transformer主线往后补到今天（这部分是我自己整理的，不在课
 思路都是把template和search region丢进同一个attention里做关系建模，
 正好是note 2里GOTURN"比较两帧"思想的attention版。
 
-到我写这篇笔记的2026年：检测上，实时赛道基本是RT-DETR/D-FINE/DEIM这条
-DETR系路线和YOLO系并立；跟踪上，**端到端（tracking-by-attention）和
+到我写这篇笔记的2026年：detection task实时赛道基本是RT-DETR/D-FINE/DEIM这条DETR系路线和YOLO系并立；segmentationn task **mask classification已经成为默认范式**，query-based的通用架构（Mask2Former、OneFormer、Mask DINO这条线）取代了per-pixel和per-task的专用模型，问题依然是小物体和细边界、视频分割的时序一致性，以及实时化，因为这套架构至今仍然又大又慢；promptable和open-vocabulary的分割（SAM那条线）依赖大规模预训练，属于后面章节的话题会在后面章节描述。跟踪上，**端到端（tracking-by-attention）和
 tracking-by-detection之争还没有定论**，检测器的强弱仍然主导benchmark，
 长遮挡下offline图方法保持优势。matching的稳定性、小物体、以及开放词汇
-检测（open-vocabulary，和后面章节的预训练话题有关，这里按下不表）
-仍然是open problems。
-回头看整章的主线其实就一句话：**attention把"和谁比较、取什么信息"变成了
-可学习的，然后detection和segmentation都被改写成了set prediction**。
-
-
+检测（open-vocabulary）仍然是open problems。
 
 
 ## 2. Unsupervised (self-supervised) learning

@@ -305,6 +305,14 @@ def updated_date(path, meta, published_iso):
             return u.isoformat()[:10]
         return str(u).strip()
     try:
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--", str(path)],
+            capture_output=True, text=True, cwd=ROOT, timeout=10,
+        ).stdout.strip()
+        if dirty:
+            # Uncommitted edits: the commit that will contain them gets
+            # today's date, so use today to match what CI will compute.
+            return _date.today().isoformat()
         out = subprocess.run(
             ["git", "log", "-1", "--format=%as", "--", str(path)],
             capture_output=True, text=True, cwd=ROOT, timeout=10,
