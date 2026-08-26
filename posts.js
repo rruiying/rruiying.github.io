@@ -334,10 +334,10 @@ const POSTS = [
       "semi-supervised learning"
     ],
     "url": "posts/cv3-modern-approaches.html",
-    "updated": "2026-08-25",
-    "mtime": "2026-08-25T11:20:26+02:00",
-    "words": 11249,
-    "minutes": 40,
+    "updated": "2026-08-26",
+    "mtime": "2026-08-26T08:07:18+02:00",
+    "words": 15917,
+    "minutes": 56,
     "summary": "Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
   },
   {

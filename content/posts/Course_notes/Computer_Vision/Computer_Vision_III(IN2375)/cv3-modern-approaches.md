@@ -497,6 +497,16 @@ image generation上都达到了SOTA。但这些成绩往往是用**更大的
   **逐层细化的分布预测**（不再直接回归坐标），实时精度继续涨
 - **2024–2025，[DEIM](https://arxiv.org/abs/2412.04234)**：matching带来的收敛慢
   问题仍在，DEIM用改进的稠密匹配监督进一步加速收敛（CVPR 2025）
+- **2026（CVPR）**：这条线还在细化。
+  [PaQ-DETR](https://cvpr.thecvf.com/virtual/2026/poster/36846)继续打磨query设计，
+  学一组共享的latent pattern、按图动态生成query，说明"query该长什么样"
+  到2026年仍是open question；
+  [Revisiting Real-Time DETR](https://openaccess.thecvf.com/content/CVPR2026F/papers/Huang_Revisiting_Real-Time_Detection_Transformer_with_Efficient_Encoder_Design_CVPRF_2026_paper.pdf)
+  指出DEIM和D-FINE都在改decoder和训练目标，转头重新设计**encoder**的效率；
+  分割侧的[ViT-P](https://github.com/sajjad-sh33/ViT-P)干脆**不再动预训练的ViT**，
+  用一个免预训练的point-based适配头在frozen backbone上做universal
+  segmentation（ADE20K 54.0 PQ），呼应了"backbone来自第2章的预训练、
+  任务头越来越轻"的大趋势
 
 **Tracking**（回忆[note 2](cv3-object-tracking.html)的分类：**online**只能看当前和过去帧、边看边出
 结果，**offline**拿到整段视频后全局优化）：
@@ -526,6 +536,10 @@ image generation上都达到了SOTA。但这些成绩往往是用**更大的
 - **2024，[MOTIP](https://arxiv.org/abs/2403.16848)**（online）：换个角度，
   把association干脆建模成**ID prediction**，给每个目标直接预测身份编号，
   简化了整个端到端管线
+- **2026（CVPR）**：matching策略仍在演化，比如
+  [ProgTrack](https://cvpr.thecvf.com/virtual/2026/poster/39945)（online）
+  用progressive matching做无人机视角的MOT，小目标加剧烈相机运动的场景
+  依旧是难点
 
 单目标跟踪（SOT）同样被transformer重写，代表作
 [STARK](https://arxiv.org/abs/2103.17154)和
@@ -543,9 +557,7 @@ tracking-by-detection之争还没有定论**，检测器的强弱仍然主导ben
 
 ### 2.1 Motivation: learning without labels
 
-标签很贵：分类标签还好，detection的box、segmentation的per-pixel mask越来越贵，
-而互联网上无标签的图片和视频几乎无限。所以我们想在没有标签的情况下，
-学一个**compact yet descriptive**的representation。
+In traditional standard paradigm, we use supervised learning, give the image or video as input and output a prediction, compare it with annotation. BUT: fine annotation data is very expansive, 而互联网上Real image data without label is everywhere. 所以我们想learning eithout labels. 但是Can we hope to learn anything useful from the unlabelled data?以及什么是一个**useful**的output? 答案是学习**compact yet descriptive**的representation。
 
 **用信息论看这件事**。记数据为 $X$、representation为 $Z$、（未来下游任务的）
 标签为 $Y$，理想的目标是：
@@ -554,14 +566,14 @@ $$\mathcal{L} = I(X; Z) - \beta\, I(Z; Y)$$
 
 - $I(X;Z)$ 要**最小化**：$Z$ 对 $X$ 压缩得越狠越好（compact）
 - $I(Z;Y)$ 要**最大化**：$Z$ 里要保住和 $Y$ 有关的信息（descriptive）
-- Recap互信息：$I(X;Y) = H(X) - H(X \mid Y)$，即观察到 $Y$ 之后
+- Recap互信息(mutual Information)：$I(X;Y) = H(X) - H(X \mid Y)$，即观察到 $Y$ 之后
   $X$ 的熵少了多少bit；$H(X \mid Y)$ 是知道 $Y$ 后 $X$ 剩下的熵
 
 最优的 $Z^*$ 叫**minimal sufficient statistic**：刚好够用、一点不多。
 
 ![SSL through the lens of information theory](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/ssl-information-theory.png)
 
-**Quiz: $X$ 是{猫, 狗, 鹦鹉, 鸡}的图片，$Y$ 是类别标签，$Z$ = 腿的数量，
+**Quiz: $X$ 是{Cat, Dog, Parrot, Chicken}的图片，$Y$ 是类别标签，$Z$ = 腿的数量，
 这个representation怎么样？**
 
 压缩性极好（一张图压成一个数字），但是压过头了：猫和狗都是4条腿、
@@ -577,9 +589,9 @@ $$\mathcal{L} = I(X; Z) - \beta\, I(Z; Y)$$
 linear probe就能分类。这就是SSL的价值主张：**representation学好了，
 下游只需要很少的标签**。
 
-怎么在没标签时定义训练目标？**Goal: 设计一个和目标任务有某种关联的
+新的问题是怎么在没标签时定义训练目标？**Goal: 设计一个和目标任务有某种关联的
 training objective**，希望模型在它上面训练时顺便学到对目标任务有用的东西。
-按此课程分成三类：**pretext tasks**、**contrastive learning**、
+我们把unsupervised learning的goal分成三类：**pretext tasks**、**contrastive learning**、
 **non-contrastive learning**。
 
 ### 2.2 Pretext tasks
@@ -705,7 +717,7 @@ $$s(x) = \frac{e^{d(x, y^+)/\tau}}{e^{d(x, y^+)/\tau} + \sum_{i=1}^{n} e^{d(x, y
 
 ![Three contrastive mechanisms](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/moco-mechanisms.png)
 
-- **end-to-end**（SimCLR式）：两个encoder都反向传播，negatives只能来自
+- **end-to-end**：两个encoder都反向传播，negatives只能来自
   当前batch，显存和batch绑死
 - **memory bank**：把历史特征存起来采样当negatives，省显存，但bank里的
   特征是很久以前的旧encoder算的，和当前特征**不一致**
@@ -917,43 +929,372 @@ context路径，相当于强化common fate（单条路径记不住了，只能�
 
 ![Dense tracking with CRW features](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/crw-tracking.png)
 
-### 2.7 Additional reading
+### 2.7 Conclusion and what came after
 
-*(…)*
+**课程给的结论**（润色版）：unsupervised learning已经主导了研究版图，
+我们能用更少的监督训出更准的模型。但代价是**巨大的计算资源**（几十块
+高端GPU起步），而且**对数据量的scaling并不理想**（性能会饱和）。
+open questions：什么才是好的proxy task？计算开销怎么降下来？
+以及最根本的：它**为什么**work？
+
+课件的additional reading里还有两篇正文没展开的：
+[LOCA](https://arxiv.org/abs/2212.02400)（location-aware的自监督，
+专门为semantic segmentation设计proxy task）和
+[Dense Unsupervised Learning for Video Segmentation](https://arxiv.org/abs/2111.06265)
+（Araslanov et al.，无监督的视频分割）。
+
+**课件之后的SSL主线**（补到今天，不在课件里；和第1章的时间线一样，
+按"解决了什么、又留下什么"来串）：
+
+- **2020，[BYOL](https://arxiv.org/abs/2006.07733)**：第一个证明
+  **完全不要negatives也不collapse**的方法（online predictor + EMA teacher），
+  non-contrastive这条线的起点，DINO是它的直接后继
+- **2021，[CLIP](https://arxiv.org/abs/2103.00020)**：另一条路线登场。
+  不用人工标签，但用**网络上免费的图文配对**做弱监督，4亿对图文训出
+  zero-shot分类。从此视觉预训练分成两大阵营：**纯视觉SSL**和**语言监督**
+- **2021，[iBOT](https://arxiv.org/abs/2111.07832)**：把DINO的distillation和
+  MAE式的**masked prediction合流**（在线tokenizer上做patch级BERT），
+  这套配方后来被DINOv2直接继承
+- **2022，[data2vec](https://arxiv.org/abs/2202.03555)**：同一个目标函数
+  通吃语音、视觉、语言，预测的是**latent representation而不是像素**，
+  预示了下一步的方向
+- **2023，[I-JEPA](https://arxiv.org/abs/2301.08243)**：LeCun的JEPA路线。
+  MAE重建像素会把容量浪费在纹理细节上，I-JEPA改成**在表示空间里预测**
+  被mask区域的特征，不需要augmentation定义的不变性，也不碰像素
+- **2023，[SigLIP](https://arxiv.org/abs/2303.15343)**：把CLIP的softmax对比
+  loss换成**sigmoid**，不再需要全局batch归一化，语言监督的scaling变便宜。
+  [SigLIP 2](https://arxiv.org/abs/2502.14786)（2025）继续加码
+- **2024，[AIM](https://arxiv.org/abs/2401.08541)**：把LLM的**自回归**
+  预训练搬到图像上，展示视觉也有类似语言的scaling law
+- **2024，[V-JEPA](https://arxiv.org/abs/2404.08471)**：JEPA上视频，
+  从视频里学feature prediction
+- **2024，[AM-RADIO](https://arxiv.org/abs/2312.06709)**：既然CLIP、DINOv2、
+  SAM各有所长，那就**把多个teacher蒸馏进一个backbone**（agglomerative
+  distillation），工程上非常实用的路线
+- **2025，[Web-SSL](https://arxiv.org/abs/2504.01017)**：把**language-free**
+  的SSL规模化到几十亿图片，证明纯视觉SSL在VQA等任务上能追平CLIP系，
+  "视觉预训练必须靠语言"的说法被动摇
+- **2025，[DINOv3](https://arxiv.org/abs/2508.10104)**（2.4已讲）：
+  纯SSL在dense任务的frozen特征上全面领先，语言监督模型反而做不到
+- **2025，[V-JEPA 2](https://arxiv.org/abs/2506.09985)**：视频SSL学出的
+  world model直接支持**理解、预测和规划**，zero-shot迁移到真实机器人的
+  操作任务。SSL从"学特征"走向"学世界模型"，正好接到第4章的outlook
+- **2026（CVPR）**：两个新方向。一是**跨模态对齐**：
+  [A Mixed Diet Makes DINO an Omnivorous Vision Encoder](https://arxiv.org/abs/2602.24181)
+  发现DINOv2的特征在模态之间没对齐（同一场景的RGB和depth图，特征的
+  cosine相似度跟两张无关图片差不多），用post-training加蒸馏锚定把encoder
+  变成"杂食"的；二是**空间预训练**：
+  [E-RayZer](https://cvpr.thecvf.com/virtual/2026/poster/38569)把
+  **自监督3D重建本身当成proxy task**，让预训练直接长出空间理解，
+  SSL和spatial AI在这里正式合流（第4章见）
+
+到2026年：dense视觉任务上**纯SSL（DINOv3系）领先**，
+多模态应用里**语言监督（SigLIP系）是默认**，工程落地常用**蒸馏聚合
+（RADIO系）**各取所长；2026年主会的关键词是**跨模态对齐**和**空间预训练**，
+视频和world model成为SSL的主战场。课件conclusion
+里的三个open question（好的proxy task、计算开销、为什么work）至今没有
+一个被真正解决。
 
 ## 3. Semi-supervised learning
 
-### 3.1 The semi-supervised loss
+### 3.1 Setting: limited supervision
 
-*(…)*
+第2章的SSL完全不用标签，但现实里我们通常**有一点标签**：真实数据里有一小块
+fine annotation（贵）、一块coarse annotation（比如只有image-level标签）、
+大量完全无标签的数据（其中很多是视频）；另外还有**synthetic data**，
+标签几乎免费但外观和真实数据有差距：
+
+![Limited supervision: what data we actually have](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/semi-limited-supervision.png)
+
+**Semi-supervised learning就是同时在labelled和unlabelled数据上训练**。
+General remarks：
+
+- 这是**最实用**的场景。想要最高的accuracy，semi-supervised就是正路，
+  当前SOTA的框架基本都这么做（而不是纯监督）
+- Small print：提升**不保证**（取决于模型、技术和无标签数据本身）；
+  各种semi-supervised技术往往**互补**，组合起来效果最好（但框架更复杂）
+
+**Loss的一般形式**。记labelled数据 $\{(x_i, y_i)\}_i$、unlabelled数据
+$\{\hat{x}_i\}_i$：
+
+$$\mathcal{L} = \sum_i \mathcal{L}_{\text{supervised}}(x_i, y_i) + \lambda \sum_i \mathcal{L}_{\text{unsupervised}}(\hat{x}_i)$$
+
+监督项照常，整个领域的问题就是**无标签的那一项怎么设计**。
 
 ### 3.2 Three assumptions
 
-*(smoothness, low-density, manifold …)*
+无标签数据能帮上忙，靠的是对数据分布的假设
+（[van Engelen & Hoos, 2020](https://link.springer.com/article/10.1007/s10994-019-05855-6)）：
+
+1. **Smoothness assumption**：两个输入点离得近，标签就应该相同。
+   而且有**传递性**：labelled的 $x_1$ 挨着unlabelled的 $x_2$，$x_2$ 挨着
+   $x_3$，即使 $x_1$ 和 $x_3$ 不挨着，我们仍然预期 $x_3$ 和 $x_1$ 同标签。
+   因为传递性，标签可以沿着无标签数据"传播"出去
+2. **Low-density assumption**：决策边界应该穿过 $p(x)$ **低密度**的区域。
+   看图：只用有标签的几个点（+和▽），监督算法画出的边界会从数据团中间
+   穿过；无标签数据把两团的形状显出来之后，最优边界应该走两团之间的空隙：
+
+![Low-density assumption](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/semi-low-density.png)
+
+3. **Manifold assumption**：数据来自多个**低维流形**，同一个流形上的点
+   共享标签。两个环的例子：欧氏距离上很近的两个点可能属于不同的环，
+   流形结构比距离更可靠：
+
+![Manifold assumption](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/semi-manifold.png)
+
+**Remark**：选哪个假设，取决于我们对数据分布 $p(x)$ 和类别后验
+$p(y \mid x)$ 之间关系的了解。
 
 ### 3.3 Two taxonomies
 
-*(…)*
+领域按两个维度分类：
 
-### 3.4 Unsupervised preprocessing
+![Two taxonomies for semi-supervised learning](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/semi-taxonomies.png)
 
-*(…)*
+**按无标签数据怎么用**：
+
+1. **Unsupervised pre-processing**：预训练、聚类等
+2. **Wrapper methods**：self-training
+3. **Intrinsically semi-supervised**：entropy minimisation、
+   virtual adversarial networks
+4. 另算一类的**learning from synthetic data**：domain alignment、
+   consistency regularisation
+
+**按最终目标**：
+
+- **Inductive（归纳）**：给labelled + unlabelled数据，产出一个**分类器**，
+  对任何新输入都能用
+- **Transductive（直推）**：只要求给这批unlabelled数据**打上标签**，
+  不要求泛化到新数据
+
+### 3.4 Unsupervised pre-processing
+
+其实第2章已经讲完了：两个阶段，**unsupervised**阶段做特征学习
+（DINO、MAE），**supervised**阶段用少量标签做fine-tuning、linear probing
+或k-NN。这正是"好的representation只需要很少标签"那张理想图景的落地。
 
 ### 3.5 Self-training
 
-*(OnAVOS; SAM, SAM 2, SAM 3; self-training with pseudo-labels …)*
+**两步：training和pseudo-labelling（伪标签）**。用当前模型给无标签数据
+打标签，挑出**置信度高**的预测当作标签（pseudo-label），和真标签混在一起
+继续训练**同一个**分类器，循环往复。
 
-### 3.6 Intrinsically semi-supervised methods
+其实我们也已经见过它：[note 3](cv3-image-segmentation.html)的**OnAVOS**。
+online adaptation就是self-training：每一帧上，把当前模型的高置信度预测
+当伪标签（红色前景、蓝色背景），加进训练样本池，实时fine-tune模型来适应
+物体的外观变化：
 
-*(entropy minimisation, virtual adversarial training …)*
+![OnAVOS: predictions become pseudo-labels](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/onavos-adaptation.png)
+
+效果（adaptation前后对比）：
+
+![OnAVOS qualitative results](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/onavos-qualitative.png)
+
+把OnAVOS的图**一般化**：把"Frame 1"换成任意labelled data、"new frame"
+换成任意unlabelled data，这个循环对**任何模型、任何任务**都成立：
+
+![The general self-training loop](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/self-training-loop.png)
+
+**SAM**（[Kirillov et al., 2023](https://arxiv.org/abs/2304.02643)）：
+SOTA的分割模型就是靠self-training堆出来的。SAM是**promptable segmentation**：
+image encoder算出embedding，prompt encoder接受点、框、文本等提示，
+mask decoder输出若干个带置信度的valid mask：
+
+![Segment Anything](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/sam.png)
+
+训练数据1120万张图、11亿个mask，而**其中99.1%是模型自己标的**。
+data engine分三个阶段：
+
+1. **Assisted-manual**：专业标注员在模型辅助下标mask，模型重训6次，
+   得430万mask（12万图）
+2. **Semi-automatic**：模型先把有信心的mask填上，标注员只补漏，
+   重训5次，再得590万mask（共1020万人工mask）
+3. **Fully-automatic**：模型对每张新图预测一组mask、估计置信度、
+   直接当新标签，得到SA-1B数据集（11亿mask）
+
+这就是self-training的工业级形态：**模型和数据引擎互相喂养**。
+
+**SAM 2**（[Ravi et al., 2024](https://arxiv.org/abs/2408.00714)）：扩展到
+**视频**。prompt可以打在任意一帧或多帧上（点、框、mask），模型输出整段
+视频的object segmentation。架构上加了**memory bank**和**memory attention**
+（存最近帧和prompt的特征，FIFO队列 + object pointers），当前帧的特征先和
+记忆做attention再解码mask。数据引擎同样是annotate和train的循环，
+产出SA-V数据集（64.26万masklet、3550万mask、5.09万视频）：
+
+![SAM 2: extension to videos with a memory bank](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/sam2.png)
+
+**SAM 3**（[Carion et al., 2025](https://arxiv.org/abs/2511.16719)）：
+从"分割任何东西"到"分割任何**概念**"：用名词短语prompt（比如"条纹猫"），
+把图和视频里**所有**该概念的实例都分出来。数据规模再上一级：400万个
+unique phrase、5200万真实mask，外加3800万phrase、14亿mask的合成数据。
+data engine引入了**MLLM当"AI标注员"和"AI校验员"**（生成短语和hard
+negatives、双重校验标注质量，吞吐接近人类水平）：
+
+![SAM 3: segment anything with concepts](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/sam3.png)
+
+self-training这条线到SAM 3已经完全闭环：**人只出最初的种子标注和质检，
+数据引擎自己滚雪球**。
+
+### 3.6 Intrinsically semi-supervised
+
+不做两阶段、不打伪标签，把无标签数据**直接放进loss**。
+
+**Entropy minimisation**：让模型在无标签数据上的预测分布**熵最小化**
+（预测要么很确定是A、要么很确定是B，不要骑墙）。效果等于把决策边界
+从样本密集的地方推开，是low-density assumption的最直接实现。
+
+**Virtual adversarial networks**
+（[Miyato et al., 2018](https://arxiv.org/abs/1704.03976)）：idea是
+**输入的小扰动不应该改变标签**。先看监督情形，最小化
+
+$$D\big[\,q(y \mid x_*),\; p(y \mid x_* + r_{\text{adv}}, \theta)\,\big], \qquad r_{\text{adv}} := \underset{r;\,\|r\| \le \epsilon}{\arg\max}\; D\big[\,q(y \mid x_*),\; p(y \mid x_* + r, \theta)\,\big]$$
+
+逐项解释：$q(y \mid x_*)$ 是真实后验（ground-truth标签）；$r_{\text{adv}}$ 是
+**最能改变预测的对抗扰动**（在半径 $\epsilon$ 内找让KL散度最大的方向，
+这一步里模型参数固定）；外层再优化 $\theta$ 让扰动后的预测仍然贴近真实
+标签。**半监督情形**只改一处：无标签数据没有 $q(y \mid x_*)$，就用模型
+**当前的估计** $p(y \mid x_*, \hat{\theta})$ 代替它。
+
+**Quiz: 这里用的是哪个assumption？**
+
+Smoothness：$x_*$ 和 $x_* + r$ 离得近，所以标签（预测分布）应该一样。
 
 ### 3.7 Learning from synthetic data
 
-*(domain alignment …)*
+labelled和unlabelled数据可能来自**不同的分布**，最典型的就是合成数据：
+标签几乎免费（游戏引擎渲染，每个像素的语义都是已知的），但外观和真实
+世界有**domain gap**：
+
+![The domain gap](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/domain-gap.png)
+
+经典例子是拿GTA的画面训练自动驾驶的语义分割
+（[Richter et al., 2016](https://arxiv.org/abs/1608.02192)，Playing for Data）。
+可以把它看成semi-supervised的特例：labelled = synthetic，
+unlabelled = real。这个setting叫**Unsupervised Domain Adaptation（UDA）**：
+训练时用有标签的合成数据加无标签的真实数据，测试时模型要在真实数据上
+输出好的预测：
+
+![Unsupervised domain adaptation](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/uda.png)
+
+**Domain alignment**。直接只用合成数据训练会发生什么？两个domain的特征
+分布是**割裂**的：模型在合成特征上画好了cat/dog的边界，真实数据的特征
+落在完全另一片区域，全部误分类：
+
+![Disjoint feature distributions](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/domain-alignment-problem.png)
+
+解决办法是**把两个特征分布对齐（align）**，让它们不可区分。可以用GAN：
+一个**discriminator**学着判断一个特征来自哪个domain（合成还是真实），
+主模型同时学两件事，一是把labelled数据分类对，二是学出一种
+**让discriminator分不出来源**的特征表示。discriminator分不出来的时候，
+两个domain的特征就混到一起了，合成数据上学的分类边界对真实数据也适用：
+
+![Domain alignment with a discriminator](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/domain-alignment-gan.png)
 
 ### 3.8 Consistency regularisation
 
-*(…)*
+UDA也可以完全用self-training做，例子是
+[Araslanov & Roth, 2021](https://arxiv.org/abs/2105.00097)的
+self-supervised augmentation consistency框架：
+
+![Self-training UDA with augmentation consistency](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/sac-framework.png)
+
+- 又见EMA：一个**momentum net**（segmentation net的滑动平均，DINO/MoCo的
+  老朋友）负责产伪标签
+- momentum net看的是**干净的multi-scale crops和flips**，多尺度预测融合
+  （相当于把test-time augmentation搬到训练时在线做）之后生成pseudo-labels：
+
+![Momentum net: test-time augmentation at training time](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/momentum-net-tta.png)
+
+- student（segmentation net）看的是**加了photometric noise的同一张图**，
+  用momentum net的伪标签算target loss
+- 这就是**consistency regularisation**：同一张图的不同增强版本，预测必须
+  一致。慢速的teacher提供稳定目标，快速的student在扰动下向它对齐，
+  模型逐渐把合成数据学到的知识迁移到真实domain
+
+和3.2呼应：consistency regularisation本质上还是smoothness assumption
+（增强不改变语义，预测就不该变）。
+
+## 4. Outlook: from SSL to spatial intelligence
+
+课程最后跳出技术细节，聊了聊这一切通向哪里。
+
+**数据瓶颈**。Ilya Sutskever在NeurIPS 2024说"pre-training as we know it
+will end"：算力还在涨（更好的硬件、算法、更大的集群），但**数据不涨了**，
+互联网只有一个，它是"AI的化石燃料"。出路有二：一是**新的训练范式**和更细
+粒度、更高质量的数据；二是互联网数据只是冰山一角，水面下是来自万亿传感器
+的**真实物理世界的"dark data"**：
+
+![The data bottleneck and the real-world data iceberg](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/data-bottleneck.png)
+
+这正好回扣本章：SSL和semi-supervised就是"不靠人工标注消化海量数据"的
+技术储备。
+
+**生成模型还不懂几何**。一个有意思的检验
+（[Sarkar et al., 2024](https://arxiv.org/abs/2311.17138)，
+*Shadows Don't Lie and Lines Can't Bend!*）：看起来照片级真实的生成图像，
+影子的方向互相矛盾、直线消失点不汇聚，也就是说模型学会了纹理和风格，
+**还没学会projective geometry**：
+
+![Generative models don't know projective geometry](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/shadows-dont-lie.png)
+
+**Spatial intelligence是下一个前沿**。Fei-Fei Li在
+[From Words to Worlds](https://drfeifei.substack.com/p/from-words-to-worlds-spatial-intelligence)
+里的判断：MLLM在估计距离、朝向、大小上勉强好于瞎猜，不会走迷宫、不会
+预测基本物理，AI生成的视频几秒后就失去连贯性。她的结论是**没有spatial
+intelligence，真正智能的机器就不完整**。学界也在把2D理解推向3D认知，
+world model的survey把这个领域拆成3D表示（NeRF、3DGS、点云、occupancy）
+加世界知识两大支柱，往上长出场景生成、空间推理、空间交互三种能力，
+应用落在Embodied AI、自动驾驶、数字孪生：
+
+![From 2D to 3D cognition: world models](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/spatial-ai-survey.png)
+
+**从SSL到spatial AI：研究主线**（课件之外，我把这条路补到2026）：
+
+- **2020，[NeRF](https://arxiv.org/abs/2003.08934)**：用一个神经网络隐式地
+  表示3D场景，photorealistic的novel view synthesis。3D表示的第一次革命，
+  但训练和渲染都慢
+- **2023，[3D Gaussian Splatting](https://arxiv.org/abs/2308.04079)**：
+  用显式的高斯点云替代隐式field，**实时渲染**，第二次革命。NeRF和3DGS
+  就是world model survey里"3D representation"支柱的两大主角
+- **2023，[DreamerV3](https://arxiv.org/abs/2301.04104)**：world model路线的
+  里程碑，agent在**学出来的latent世界模型里"想象"训练**，第一个从零采钻石
+  （Minecraft）的通用算法
+- **2024，[DUSt3R](https://arxiv.org/abs/2312.14132)**：3D重建不再需要标定
+  和已知位姿，两张图直接回归pointmap，geometry foundation model的开端；
+  同年[Depth Anything](https://arxiv.org/abs/2401.10891)用大规模**无标签**
+  数据（第2、3章的精神）蒸馏出通用深度估计
+- **2024，[Genie](https://arxiv.org/abs/2402.15391)**：从无标签游戏视频学出
+  **可交互的生成环境**，连"action"都是自监督学出来的latent action
+- **2025，[VGGT](https://arxiv.org/abs/2503.11651)**：一个纯前馈transformer
+  同时输出相机位姿、深度、点图和轨迹，CVPR 2025 best paper。第1章的故事
+  重演：**transformer把3D几何任务也改写成了一次前向传播**
+- **2025，Physical AI平台化**：[Cosmos](https://arxiv.org/abs/2501.03575)
+  做"world foundation model平台"，用生成的物理世界视频当机器人和自动驾驶
+  的**合成数据引擎**（第3章learning from synthetic data的工业级形态）；
+  [π0](https://arxiv.org/abs/2410.24164)这类VLA模型把视觉语言预训练接上
+  机器人action；V-JEPA 2（2.7）用视频SSL直接做规划
+- **2025下半年到2026，世界模型军备竞赛**：DeepMind的
+  [Genie 3](https://deepmind.google/discover/blog/genie-3-a-new-frontier-for-world-models/)
+  实时（24fps）生成可交互的世界、有分钟级的一致性；Fei-Fei Li的World Labs
+  发布[Marble](https://marble.worldlabs.ai)，从文本或图片生成可行走、
+  可编辑、可导出的3D世界并商用；LeCun离开Meta创办AMI Labs拿了
+  **10亿美元级的种子轮**专做world models。行业在用钱投票
+- **2026（CVPR）**：E-RayZer（2.7提过）把自监督3D重建做成**空间预训练**
+  本身。第2章的SSL和这一章的spatial AI，在这里正式汇成一条河
+
+**Embodiment**。从Descartes的身心二元论，到心理学的embodied cognition
+（运动和语言、记忆的关联），再到今天CV/AI研究者（LeCun、Malik）押注的
+[Embodied AI](https://arxiv.org/abs/2506.22355)：感知、世界模型、行动构成
+闭环，智能在和物理世界的交互里长出来：
+
+![Embodiment: perception, world models, action](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note4/embodiment.png)
+
+课件的收束句：这些自监督、半监督的技术**从来不是最终目标**，它们是让
+learning和searching更快的手段。而按照Sutton的
+[Bitter Lesson](http://www.incompleteideas.net/IncIdeas/BitterLesson.html)，
+70年AI研究最大的教训就是：**能随算力scale的通用方法（search和learning）
+最终总是赢**。SSL让learning摆脱了标注的束缚，能吃下真实世界的海量数据，
+这就是它在这条主线上的位置。
 
 ## References
 
@@ -994,5 +1335,26 @@ context路径，相当于强化common fate（单条路径记不住了，只能�
 
 - Kirillov et al. [Segment Anything (SAM)](https://arxiv.org/abs/2304.02643). ICCV 2023.
 - Ravi et al. [SAM 2: Segment Anything in Images and Videos](https://arxiv.org/abs/2408.00714). arXiv 2024.
+- Carion et al. [SAM 3: Segment Anything with Concepts](https://arxiv.org/abs/2511.16719). arXiv 2025.
 - Miyato et al. [Virtual Adversarial Training](https://arxiv.org/abs/1704.03976). TPAMI 2018.
 - van Engelen & Hoos. [A Survey on Semi-Supervised Learning](https://link.springer.com/article/10.1007/s10994-019-05855-6). Machine Learning 2020.
+- Voigtlaender & Leibe. [Online Adaptation of Convolutional Neural Networks for VOS (OnAVOS)](https://arxiv.org/abs/1706.09364). BMVC 2017.
+- Richter et al. [Playing for Data: Ground Truth from Computer Games](https://arxiv.org/abs/1608.02192). ECCV 2016.
+- Araslanov & Roth. [Self-Supervised Augmentation Consistency for Adapting Semantic Segmentation](https://arxiv.org/abs/2105.00097). CVPR 2021.
+
+**Outlook**
+
+- Sarkar et al. [Shadows Don't Lie and Lines Can't Bend! Generative Models Don't Know Projective Geometry](https://arxiv.org/abs/2311.17138). CVPR 2024.
+- Fei-Fei Li. [From Words to Worlds: Spatial Intelligence is AI's Next Frontier](https://drfeifei.substack.com/p/from-words-to-worlds-spatial-intelligence). 2025.
+- [Embodied AI Agents: Modeling the World](https://arxiv.org/abs/2506.22355). 2025.
+- Sutton. [The Bitter Lesson](http://www.incompleteideas.net/IncIdeas/BitterLesson.html). 2019.
+- Mildenhall et al. [NeRF: Representing Scenes as Neural Radiance Fields](https://arxiv.org/abs/2003.08934). ECCV 2020.
+- Kerbl et al. [3D Gaussian Splatting for Real-Time Radiance Field Rendering](https://arxiv.org/abs/2308.04079). SIGGRAPH 2023.
+- Hafner et al. [Mastering Diverse Domains through World Models (DreamerV3)](https://arxiv.org/abs/2301.04104). 2023.
+- Wang et al. [DUSt3R: Geometric 3D Vision Made Easy](https://arxiv.org/abs/2312.14132). CVPR 2024.
+- Yang et al. [Depth Anything](https://arxiv.org/abs/2401.10891). CVPR 2024.
+- Bruce et al. [Genie: Generative Interactive Environments](https://arxiv.org/abs/2402.15391). ICML 2024.
+- Wang et al. [VGGT: Visual Geometry Grounded Transformer](https://arxiv.org/abs/2503.11651). CVPR 2025 (best paper).
+- NVIDIA. [Cosmos World Foundation Model Platform for Physical AI](https://arxiv.org/abs/2501.03575). 2025.
+- Black et al. [π0: A Vision-Language-Action Flow Model](https://arxiv.org/abs/2410.24164). 2024.
+- Kabra et al. [A Mixed Diet Makes DINO an Omnivorous Vision Encoder](https://arxiv.org/abs/2602.24181). CVPR 2026.
