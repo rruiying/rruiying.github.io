@@ -4,6 +4,8 @@ date: 2026-08-23
 tags: [Deep learning, Computer Vision, TUM, transformers, self-supervised learning, semi-supervised learning]
 summary: Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation.
 ---
+> 本文笔记中英混杂，因为期末考试纯英文方便记忆，解释部分用中文方便理解
+
 This note covers the last three lectures.
 
 First we introduce **transformers** by extending the idea from correlation layer we met in video object segmentation already compares features against features, which is

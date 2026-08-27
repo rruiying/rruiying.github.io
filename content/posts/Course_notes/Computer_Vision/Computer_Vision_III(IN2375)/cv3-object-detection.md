@@ -4,9 +4,7 @@ date: 2026-08-20
 tags: [Deep learning, Computer Vision, TUM, object detection]
 summary: First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated.
 ---
-> 本文笔记中英混杂，纯英文阅读可使用浏览器自带的翻译功能。
-> *These notes mix Chinese and English — your browser's built-in translation
-> works well if you prefer pure English.*
+> 本文笔记中英混杂，因为期末考试纯英文方便记忆，解释部分用中文方便理解
 
 These notes deviate from the order of the lecture slides and start from the
 motivation instead. We first look at **how detection is evaluated**, then follow

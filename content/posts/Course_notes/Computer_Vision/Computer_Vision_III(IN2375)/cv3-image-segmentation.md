@@ -4,6 +4,8 @@ date: 2026-08-23
 tags: [Deep learning, Computer Vision, TUM, segmentation, video object segmentation]
 summary: Third notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval.
 ---
+> 本文笔记中英混杂，因为期末考试纯英文方便记忆，解释部分用中文方便理解
+
 We again build up from classical methods to deep learning. Segmentation begins
 as a grouping problem: **superpixels** and **clustering** — k-means, spectral
 clustering, mean shift — leading to **normalized cuts**, and then to
