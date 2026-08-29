@@ -143,9 +143,9 @@ const POSTS = [
       "GAMES102"
     ],
     "url": "posts/games102.html",
-    "updated": "2026-08-24",
-    "mtime": "2026-08-24T16:39:11+02:00",
-    "words": 3,
+    "updated": "2026-08-29",
+    "mtime": "2026-08-29T13:07:50+02:00",
+    "words": 69,
     "minutes": 1,
     "summary": "Notes for GAMES102 (Geometric Modeling and Processing)."
   },
@@ -314,7 +314,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-image-segmentation.html",
     "updated": "2026-08-27",
-    "mtime": "2026-08-27T08:18:32+02:00",
+    "mtime": "2026-08-27T10:42:10+02:00",
     "words": 473,
     "minutes": 3,
     "summary": "Third notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval."
@@ -335,7 +335,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-modern-approaches.html",
     "updated": "2026-08-27",
-    "mtime": "2026-08-27T08:18:32+02:00",
+    "mtime": "2026-08-27T10:42:10+02:00",
     "words": 15949,
     "minutes": 56,
     "summary": "Fourth notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — transformers from attention to ViT, Swin, DETR and Mask2Former; self-supervised learning from pretext tasks through contrastive (SimCLR, MoCo) and non-contrastive methods (DINO, MAE) with their downstream applications; and semi-supervised learning from its core assumptions to self-training, SAM, and consistency regularisation."
@@ -355,7 +355,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-object-tracking.html",
     "updated": "2026-08-27",
-    "mtime": "2026-08-27T08:18:32+02:00",
+    "mtime": "2026-08-27T10:42:10+02:00",
     "words": 807,
     "minutes": 4,
     "summary": "Second notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated."
@@ -373,10 +373,10 @@ const POSTS = [
       "object detection"
     ],
     "url": "posts/cv3-object-detection.html",
-    "updated": "2026-08-27",
-    "mtime": "2026-08-27T08:18:32+02:00",
-    "words": 1918,
-    "minutes": 8,
+    "updated": "2026-08-29",
+    "mtime": "2026-08-29T13:07:51+02:00",
+    "words": 8176,
+    "minutes": 29,
     "summary": "First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."
   }
 ];

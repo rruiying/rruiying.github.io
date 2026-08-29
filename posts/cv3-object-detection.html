@@ -43,7 +43,7 @@
                 <li class="toc-h3"><a href="#24-average-precision-ap">2.4 Average precision (AP)</a></li>
                 <li class="toc-h3"><a href="#25-computing-average-precision">2.5 Computing average precision</a></li>
                 <li class="toc-h3"><a href="#26-ap-flavours-and-map">2.6 AP flavours and mAP</a></li>
-                <li class="toc-h2"><a href="#3-classical-single-stage-detection">3. Classical single-stage detection</a></li>
+                <li class="toc-h2"><a href="#3-classical-one-stage-detection">3. Classical one-stage detection</a></li>
                 <li class="toc-h3"><a href="#31-template-matching">3.1 Template matching</a></li>
                 <li class="toc-h3"><a href="#32-feature-based-detection-violajones">3.2 Feature-based detection: Viola–Jones</a></li>
                 <li class="toc-h3"><a href="#33-hog-features-and-sliding-windows">3.3 HOG features and sliding windows</a></li>
@@ -57,6 +57,7 @@
                 <li class="toc-h3"><a href="#62-sppnet">6.2 SPPNet</a></li>
                 <li class="toc-h3"><a href="#63-fast-r-cnn">6.3 Fast R-CNN</a></li>
                 <li class="toc-h3"><a href="#64-rpn-and-faster-r-cnn">6.4 RPN and Faster R-CNN</a></li>
+                <li class="toc-h3"><a href="#65-addressing-scale-variance-fpn">6.5 Addressing scale variance: FPN</a></li>
                 <li class="toc-h2"><a href="#7-modern-one-stage-detectors">7. Modern one-stage detectors</a></li>
                 <li class="toc-h3"><a href="#71-yolo">7.1 YOLO</a></li>
                 <li class="toc-h3"><a href="#72-ssd">7.2 SSD</a></li>
@@ -65,6 +66,7 @@
                 <li class="toc-h3"><a href="#81-keypoint-based-detection-cornernet-centernet">8.1 Keypoint-based detection: CornerNet, CenterNet</a></li>
                 <li class="toc-h3"><a href="#82-sequential-detection">8.2 Sequential detection</a></li>
                 <li class="toc-h2"><a href="#9-spatial-transformers">9. Spatial transformers</a></li>
+                <li class="toc-h2"><a href="#10-the-big-picture">10. The big picture</a></li>
                 <li class="toc-h2"><a href="#references">References</a></li>
                 </ul>
             </nav>
@@ -76,9 +78,9 @@
             <h1>Computer Vision III (IN2375) — Notes 1: Object Detection</h1>
             <div class="post-meta">
                 <span>Published 20 August 2026</span> ·
-                <span>Updated 27 August 2026</span> ·
+                <span>Updated 29 August 2026</span> ·
                 <span class="post-category">Course notes › Computer Vision › Computer Vision III (IN2375)</span> ·
-                <span>1,918 words · 8 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>8,176 words · 29 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
@@ -104,15 +106,34 @@ networks.</p>
 <figure><img alt="MIT Project MAC, 1963 (CSAIL)" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/CSAIL.png" loading="lazy" decoding="async" width="640" height="388"><figcaption>MIT Project MAC, 1963 (CSAIL)</figcaption></figure>
 <p>本课关注的是RGB image和RGB video在<strong>不同颗粒度下的semantic understanding</strong>，
 属于high-level computer vision：从整张图只给一个label的classification，到本课的
-detection、segmentation、tracking，对图像的理解越来越细。在object detection这一层，
-我们用bounding box这种coarse的description来localize object。</p>
+detection、segmentation、tracking，在颗粒度Granularity上对图像的理解越来越细。在object detection这一层，我们用bounding box这种coarse的description来localize object.</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>How many parameters define a bounding box?</p>
+<p>4个，但参数化<strong>不唯一</strong>。下图的例子用 <span class="arithmatex">\((x_0, y_0, h, w)\)</span>，把 <span class="arithmatex">\((x_0, y_0)\)</span>
+定在box的左下角：</p>
+<figure><img alt="Bounding box parameterisation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/bbox-parameterisation.png" loading="lazy" decoding="async" width="445" height="344"><figcaption>Bounding box parameterisation</figcaption></figure>
+<p>同样是4个参数，常见的定法还有：</p>
+<ul>
+<li><strong>两个对角点</strong> <span class="arithmatex">\((x_{min}, y_{min}, x_{max}, y_{max})\)</span>：Pascal VOC的标注格式，
+  例如CornerNet预测的就是top-left和bottom-right这对corner</li>
+<li><strong>左上角加宽高</strong> <span class="arithmatex">\((x, y, w, h)\)</span>：例如COCO的标注格式</li>
+<li><strong>中心点加宽高</strong> <span class="arithmatex">\((c_x, c_y, w, h)\)</span>：例如YOLO和DETR用这种，DETR还把四个数
+  归一化到 <span class="arithmatex">\([0, 1]\)</span></li>
+</ul>
+<p>与2d坐标系轴对齐的矩形axis-aligned bounding box存在四个自由度（可以旋转的有5个dof），满足自由度参数化即可，但选择何种会影响回归loss的性质（例如DETR的L1 loss问题），本课主要采用基于矩形左下角的<span class="arithmatex">\((x_0, y_0)\)</span>定义的<span class="arithmatex">\((x_0, y_0, h, w)\)</span>四个参数来定义bounding box.</p>
+<p>Remark：计算机视觉的惯例是 <span class="arithmatex">\(x\)</span> 沿图像宽度方向、<span class="arithmatex">\(y\)</span> 沿高度方向，
+<strong>坐标原点在左上角</strong>，所以 <span class="arithmatex">\(y\)</span> 轴朝下，但是各家api其实有不同：</p>
+<ul>
+<li>OpenCV和CV/Graphics research默认：<strong>左上角</strong>原点，<span class="arithmatex">\(y\)</span> 向下</li>
+<li>Unity和OpenGL的屏幕坐标：<strong>左下角</strong>原点，<span class="arithmatex">\(y\)</span> 向上</li>
+</ul>
+<p>本课作为研究导向的一门本科生高年级/低年纪研究生课程，遵循<strong>左上角原点</strong>的坐标轴定义</p>
 <h2 id="2-evaluation-how-do-we-measure-a-detector">2. Evaluation: how do we measure a detector?</h2>
+<p>我们在认识了bounding box之后，那么我们当然想知道模型预测的好不好准不准，那么我们需要评估预测的bouding box与ground truth的bouding box。</p>
 <h3 id="21-region-overlap-iou">2.1 Region overlap: IoU</h3>
-<p>首先我们为了定义两个框之间的关系(Region overlap)引入了Intersection over Union (IoU) or
-Jaccard Index, 下图IoU中我们看到, <mark>IoU是两者交集的面积除以两者并集的面积</mark></p>
+<p>首先我们需要定义两个bbox之间的关系(Region overlap)，因此引入了Intersection over Union (IoU) 也叫 Jaccard Index, 下图IoU中我们看到, <mark>IoU是两者交集的面积除以两者并集的面积</mark></p>
 <figure><img alt="Intersection over Union" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/IoU.png" loading="lazy" decoding="async" width="938" height="525"><figcaption>Intersection over Union</figcaption></figure>
 <h3 id="22-tp-fp-fn-precision-and-recall">2.2 TP / FP / FN, precision and recall</h3>
-<p>在detection的evaluation我们有以下三种情况：</p>
+<p>在object detection任务的evaluation我们有以下三种情况：</p>
 <ul>
 <li>TP = True positive表示有物体且正确框住</li>
 <li>FP = False positive表示没有物体但错框</li>
@@ -123,40 +144,41 @@ Jaccard Index, 下图IoU中我们看到, <mark>IoU是两者交集的面积除以
 <div class="arithmatex">\[\text{Recall} = \frac{TP}{TP + FN}\]</div>
 <p>Recall评估模型召回有多好，其中 <span class="arithmatex">\(TP + FN\)</span> 是ground truth boxes的数量。</p>
 <h3 id="23-what-counts-as-a-positive-match">2.3 What counts as a positive match?</h3>
-<p>那么当我们bounding box框住一片区域，什么是true positive 什么是 false positive?
+<p>那么当我们bounding box框住一片区域，这篇区域是true positive 还是 false positive?
 我们用IoU作为threshold来评判模型预测的bbox和GT的bbox，例如在MS-COCO和PASCAL VOC中当IoU大于0.5即为positive match.
-同时<mark>每一个prediction和gt box是一一对应的</mark>，如果有多个那么是存在错误</p>
+同时<mark>每一个prediction和gt box是<strong>一一对应的</strong></mark>，如果有多个那么是存在错误</p>
 <h3 id="24-average-precision-ap">2.4 Average precision (AP)</h3>
-<p>结合precision和recall我们得到了average precision(AP)的metric, <mark>横轴用recall竖轴用precision, 在1x1的区域内，面积越大越好</mark></p>
+<p>把precision和recall结合我们得到了average precision(AP)的metric, <mark>横轴用recall竖轴用precision, 对于预测结果，在recall和precision构成的1x1的正方形区域内，与坐标轴围成的面积越大越好</mark></p>
 <figure><img alt="Precision–recall curve and AP" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/AP.png" loading="lazy" decoding="async" width="902" height="1052"><figcaption>Precision–recall curve and AP</figcaption></figure>
 <h3 id="25-computing-average-precision">2.5 Computing average precision</h3>
+<h1 id="ap">以下是计算AP的步骤：</h1>
 <ol>
 <li>Sort the predicted boxes by confidence score.</li>
 <li>For each prediction, find the associated ground truth.
-   <em>Note: the ground truth must not be assigned yet, and the prediction must
-   pass the IoU threshold.</em></li>
+   <strong>Note: the ground truth must not be assigned yet, and the prediction must
+   pass the IoU threshold.</strong></li>
 <li>Compute cumulative TP and FP. Example with three predictions:
    TP = [1, 0, 1], FP = [0, 1, 0] → cTP = [1, 1, 2], cFP = [0, 1, 1].</li>
 <li>Compute precision and recall (#GT = 3, so TP + FN = 3):
    precision = cTP divided by the prediction index → [1/1, 1/2, 2/3];
    recall = cTP divided by #GT → [1/3, 1/3, 2/3].</li>
 <li>Plot the precision–recall curve; AP is the area beneath it
-   (numerical integration).</li>
+   (numerical integration).
+==</li>
 </ol>
 <h3 id="26-ap-flavours-and-map">2.6 AP flavours and mAP</h3>
 <figure><img alt="AP flavours" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/AP_flavours.png" loading="lazy" decoding="async" width="804" height="265"><figcaption>AP flavours</figcaption></figure>
-<ul>
-<li>AP may be averaged over multiple IoU thresholds.</li>
-<li>mAP is the average over object categories.</li>
-</ul>
-<h2 id="3-classical-single-stage-detection">3. Classical single-stage detection</h2>
+<p>我们可以不同定位精度要求下的 AP 平均起来以及把每个类别的 AP 平均得到模型更全面的性能评价
+- AP may be averaged over multiple IoU thresholds.
+- mAP is the average over object categories.
+如图中 AP = .50:.05:.95 即从 IoU = 0.50 开始，每次增加 0.05，一直到 0.95，在每个IoU threshold下面都计算一次AP,最后取平均 $<span class="arithmatex">\(AP = \mathrm{mean}(AP_{50}, AP_{55}, \ldots, AP_{95})\)</span>$</p>
+<h2 id="3-classical-one-stage-detection">3. Classical one-stage detection</h2>
 <h3 id="31-template-matching">3.1 Template matching</h3>
-<p>最简单的想法是定义一个metric，用一个物体图像作为template，通过sliding window扫过整张图片，
-measure每个位置和template的similarity，其中high correlation的region认为是object：</p>
+<p>在经典one-stage detextion里，我们最简单的想法是定义一个metric，用一个物体图像作为template，通过sliding window扫过整张图片，计算每个位置和template的correlation，其中high correlation的region认为是object, bbox的大小就是template的大小：</p>
 <figure><img alt="Old one-stage detectors: template + sliding window" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/oldtime_one_stage.png" loading="lazy" decoding="async" width="972" height="347"><figcaption>Old one-stage detectors: template + sliding window</figcaption></figure>
 <p>我们定义matching函数为 <span class="arithmatex">\(L(x_0, y_0) = d(I_{(x_0, y_0)}, T)\)</span>，其中 <span class="arithmatex">\(d\)</span> 是distance
-（或similarity）metric，<span class="arithmatex">\(I_{(x_0, y_0)}\)</span> 是以 <span class="arithmatex">\((x_0, y_0)\)</span> 为位置的image region，
-<span class="arithmatex">\(T\)</span> 是template。<span class="arithmatex">\(d\)</span> 可以用：</p>
+（或correlation）metric，<span class="arithmatex">\(I_{(x_0, y_0)}\)</span> 是以 <span class="arithmatex">\((x_0, y_0)\)</span> 为位置的image region，
+<span class="arithmatex">\(T\)</span> 是template。<span class="arithmatex">\(d\)</span> 距离或者相关可以用以下函数来度量：</p>
 <ol>
 <li>
 <p><strong>Sum of squared distances (SSD) / mean squared error (MSE)</strong>：</p>
@@ -168,7 +190,7 @@ measure每个位置和template的similarity，其中high correlation的region认
 <p>于是我们做normalization，得到<strong>Normalised cross-correlation (NCC)</strong>：</p>
 <div class="arithmatex">\[d(I, T) = \frac{1}{n} \sum_{x,y} \frac{I(x,y) \, T(x,y)}{\sigma_I \, \sigma_T}\]</div>
 <p>其中 <span class="arithmatex">\(\sigma_I\)</span> 和 <span class="arithmatex">\(\sigma_T\)</span> 分别是image region和template的standard deviation。
-除以标准差后，NCC对乘性的contrast变化（gain）invariant。</p>
+除以标准差后，NCC对乘性的contrast增益（gain）(例如整体变亮两倍)invariant。</p>
 </li>
 <li>
 <p>但是NCC依然对加性的brightness偏移（offset）敏感，我们用
@@ -190,78 +212,411 @@ measure每个位置和template的similarity，其中high correlation的region认
 </ol>
 <h3 id="32-feature-based-detection-violajones">3.2 Feature-based detection: Viola–Jones</h3>
 <p>新的one-stage detectors不再用template做sliding window，而是先对RGB pixel values做
-<strong>feature extraction</strong>，再在feature上同时做classification和localization：</p>
+<strong>feature extraction</strong>，再在feature上同时做classification和localization(bbox regression)：</p>
 <figure><img alt="New one-stage detectors: feature extraction" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/new_one_stage.png" loading="lazy" decoding="async" width="1010" height="370"><figcaption>New one-stage detectors: feature extraction</figcaption></figure>
 <p>idea是learn feature-based classifiers <strong>invariant to natural object changes</strong>。
 但随之而来的问题是features are not always linearly separable，单个简单分类器不够用，
 所以我们<mark>learn multiple weak learners，组合成一个strong classifier</mark>（boosting）。</p>
 <p><strong>Viola–Jones detector</strong>的流程：</p>
 <ol>
-<li>
-<p>先定义大量的<strong>Haar-like features</strong>：如下图中竖条、横条等黑白矩形组合，
-   feature value = 白色区域像素总和 − 黑色区域像素总和。每个Haar feature配一个
-   threshold就构成一个weak learner <span class="arithmatex">\(h_i(\cdot)\)</span>。借助<strong>integral image</strong>（积分图），
-   任意矩形的像素和只需4次查表，所以这些feature可以在常数时间内算出。</p>
-<figure><img alt="Haar-like features as weak learners" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/Haar-like-features.png" loading="lazy" decoding="async" width="815" height="546"><figcaption>Haar-like features as weak learners</figcaption></figure>
-</li>
-<li>
-<p>然后按下图的步骤用<strong>AdaBoost</strong>训练。AdaBoost的思想：每一轮在当前样本权重下，
-   从所有候选weak learner中找到error最低的那个并保存；然后<strong>提高被它分错的样本的
-   权重</strong>（update the priority of the data samples），让下一轮的weak learner专注于
-   难例；重复N轮。</p>
-<figure><img alt="Viola–Jones training procedure (AdaBoost)" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/Viola-Jones_detector.png" loading="lazy" decoding="async" width="1071" height="480"><figcaption>Viola–Jones training procedure (AdaBoost)</figcaption></figure>
-</li>
-<li>
-<p>最终的strong classifier是所有weak learners的<strong>linear combination</strong>（每个learner
-   的权重和它的准确率相关）。</p>
-<p>注意：原始论文里的weak classifier<strong>不是SVM</strong>，而是<strong>decision stump</strong>，即对单个
-Haar feature取threshold的一层决策树，简单到单独用几乎没用，但组合起来很强。
-实际检测时VJ还把strong classifiers串成<strong>attentional cascade</strong>：前几级用极少的
-feature快速拒绝绝大多数negative windows，只有全部通过的window才算检测到，
-<mark>这是它能real-time的关键</mark>。</p>
-</li>
+<li>先定义大量的 Haar-like features：如下图中竖条、横条等黑白矩形组合，feature value = 白色区域像素总和 − 黑色区域像素总和。一个 Haar feature 可以放在 detection window 中不同的位置，并取不同的 width 和 height，因此即使一个很小的 detection window 中也可以产生十几万个 candidate features。每个 Haar feature <span class="arithmatex">\(f_j(x)\)</span> 再配上一个 threshold <span class="arithmatex">\(\theta_j\)</span> 和方向（polarity），就构成一个 weak classifier / weak learner <span class="arithmatex">\(h_j(x)\)</span>，例如“如果这个 Haar feature 的 response 小于某个 threshold 就判断为 face，否则判断为 non-face”。单个 Haar feature 只能检查一种很简单的局部亮暗关系，所以单独分类能力通常很弱。</li>
 </ol>
+<p>由于训练和检测时需要计算大量 Haar features，Viola-Jones 使用 integral image（积分图）加速。积分图中每个位置存储从图像左上角到该位置的累计像素和，因此计算任意矩形区域的像素和时，只需读取矩形四个角对应的积分图值，通过“右下 − 上方 − 左方 + 左上”得到结果，复杂度为 <span class="arithmatex">\(O(1)\)</span>。例如原图为：</p>
+<div class="arithmatex">\[
+I=
+\begin{bmatrix}
+1&amp;2&amp;3\
+4&amp;5&amp;6\
+7&amp;8&amp;9
+\end{bmatrix}
+\]</div>
+<p>对应的 integral image 为：</p>
+<div class="arithmatex">\[
+II=
+\begin{bmatrix}
+1&amp;3&amp;6\
+5&amp;12&amp;21\
+12&amp;27&amp;45
+\end{bmatrix}
+\]</div>
+<p>如果想求右下角 <span class="arithmatex">\(2\times2\)</span> 区域 <span class="arithmatex">\(\begin{bmatrix}5&amp;6\8&amp;9\end{bmatrix}\)</span> 的像素和，不需要重新计算 <span class="arithmatex">\(5+6+8+9\)</span>，而是直接利用积分图四个位置得到 <span class="arithmatex">\(45-6-12+1=28\)</span>。因此无论矩形有多大，矩形像素和都只需要 4 次查表，一个由多个矩形组成的 Haar feature 也就可以非常快地计算。</p>
+<pre><code>![Haar-like features as weak learners](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/Haar-like-features.png)
+</code></pre>
+<ol start="2">
+<li>然后按下图的步骤用 AdaBoost 训练。训练数据是大量固定大小的 positive samples（face）和 negative samples（non-face），而上面的十几万个 Haar features 是候选的分类特征，两者不要混淆。训练开始时，每个 training sample 都有一个 weight <span class="arithmatex">\(w_i\)</span>，最开始通常近似相同；这个 weight 表示当前这一轮训练中这个 sample 有多重要。对于每一个 candidate Haar feature，先在所有 training samples 上计算它的 feature value，并寻找能够使分类 error 最小的 threshold 和 polarity，从而得到这个 feature 对应的最佳 weak classifier。然后计算它的 weighted error</li>
+</ol>
+<div class="arithmatex">\[
+\epsilon_j=\sum_i w_i,\mathbf{1}\left[h_j(x_i)\neq y_i\right].
+\]</div>
+<p>AdaBoost 会把所有 candidate weak classifiers 都比较一遍，在当前这一轮选出 weighted error 最低的那个保存下来。因此假如有十几万个 Haar features，一轮训练实际上就是从这十几万个候选中挑出当前最好的 一个。选完之后，提高这个 weak classifier 分错的 samples 的权重、相对降低已经分对的 samples 的权重。这样下一轮重新寻找最佳 weak classifier 时，如果某个 classifier 仍然把这些“难样本”分错，它的 weighted error 就会很大，因此下一轮会倾向于选择一个能够解决上一轮错误的新 Haar feature。重复 <span class="arithmatex">\(N\)</span> 轮，就会从最初十几万个 candidate features 中依次选出 <span class="arithmatex">\(N\)</span> 个真正有用的 weak classifiers，而不是把十几万个 features 全部用于最终检测。</p>
+<p>例如第一轮所有样本权重相同，某个 Haar feature 能正确分类大部分人脸，只把一个比较困难的人脸分错，那么它可能被选为第一个 weak classifier。随后这个被分错的人脸 sample 的 weight 会提高。第二轮重新测试所有 candidate Haar features 时，一个能够正确识别这个困难样本的 Haar feature 就更有优势。因此 AdaBoost 的核心思想就是 不断重新调整 training samples 的重要性，让后面的 weak classifiers 专门补前面 classifiers 的错误。</p>
+<pre><code>![Viola–Jones training procedure (AdaBoost)](/images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/Viola-Jones_detector.png)
+</code></pre>
+<ol start="3">
+<li>最终的 strong classifier 是这些被 AdaBoost 选出的 weak classifiers 的 weighted linear combination。假设经过 <span class="arithmatex">\(N\)</span> 轮选出了 <span class="arithmatex">\(h_1(x),h_2(x),\ldots,h_N(x)\)</span>，则可以写成</li>
+</ol>
+<div class="arithmatex">\[
+H(x)=\operatorname{sign}\left(\sum_{t=1}^{N}\alpha_t h_t(x)-\theta\right),
+\]</div>
+<p>其中 <span class="arithmatex">\(\alpha_t\)</span> 是每个 weak classifier 的权重，通常当前训练 error 越低、分类能力越强的 weak classifier 会得到越大的权重。因此单个 Haar feature 可能只能判断“眼睛区域是否比脸颊暗”“鼻梁是否比两侧亮”这样非常简单的条件，但大量 weak classifiers 加权组合后，就可以形成一个强很多的 face detector。原始 Viola-Jones 中的 weak classifier 本质上是 decision stump，即只根据一个 Haar feature 加一个 threshold 做一次二分类判断，是最简单的一层决策树。</p>
+<p>实际检测时，Viola-Jones 进一步把多个 strong classifiers 串成 attentional cascade。前面的 stage 只使用极少量 Haar features，目标不是非常准确地确认 face，而是以极低计算量快速排除明显不可能是 face 的大量 negative windows；只有通过前一个 stage 的 window 才进入后面更加复杂、使用更多 features 的 stage。随着 stage 越来越深，classifier 越来越严格，最终只有通过所有 stages 的 window 才被认为是 face。由于一张图片中绝大多数 sliding windows 都是 background，它们通常在 cascade 最前几级就被拒绝，因此不需要对每个 window 都运行完整的 classifier，这才是 Viola-Jones 能够实现 real-time detection 的关键。</p>
 <p><strong>Viola–Jones的问题：</strong></p>
 <ul>
-<li>Haar features是<strong>hand-crafted</strong>的，表达能力有限，基本只对rigid、frontal的物体
-  （典型：正脸）work</li>
-<li>对<strong>pose / viewpoint变化、形变、遮挡</strong>不robust，比如侧脸就得另外训练一个detector</li>
-<li>每个类别都要<strong>单独训练</strong>，无法scale到general的多类别object detection</li>
+<li>Haar features 是 hand-crafted features，它只描述一些非常简单的局部亮暗差异，例如“上面比下面暗”“中间比两边亮”。这些特征不是从数据中自动学习出来的，因此表达能力有限。对于结构比较固定、外观比较一致的目标，比如 frontal face，这些固定的黑白矩形模式比较容易匹配；但对于复杂物体，不同实例之间的外观差异很大，一组固定 Haar patterns 很难覆盖所有情况。</li>
+<li>对 pose / viewpoint change、deformation、occlusion 不够 robust。Haar feature 依赖比较固定的空间位置关系，例如某个 feature 可能假设“眼睛区域在上方、鼻梁在中间、脸颊在下方”。一旦人脸发生旋转、变成侧脸，或者目标本身发生形变，这些区域的相对位置就会改变，原来训练好的 feature response 可能完全失效。同样，如果关键区域被遮挡，例如眼睛被墨镜挡住，对应 Haar feature 也可能无法正常响应。因此不同 viewpoint 往往需要额外训练不同 detector，例如 frontal-face detector 和 profile-face detector。</li>
+<li>每个类别通常都需要 单独训练一个 detector。一个 face detector 学到的是“哪些 Haar features 能区分 face 和 non-face”，这些 features 和 thresholds 并不能直接拿去检测 car、pedestrian 或 dog。如果要检测新的类别，就需要重新收集该类别的 positive / negative samples，重新枚举和选择 Haar features，再训练一套新的 AdaBoost classifier。因此如果要检测 100 个类别，就基本需要维护 100 套独立 detector，训练和推理成本都会快速增加，难以 scale 到现代的 general multi-class object detection。</li>
 </ul>
 <h3 id="33-hog-features-and-sliding-windows">3.3 HOG features and sliding windows</h3>
-<p><em>(…)</em></p>
+<p>Haar feature太简单了，第二代hand-crafted feature是<strong>HOG（Histogram of
+Oriented Gradients）</strong>。<strong>Gradient指向图像变化最剧烈的方向</strong>（从暗指向亮）。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>"black"比"white"低还是高？</p>
+<p>低。像素值0是黑、255是白，所以梯度从黑指向白。</p>
+<figure><img alt="Gradients provide shape information" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/HOG1.png" loading="lazy" decoding="async" width="1064" height="502"><figcaption>Gradients provide shape information</figcaption></figure>
+<p>把训练集里所有行人图的梯度图平均起来，可以清楚看到人的轮廓，也就是说
+<strong>梯度携带了shape信息</strong>（而且对光照变化比原始像素robust，因为亮度整体
+加减不改变梯度）。</p>
+<p><strong>HOG descriptor</strong>：把图片切成dense的cell grid，每个cell里统计
+<strong>梯度方向的直方图</strong>，拼起来就是特征向量：</p>
+<figure><img alt="HOG descriptor" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/HOG2.png" loading="lazy" decoding="async" width="1064" height="549"><figcaption>HOG descriptor</figcaption></figure>
+<p><strong>完整的detection流程</strong>（<a href="https://lear.inrialpes.fr/people/triggs/pubs/Dalal-cvpr05.pdf">Dalal &amp; Triggs, 2005</a>）：</p>
+<ol>
+<li>选一个包含目标物体（比如行人）的训练集</li>
+<li>再选一组<strong>不包含</strong>该物体的图片</li>
+<li>两组都提取HOG特征</li>
+<li>训练一个<strong>linear SVM</strong>做0/1分类（是不是行人）</li>
+</ol>
+<figure><img alt="HOG training pipeline" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/HOG3.png" loading="lazy" decoding="async" width="1126" height="513"><figcaption>HOG training pipeline</figcaption></figure>
+<p>检测时还是sliding window扫全图，每个window提HOG过SVM；不同大小的物体
+靠<strong>image pyramid</strong>（缩放图片多跑几遍）解决。</p>
+<p><strong>DPM（Deformable Part Model）</strong>
+（<a href="https://ieeexplore.ieee.org/document/4587597">Felzenszwalb et al., 2008</a>）：
+很多物体不是刚体，一个模板套不住所有姿态。DPM用<strong>bottom-up</strong>的思路：
+先检测body parts，parts的排布合理就判定为"person"：</p>
+<figure><img alt="Deformable Part Model" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/dpm.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>Deformable Part Model</figcaption></figure>
+<p>但注意，每个区域的计算量因此显著增长。<strong>每个sliding window都跑这么重的
+模型，划算吗？</strong>这个问题埋下了后面object proposal的伏笔。</p>
 <h3 id="34-non-maximum-suppression-nms">3.4 Non-maximum suppression (NMS)</h3>
-<p><em>(…)</em></p>
+<p>检测器在物体周围会输出<strong>一堆互相重叠的box</strong>（很多box都在解释同一个物体），
+我们需要只留下"最好"的那个：</p>
+<figure><img alt="NMS: before and after" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/nms-before-after.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>NMS: before and after</figcaption></figure>
+<p><strong>算法</strong>：对每个box <span class="arithmatex">\(b_i\)</span>，看所有其他box <span class="arithmatex">\(b_j\)</span>，如果两者重叠够大
+（<span class="arithmatex">\(\text{same}(b_i, b_j) &gt; \lambda_{nms}\)</span>，same就是2.1的IoU）而且 <span class="arithmatex">\(b_j\)</span> 的
+score更高，就丢掉 <span class="arithmatex">\(b_i\)</span>。最后留下来的都是局部score最高的box：</p>
+<figure><img alt="NMS algorithm" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/nms-algorithm.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>NMS algorithm</figcaption></figure>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>NMS的时间复杂度是多少？</p>
+<p><span class="arithmatex">\(O(N^2)\)</span>，两两比较所有box。</p>
+<p><strong>NMS的根本问题</strong>：<span class="arithmatex">\(\lambda_{nms}\)</span> 是个很难选的超参。用1D的score曲线示意
+（两个真实物体挨得近）：</p>
+<ul>
+<li>阈值选<strong>高</strong>了（只有重叠非常大才合并）：同一物体的多个响应合并不掉，
+  <strong>false positive变多，precision低</strong>：</li>
+</ul>
+<figure><img alt="High threshold: more false positives" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/nms-threshold-high.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>High threshold: more false positives</figcaption></figure>
+<ul>
+<li>阈值选<strong>低</strong>了（稍微重叠就合并）：两个真实物体被合并成一个，
+  <strong>false negative变多，recall低</strong>（拥挤场景重灾区）：</li>
+</ul>
+<figure><img alt="Low threshold: more false negatives" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/nms-threshold-low.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>Low threshold: more false negatives</figcaption></figure>
+<p>Remark：NMS只在<strong>test time</strong>用，而且几乎所有检测器（深度学习的也不例外）
+都在用，一直到<a href="cv3-modern-approaches.html">note 4</a>的DETR才靠set prediction
+把它甩掉。</p>
 <h2 id="4-first-deep-one-stage-detector-overfeat">4. First deep one-stage detector: OverFeat</h2>
-<p><em>(…)</em></p>
+<p>进入深度学习。detection = classification + localisation，自然的做法是让CNN
+特征后面接<strong>两个FC head</strong>：regression head输出box坐标 <span class="arithmatex">\((x, y, w, h)\)</span>，
+classification head输出class scores：</p>
+<figure><img alt="Localisation and classification heads" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/loc-cls-heads.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>Localisation and classification heads</figcaption></figure>
+<p><strong>OverFeat</strong>（<a href="https://arxiv.org/abs/1312.6229">Sermanet et al., 2014</a>）就是
+这个思路的第一个有影响力的实现：sliding window + box regression +
+classification。训练流程是<strong>先训classification head、冻住backbone、
+再训regression head</strong>，测试时两个都用。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>为什么不两个任务一起训？</p>
+<p>其实可以（加权的multi-task loss），后来的检测器全都这么做了。OverFeat
+分开训主要是当时multi-task训练的经验还不成熟，这也正是它的历史局限。</p>
+<figure><img alt="OverFeat architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/overfeat.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>OverFeat architecture</figcaption></figure>
+<p>实际使用时在<strong>多个位置、多个尺度</strong>跑sliding window，每个window都吐出
+box和score，最后得到一大堆预测，用greedy merge（NMS的变体）合成最终结果：</p>
+<figure><img alt="OverFeat: multi-scale sliding windows + NMS" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/overfeat-multiscale.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>OverFeat: multi-scale sliding windows + NMS</figcaption></figure>
+<p><strong>评价</strong>：准确率明显提升，主要功劳是<strong>深度网络学出来的特征</strong>（对比HOG这种
+手工特征）。问题：所有position、scale、aspect ratio都要试一遍，太贵；
+而且网络只能吃固定分辨率。</p>
+<p><strong>顺便做个复杂度分析（为什么sliding window慢、proposal为什么有用）</strong>。
+设窗口总数为 <span class="arithmatex">\(N\)</span>、每个窗口检测的开销为 <span class="arithmatex">\(D\)</span>，暴力做法是 <span class="arithmatex">\(O(ND)\)</span>。如果先用
+一个便宜的方法（开销 <span class="arithmatex">\(d\)</span>）<strong>预筛</strong>出 <span class="arithmatex">\(n\)</span> 个候选窗口，再对候选做完整检测，
+开销变成 <span class="arithmatex">\(O(Nd + nD)\)</span>。预筛划算的条件（忽略常数）：</p>
+<div class="arithmatex">\[\frac{n}{N} + \frac{d}{D} &lt; 1\]</div>
+<p>第一项是<strong>RoI比例</strong>（筛得越狠越好），第二项是<strong>预筛器的相对开销</strong>
+（越便宜越好）。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>预筛掉三分之一的窗口，预筛开销 <span class="arithmatex">\(d = D/2\)</span>，值得吗？</p>
+<p>不值得。<span class="arithmatex">\(n/N = 2/3\)</span>，<span class="arithmatex">\(d/D = 1/2\)</span>，加起来 <span class="arithmatex">\(7/6 &gt; 1\)</span>，比暴力还慢。预筛必须
+<strong>又狠又便宜</strong>才有意义。这个不等式还有个下界：<span class="arithmatex">\(n/N\)</span> 不可能低于
+（物体数<span class="arithmatex">\(/N\)</span>），所以好的proposal方法要在"不漏物体"的前提下把 <span class="arithmatex">\(n\)</span> 压到
+接近物体数量级。</p>
 <h2 id="5-object-proposals">5. Object proposals</h2>
+<p>预筛器筛的是什么？我们需要一个<strong>class-agnostic的objectness度量</strong>，即一个
+图像区域"像不像个物体"（不管是什么类别）：</p>
+<figure><img alt="Class-agnostic objectness" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/objectness.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>Class-agnostic objectness</figcaption></figure>
+<p>用它生成一批候选的<strong>object proposals（RoI）</strong>，后面接分类器，这就是
+<strong>two-stage detector</strong>的蓝图：proposal generation出候选框，然后对每个候选
+做classification（类别分布）和localisation（refine框，输出
+<span class="arithmatex">\(\Delta x, \Delta y, \Delta w, \Delta h\)</span>）：</p>
+<figure><img alt="Two-stage detectors" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/two-stage.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>Two-stage detectors</figcaption></figure>
+<p>两个经典的heuristic proposal方法：</p>
 <h3 id="51-selective-search">5.1 Selective search</h3>
-<p><em>(…)</em></p>
+<p><a href="https://link.springer.com/article/10.1007/s11263-013-0620-5">Uijlings et al., 2013</a>。
+<strong>层级式分割</strong>：先over-segmentation（切得碎碎的），然后贪心地反复合并
+最相似的两个segment，直到整张图变成一个segment。合并过程中每一层的
+segment都框出来当proposal，天然覆盖多个尺度：</p>
+<figure><img alt="Selective search: hierarchical segmentation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/selective-search.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>Selective search: hierarchical segmentation</figcaption></figure>
 <h3 id="52-edge-boxes">5.2 Edge boxes</h3>
-<p><em>(…)</em></p>
+<p><a href="https://www.microsoft.com/en-us/research/publication/edge-boxes-locating-object-proposals-from-edges/">Zitnick &amp; Dollár, 2014</a>。
+核心观察：<strong>一个box完整包住的轮廓（contour）数量，指示了它包含物体的
+可能性</strong>。box切断很多轮廓就不像物体，包住很多完整轮廓就很像：</p>
+<figure><img alt="Edge boxes" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/edge-boxes.png" loading="lazy" decoding="async" width="830" height="437"><figcaption>Edge boxes</figcaption></figure>
 <h2 id="6-the-two-stage-r-cnn-family">6. The two-stage R-CNN family</h2>
+<p>"Regions with CNN features"，detection乃至整个CV最有影响力的工作线之一，
+R-CNN、Fast、Faster、Mask R-CNN加起来<strong>引用超过12万</strong>：</p>
+<figure><img alt="The R-CNN family" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/rcnn-family.png" loading="lazy" decoding="async" width="830" height="458"><figcaption>The R-CNN family</figcaption></figure>
 <h3 id="61-r-cnn">6.1 R-CNN</h3>
-<p><em>(…)</em></p>
+<p><a href="https://arxiv.org/abs/1311.2524">Girshick et al., 2014</a>。流程：</p>
+<figure><img alt="R-CNN pipeline" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/rcnn-pipeline.png" loading="lazy" decoding="async" width="830" height="458"><figcaption>R-CNN pipeline</figcaption></figure>
+<ol>
+<li>selective search出约<strong>2000个proposal</strong></li>
+<li>每个proposal<strong>warp成固定的227×227</strong></li>
+<li>各自过一遍CNN提4096维特征</li>
+<li><strong>每类一个linear SVM</strong>分类 + 一个bounding box regressor微调框</li>
+</ol>
+<figure><img alt="R-CNN architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/rcnn-arch.png" loading="lazy" decoding="async" width="830" height="458"><figcaption>R-CNN architecture</figcaption></figure>
+<p>训练分四步：ImageNet预训练CNN、在目标类别上finetune、训SVM、训regressor。</p>
+<p><strong>Pros</strong>：第一次把CNN特征接进检测管线，而且吃到了<strong>transfer learning</strong>的
+红利（ImageNet预训练，换个FC就能迁移）。效果立竿见影，ILSVRC 2013上
+31.4 mAP，比OverFeat的24.3高出一大截：</p>
+<figure><img alt="R-CNN on ILSVRC 2013" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/rcnn-ilsvrc.png" loading="lazy" decoding="async" width="830" height="458"><figcaption>R-CNN on ILSVRC 2013</figcaption></figure>
+<p><strong>Cons</strong>：<strong>慢</strong>。2000个proposal各过一遍CNN，VGG16要<strong>47秒一张图</strong>；
+训练又慢又复杂（四个阶段）；proposal算法是固定的；特征和SVM分开训练，
+<strong>不是end-to-end</strong>。</p>
 <h3 id="62-sppnet">6.2 SPPNet</h3>
-<p><em>(…)</em></p>
+<p>两个目标：更快，以及把proposal整合进训练。共同的拦路虎：<strong>网络只能吃
+固定尺寸的输入</strong>。谁的锅？卷积层对输入尺寸没要求（滑窗操作），
+<strong>是FC层需要固定长度的输入</strong>。</p>
+<p><a href="https://arxiv.org/abs/1406.4729">He et al., 2014</a>的解法：与其crop/warp输入
+图片，不如<strong>整张图只过一遍卷积</strong>，在conv5的feature map上把每个proposal
+对应的区域<strong>池化成固定长度</strong>，再喂FC：</p>
+<figure><img alt="Crop/warp vs spatial pyramid pooling" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/sppnet-crop-warp.png" loading="lazy" decoding="async" width="830" height="458"><figcaption>Crop/warp vs spatial pyramid pooling</figcaption></figure>
+<figure><img alt="SPP-Net: 2000 nets vs 1 net" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/sppnet-overview.png" loading="lazy" decoding="async" width="830" height="458"><figcaption>SPP-Net: 2000 nets vs 1 net</figcaption></figure>
+<p>固定长度靠<strong>spatial pyramid pooling</strong>：把任意大小的区域分别切成4×4、2×2、
+1×1的格子做max pooling，拼起来长度恒定：</p>
+<figure><img alt="The SPP layer" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/spp-layer.png" loading="lazy" decoding="async" width="830" height="459"><figcaption>The SPP layer</figcaption></figure>
+<p>速度大幅提升（卷积只算一遍），但SPPNet<strong>冻住了backbone</strong>只训FC，
+特征本身没法为检测任务优化。</p>
 <h3 id="63-fast-r-cnn">6.3 Fast R-CNN</h3>
-<p><em>(…)</em></p>
+<p><a href="https://arxiv.org/abs/1504.08083">Girshick, 2015</a>把这条线做成了end-to-end。
+核心组件<strong>RoI pooling</strong>就是单层的SPP：把feature map上任意 <span class="arithmatex">\(h' \times w'\)</span> 的
+RoI映射成固定的 <span class="arithmatex">\(L\)</span>（比如7×7）：</p>
+<figure><img alt="Why we need RoI pooling" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/roi-pooling-need.png" loading="lazy" decoding="async" width="830" height="463"><figcaption>Why we need RoI pooling</figcaption></figure>
+<p>具体做法：把RoI切成固定数量的格子，每格内max pooling：</p>
+<figure><img alt="Spatial pooling example" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/spatial-pooling.png" loading="lazy" decoding="async" width="830" height="459"><figcaption>Spatial pooling example</figcaption></figure>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>RoI pooling可微吗？</p>
+<p>分两问。对<strong>feature map <span class="arithmatex">\(S\)</span></strong>：可微（max pooling把梯度路由给最大值那个
+位置，和普通池化一样）。对<strong>box坐标 <span class="arithmatex">\((x, y, h, w)\)</span></strong>：<strong>不可微</strong>，因为
+坐标的舍入和格子划分是离散操作。所以框的坐标没法从pooling后面的loss拿到
+梯度，这个缺口后来由RoIAlign（<a href="cv3-image-segmentation.html">note 3</a>的
+Mask R-CNN）和<a href="cv3-modern-approaches.html">note 4</a>的DETR分别补上。</p>
+<p>整体架构：整图过一遍ConvNet（shared computation），RoI pooling取出每个
+proposal的定长特征，FC后接<strong>softmax分类器</strong>（取代SVM）和box regressor，
+一个multi-task loss端到端训练：</p>
+<figure><img alt="Fast R-CNN at test time" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/fast-rcnn.png" loading="lazy" decoding="async" width="812" height="459"><figcaption>Fast R-CNN at test time</figcaption></figure>
+<p><strong>结果</strong>（VGG-16，Pascal VOC 2007）：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>R-CNN</th>
+<th>Fast R-CNN</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>训练时间</td>
+<td>84小时</td>
+<td>9.5小时（8.8×）</td>
+</tr>
+<tr>
+<td>测试每张图</td>
+<td>47秒</td>
+<td><strong>0.32秒（146×）</strong></td>
+</tr>
+</tbody>
+</table>
+<figure><img alt="Fast R-CNN results" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/fast-rcnn-results.png" loading="lazy" decoding="async" width="812" height="459"><figcaption>Fast R-CNN results</figcaption></figure>
 <h3 id="64-rpn-and-faster-r-cnn">6.4 RPN and Faster R-CNN</h3>
-<p><em>(…)</em></p>
+<p>现在的瓶颈只剩<strong>proposal本身</strong>（selective search在CPU上约2秒一张图）。
+<a href="https://arxiv.org/abs/1506.01497">Ren et al., 2015</a>的答案：proposal也交给
+网络，在共享的feature map上加一个<strong>Region Proposal Network（RPN）</strong>：</p>
+<figure><img alt="Faster R-CNN" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/faster-rcnn.png" loading="lazy" decoding="async" width="812" height="459"><figcaption>Faster R-CNN</figcaption></figure>
+<p><strong>RPN怎么出proposal？</strong>多物体检测的难点是<strong>输出数量不定</strong>（3个物体12个数，
+14个物体56个数）。RPN的解法是<strong>densely地铺一组固定数量的anchor当上界</strong>：
+feature map的每个位置放 <span class="arithmatex">\(n = 9\)</span> 个anchor（3种scale × 3种aspect ratio），
+每个位置用一个256维descriptor预测：</p>
+<figure><img alt="RPN anchors" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/rpn-anchors.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>RPN anchors</figcaption></figure>
+<figure><img alt="Anchors: 3 scales × 3 aspect ratios" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/rpn-anchor-grid.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>Anchors: 3 scales × 3 aspect ratios</figcaption></figure>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>每个位置的proposal encoding是多少维？（n个anchor）</p>
+<p><span class="arithmatex">\(6n\)</span>：每个anchor要2个分类score（object/non-object）加4个坐标修正量。
+RPN本身就是两层conv，<strong>fully convolutional</strong>：</p>
+<figure><img alt="RPN structure" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/rpn-structure.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>RPN structure</figcaption></figure>
+<p><strong>RPN训练</strong>：</p>
+<ul>
+<li>分类的GT：anchor和GT box的IoU <span class="arithmatex">\(&gt; 0.7\)</span> 记 <span class="arithmatex">\(p^* = 1\)</span>（前景），
+  <span class="arithmatex">\(&lt; 0.3\)</span> 记 <span class="arithmatex">\(p^* = 0\)</span>（背景），<strong>中间的不参与训练</strong></li>
+<li>每张图随机采<strong>256个anchor</strong>组成mini-batch（前景背景平衡），
+  binary cross-entropy；有物体的anchor再算regression loss</li>
+<li>网络回归的不是绝对坐标，而是<strong>相对anchor的归一化修正量</strong>：</li>
+</ul>
+<div class="arithmatex">\[t_x = \frac{x - x_a}{w_a}, \quad t_y = \frac{y - y_a}{h_a}, \quad t_w = \log\frac{w}{w_a}, \quad t_h = \log\frac{h}{h_a}\]</div>
+<p>位置除以anchor尺寸做归一化，宽高取log让缩放变加法，回归用smooth L1。</p>
+<p><strong>Faster R-CNN = RPN + Fast R-CNN</strong>，四个loss联合训练（RPN的分类+回归，
+Fast R-CNN的分类+回归）：</p>
+<figure><img alt="Faster R-CNN: four losses" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/faster-rcnn-losses.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>Faster R-CNN: four losses</figcaption></figure>
+<p><strong>结果</strong>：测试0.2秒一张图（比R-CNN快<strong>250×</strong>），mAP 66.9，proposal是学出来
+的所以更准，整条管线end-to-end。到这里two-stage的骨架就定型了。</p>
+<h3 id="65-addressing-scale-variance-fpn">6.5 Addressing scale variance: FPN</h3>
+<p>还剩一个老大难：<strong>CNN不是scale-invariant的</strong>，物体尺度变化非常大。
+RoI pooling把特征"规范化"到固定大小，帮了一点，但不够。三个思路
+（<a href="https://arxiv.org/abs/1612.03144">Lin et al., 2017</a>）：</p>
+<ul>
+<li><strong>Idea A：image pyramid</strong>。图片缩放成多个尺度各过一遍CNN。准（尤其测试
+  时），但计算量爆炸：</li>
+</ul>
+<figure><img alt="Idea A: featurised image hierarchy" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/scale-ideaA.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>Idea A: featurised image hierarchy</figcaption></figure>
+<ul>
+<li><strong>Idea B：pyramidal feature hierarchy</strong>。直接在CNN自带的多层feature map上
+  分别预测（深监督）。高效，但浅层特征语义太弱，准确率有限：</li>
+</ul>
+<figure><img alt="Idea B: pyramidal feature hierarchy" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/scale-ideaB.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>Idea B: pyramidal feature hierarchy</figcaption></figure>
+<ul>
+<li><strong>Idea C：Feature Pyramid Network（FPN）</strong>。在B的基础上加一条
+  <strong>top-down通路和skip connection</strong>：深层的语义顺着上采样流回高分辨率层，
+  每一层都又快又有深层语义：</li>
+</ul>
+<figure><img alt="Idea C: feature pyramid network" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/fpn.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>Idea C: feature pyramid network</figcaption></figure>
+<p>实现非常简单：横向1×1卷积对齐通道，top-down 2×最近邻上采样，逐元素相加：</p>
+<figure><img alt="FPN implementation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/fpn-implementation.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>FPN implementation</figcaption></figure>
+<p>和RPN配合：每个pyramid level一个尺度的anchor，测试时合并所有level的预测。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>大物体和小物体分别在哪个level检测？</p>
+<p>大物体在<strong>高level</strong>（分辨率粗、receptive field大），小物体在<strong>低level</strong>
+（分辨率细）。FPN对小物体的recall提升尤其明显，至今仍在广泛使用，比如
+<a href="cv3-modern-approaches.html">note 4</a>里SAM 2的image encoder就用了FPN。</p>
 <h2 id="7-modern-one-stage-detectors">7. Modern one-stage detectors</h2>
+<p>回头看Faster R-CNN的四个loss：RPN先做一次"是不是物体"，Fast R-CNN又做
+一次"是什么物体"，<strong>概念上同一件事做了两遍</strong>。那为什么不直接让每个anchor
+一步到位预测类别？把RoI pooling和第二阶段整个扔掉：</p>
+<figure><img alt="Removing pooling: a one-stage detector" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/yolo-idea.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>Removing pooling: a one-stage detector</figcaption></figure>
 <h3 id="71-yolo">7.1 YOLO</h3>
-<p><em>(…)</em></p>
+<p><a href="https://arxiv.org/abs/1506.02640">Redmon et al., 2016</a>，You Only Look Once：
+把图切成粗的 <span class="arithmatex">\(S \times S\)</span> 网格，每个cell配 <span class="arithmatex">\(B\)</span> 个anchor，每个anchor预测
+localisation <span class="arithmatex">\((x, y, w, h)\)</span> + 一个confidence（有没有物体）+ <span class="arithmatex">\(C\)</span> 类的分布：</p>
+<figure><img alt="YOLO: S×S grid" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/yolo-grid.png" loading="lazy" decoding="async" width="829" height="461"><figcaption>YOLO: S×S grid</figcaption></figure>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>每个cell的输出是多少维？</p>
+<p><span class="arithmatex">\(B \times 5 + C\)</span>（每个anchor5个数，类别分布每个cell共享一份）。整个输出是
+<span class="arithmatex">\(S \times S \times (B \cdot 5 + C)\)</span>，VOC上就是 <span class="arithmatex">\(7 \times 7 \times 30\)</span>。</p>
+<p>推理一遍前向 + NMS，真正的实时检测：</p>
+<figure><img alt="YOLO inference" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/yolo-inference.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>YOLO inference</figcaption></figure>
+<p><strong>问题</strong>：比Faster R-CNN快但不如它准。网格太粗、每个cell的anchor太少，
+<strong>小物体是重灾区</strong>；对尺度变化也不robust。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>为什么对尺度不robust？</p>
+<p>因为它只在<strong>最后一层的单尺度feature map</strong>上做预测，正是6.5里Idea B想
+解决的问题。</p>
 <h3 id="72-ssd">7.2 SSD</h3>
-<p><em>(…)</em></p>
+<p><a href="https://arxiv.org/abs/1512.02325">Liu et al., 2016</a>：把多尺度接上。YOLO在
+单一representation上预测，SSD在<strong>多个尺度的feature map</strong>上都放anchor做
+预测（只加了几层extra layers）：</p>
+<figure><img alt="SSD: multiple feature scales" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/ssd.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>SSD: multiple feature scales</figcaption></figure>
+<p>比YOLO准，而且低分辨率输入也work（更快）。但仍落后于two-stage，
+data augmentation（尤其随机缩放）非常关键。</p>
 <h3 id="73-focal-loss-and-retinanet">7.3 Focal loss and RetinaNet</h3>
-<p><em>(…)</em></p>
+<p><strong>one-stage为什么一直打不过two-stage？</strong>答案是<strong>前景背景的类别失衡</strong>。
+two-stage的分类器只看proposal筛过的1~2k个"有意思"的区域，正负样本可控；
+one-stage要对<strong>十万量级</strong>的密集位置全部分类，其中前景寥寥无几：</p>
+<figure><img alt="Foreground-background imbalance" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/fg-bg-imbalance.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>Foreground-background imbalance</figcaption></figure>
+<p>hard negative mining（挑错得最狠的负样本）能缓解但不稳定。
+<a href="https://arxiv.org/abs/1708.02002">Lin et al., 2017</a>从loss下手。先看
+cross-entropy：一个很难的样本（<span class="arithmatex">\(p_t \approx 0.1\)</span>）loss约2.3，一个简单样本
+（<span class="arithmatex">\(p_t \approx 0.9\)</span>）loss约0.1，看起来没问题，但简单样本有<strong>百万个</strong>：
+<span class="arithmatex">\(100 \times 2.3 = 230\)</span> 对 <span class="arithmatex">\(10^6 \times 0.1 = 10^5\)</span>，<strong>梯度被海量简单负样本
+淹没</strong>：</p>
+<figure><img alt="CE loss: easy examples dominate" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/ce-loss-imbalance.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>CE loss: easy examples dominate</figcaption></figure>
+<p><strong>Focal loss</strong>给CE乘一个调制因子：</p>
+<div class="arithmatex">\[FL(p_t) = -(1 - p_t)^{\gamma} \log(p_t)\]</div>
+<p><span class="arithmatex">\(\gamma = 0\)</span> 时退化为CE；<span class="arithmatex">\(\gamma\)</span> 越大，<strong>分对了的简单样本被压得越狠</strong>
+（<span class="arithmatex">\(\gamma = 2\)</span> 时 <span class="arithmatex">\(p_t = 0.9\)</span> 的样本loss降低100倍），难样本几乎不受影响：</p>
+<figure><img alt="Focal loss" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/focal-loss.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>Focal loss</figcaption></figure>
+<p><strong>RetinaNet</strong>把三块拼起来：one-stage（像YOLO/SSD）+ ResNet backbone +
+<strong>FPN多尺度</strong> + <strong>focal loss</strong>：</p>
+<figure><img alt="RetinaNet" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/retinanet.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>RetinaNet</figcaption></figure>
+<p>结果：<strong>one-stage第一次在精度上超过two-stage</strong>，还更快（<span class="arithmatex">\(\gamma = 2\)</span>、
+<span class="arithmatex">\(\alpha = 0.25\)</span> 这些超参来自论文的validation table，这类表格现在你已经
+能自己读懂了）：</p>
+<figure><img alt="RetinaNet: accuracy exceeds two-stage" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/retinanet-results.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>RetinaNet: accuracy exceeds two-stage</figcaption></figure>
+<p><strong>Two-stage vs one-stage总结</strong>：two-stage更准（对尺度变化robust）但技术上
+更绕（pooling）也更慢；one-stage设计简单、够快，配上重的augmentation
+精度也有竞争力。</p>
 <h2 id="8-beyond-boxes">8. Beyond boxes</h2>
 <h3 id="81-keypoint-based-detection-cornernet-centernet">8.1 Keypoint-based detection: CornerNet, CenterNet</h3>
-<p><em>(…)</em></p>
+<p>box的参数化方式不止一种（1.4的Quiz），那能不能干脆<strong>不用anchor</strong>？
+<a href="https://arxiv.org/abs/1808.01244">CornerNet</a>把detection变成<strong>关键点检测</strong>：
+分别预测top-left和bottom-right两张corner heatmap，再学一个embedding把
+属于同一物体的两个角配成对：</p>
+<figure><img alt="CornerNet: corner heatmaps" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/cornernet-heatmaps.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>CornerNet: corner heatmaps</figcaption></figure>
+<p><a href="https://arxiv.org/abs/1904.07850">CenterNet</a>更进一步，直接把物体建模成
+<strong>中心点</strong>（objects as points），宽高等属性从中心点回归出来。</p>
 <h3 id="82-sequential-detection">8.2 Sequential detection</h3>
-<p><em>(…)</em></p>
+<p>另一个思路：<a href="https://arxiv.org/abs/1506.04878">Stewart et al., 2016</a>用LSTM
+<strong>一个接一个地</strong>输出检测结果（预测到没有为止），对拥挤场景（人群）特别
+有意思，也算是<a href="cv3-modern-approaches.html">note 4</a>里"detection是set
+prediction"思想的早期前奏：</p>
+<figure><img alt="Sequential detection with an LSTM" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/sequential-detection.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>Sequential detection with an LSTM</figcaption></figure>
 <h2 id="9-spatial-transformers">9. Spatial transformers</h2>
-<p><em>(…)</em></p>
+<p>最后一个话题从一个失败案例说起：训练集里的企鹅都是正的（photographic
+bias，3.2里rotation任务靠的就是它），测试时来一张斜的就挂了。我们想要的
+性质是<strong>equivariance</strong>：</p>
+<div class="arithmatex">\[f(A(x)) = A(f(x))\]</div>
+<p>即先变换再提特征，等于先提特征再变换（<span class="arithmatex">\(A\)</span> 是比如仿射变换）：</p>
+<figure><img alt="Dataset bias: we need equivariance" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/dataset-bias.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>Dataset bias: we need equivariance</figcaption></figure>
+<p><strong>Spatial Transformer Networks</strong>
+（<a href="https://arxiv.org/abs/1506.02025">Jaderberg et al., 2015</a>）让网络
+<strong>自己学会把输入"摆正"</strong>：</p>
+<figure><img alt="Spatial transformer: warping the input" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/stn-warp.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>Spatial transformer: warping the input</figcaption></figure>
+<p>模块分三件套：</p>
+<figure><img alt="STN architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/stn-architecture.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>STN architecture</figcaption></figure>
+<ol>
+<li><strong>Localisation net</strong>：看输入 <span class="arithmatex">\(U\)</span>，回归出变换参数 <span class="arithmatex">\(\theta\)</span></li>
+<li><strong>Grid generator</strong>：用 <span class="arithmatex">\(\theta\)</span>（仿射就是2×3矩阵）生成采样网格
+   <span class="arithmatex">\(\mathcal{T}_\theta(G)\)</span>，即输出的每个像素对应输入的哪个位置：</li>
+</ol>
+<div class="arithmatex">\[\begin{pmatrix} x_i^s \\ y_i^s \end{pmatrix} = \mathcal{T}_\theta(G_i) = \begin{bmatrix} \theta_{11} &amp; \theta_{12} &amp; \theta_{13} \\ \theta_{21} &amp; \theta_{22} &amp; \theta_{23} \end{bmatrix} \begin{pmatrix} x_i^t \\ y_i^t \\ 1 \end{pmatrix}\]</div>
+<ol start="3">
+<li><strong>Sampler</strong>：按网格用<strong>bilinear interpolation</strong>采样出输出 <span class="arithmatex">\(V\)</span>。
+   bilinear是可微的，所以<strong>整个模块fully differentiable</strong>，插进任何网络
+   端到端训练：</li>
+</ol>
+<figure><img alt="Grid generator and bilinear sampler" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/stn-theta.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>Grid generator and bilinear sampler</figcaption></figure>
+<p>神奇之处：<strong>只用class label监督</strong>（没有任何box标注），STN就自己学会了
+把RoI找出来摆正；训练多个ST还会各自盯上物体的不同部位（鸟头、鸟身）；
+还可以串成一条链逐步refine。</p>
+<p><strong>Summary</strong>：无监督地学localisation、给网络带来（近似的）equivariance、
+完全可微。缺点是场景一复杂就难训练。但它的<strong>bilinear sampler</strong>成了传家宝，
+后来的RoIAlign、deformable convolution、optical flow warping
+（<a href="cv3-image-segmentation.html">note 3</a>）全都建立在"可微采样"这个思想上。</p>
+<h2 id="10-the-big-picture">10. The big picture</h2>
+<p>一张图收尾：detection二十年的里程碑，从traditional（VJ 2001 → HOG 2005 →
+DPM 2008）到deep learning后分成two-stage（R-CNN → SPPNet → Fast → Faster →
+FPN）和one-stage（YOLO → SSD → RetinaNet → CornerNet → CenterNet → DETR）
+两条线，正好就是这篇笔记的目录，而DETR之后的故事在
+<a href="cv3-modern-approaches.html">note 4</a>：</p>
+<figure><img alt="Object detection milestones" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note1/detection-milestones.png" loading="lazy" decoding="async" width="829" height="463"><figcaption>Object detection milestones</figcaption></figure>
+<p>课件列的open challenges：3D object detection、open vocabulary、multi-modal
+（比如红外）、camouflaged object detection、特殊场景（无人机视角）等。
+想系统回顾可以读综述
+<a href="https://arxiv.org/abs/1905.05055">Object Detection in 20 Years</a>（Zou et al.）。</p>
 <h2 id="references">References</h2>
 <ul>
 <li>Viola &amp; Jones. <a href="https://www.cs.cmu.edu/~efros/courses/LBMV07/Papers/viola-cvpr-01.pdf">Rapid Object Detection using a Boosted Cascade of Simple Features</a>. CVPR 2001.</li>
@@ -279,6 +634,10 @@ feature快速拒绝绝大多数negative windows，只有全部通过的window才
 <li>Law &amp; Deng. <a href="https://arxiv.org/abs/1808.01244">CornerNet: Detecting Objects as Paired Keypoints</a>. ECCV 2018.</li>
 <li>Zhou et al. <a href="https://arxiv.org/abs/1904.07850">Objects as Points (CenterNet)</a>. arXiv 2019.</li>
 <li>Jaderberg et al. <a href="https://arxiv.org/abs/1506.02025">Spatial Transformer Networks</a>. NeurIPS 2015.</li>
+<li>Felzenszwalb et al. <a href="https://ieeexplore.ieee.org/document/4587597">A Discriminatively Trained, Multiscale, Deformable Part Model</a>. CVPR 2008.</li>
+<li>Lin et al. <a href="https://arxiv.org/abs/1612.03144">Feature Pyramid Networks for Object Detection</a>. CVPR 2017.</li>
+<li>Stewart et al. <a href="https://arxiv.org/abs/1506.04878">End-to-End People Detection in Crowded Scenes</a>. CVPR 2016.</li>
+<li>Zou et al. <a href="https://arxiv.org/abs/1905.05055">Object Detection in 20 Years: A Survey</a>. Proc. IEEE 2023.</li>
 </ul>
 
             <!-- Share -->
