@@ -144,7 +144,7 @@ const POSTS = [
     ],
     "url": "posts/games102.html",
     "updated": "2026-08-29",
-    "mtime": "2026-08-29T13:07:50+02:00",
+    "mtime": "2026-08-29T13:08:59+02:00",
     "words": 69,
     "minutes": 1,
     "summary": "Notes for GAMES102 (Geometric Modeling and Processing)."
@@ -354,10 +354,10 @@ const POSTS = [
       "MOT"
     ],
     "url": "posts/cv3-object-tracking.html",
-    "updated": "2026-08-27",
-    "mtime": "2026-08-27T10:42:10+02:00",
-    "words": 807,
-    "minutes": 4,
+    "updated": "2026-08-29",
+    "mtime": "2026-08-29T21:07:51+02:00",
+    "words": 6965,
+    "minutes": 27,
     "summary": "Second notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated."
   },
   {
@@ -374,7 +374,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-object-detection.html",
     "updated": "2026-08-29",
-    "mtime": "2026-08-29T13:07:51+02:00",
+    "mtime": "2026-08-29T13:08:59+02:00",
     "words": 8176,
     "minutes": 29,
     "summary": "First notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object detection from classical single-stage pipelines to the R-CNN family and modern one-stage detectors, plus how detection is evaluated."

@@ -37,20 +37,33 @@
                 <ul>
                 <li class="toc-h2"><a href="#1-motivation">1. Motivation</a></li>
                 <li class="toc-h2"><a href="#2-bayesian-tracking-and-graphical-models">2. Bayesian tracking and graphical models</a></li>
+                <li class="toc-h3"><a href="#21-illustration-tracking-a-car">2.1 Illustration: tracking a car</a></li>
+                <li class="toc-h3"><a href="#22-notation">2.2 Notation</a></li>
+                <li class="toc-h3"><a href="#23-bayesian-graphical-model">2.3 Bayesian graphical model</a></li>
+                <li class="toc-h3"><a href="#24-recursive-estimation">2.4 Recursive estimation</a></li>
+                <li class="toc-h3"><a href="#25-bayesian-formulation-bayes-filter">2.5 Bayesian formulation (Bayes filter)</a></li>
+                <li class="toc-h3"><a href="#26-estimators">2.6 Estimators</a></li>
+                <li class="toc-h3"><a href="#27-deep-networks-in-this-framework">2.7 Deep networks in this framework</a></li>
                 <li class="toc-h2"><a href="#3-single-object-online-tracking">3. Single-object online tracking</a></li>
-                <li class="toc-h3"><a href="#31-goturn">3.1 GOTURN</a></li>
-                <li class="toc-h3"><a href="#32-mdnet">3.2 MDNet</a></li>
+                <li class="toc-h3"><a href="#31-online-vs-offline-tracking">3.1 Online vs offline tracking</a></li>
+                <li class="toc-h3"><a href="#32-goturn">3.2 GOTURN</a></li>
+                <li class="toc-h3"><a href="#33-mdnet">3.3 MDNet</a></li>
                 <li class="toc-h2"><a href="#4-multi-object-tracking-as-association">4. Multi-object tracking as association</a></li>
-                <li class="toc-h3"><a href="#41-motion-models-and-bipartite-matching">4.1 Motion models and bipartite matching</a></li>
-                <li class="toc-h3"><a href="#42-tracktor">4.2 Tracktor</a></li>
+                <li class="toc-h3"><a href="#41-approach-1-motion-model-bipartite-matching">4.1 Approach 1: motion model + bipartite matching</a></li>
+                <li class="toc-h3"><a href="#42-approach-2-tracktor">4.2 Approach 2: Tracktor</a></li>
                 <li class="toc-h3"><a href="#43-metric-learning-and-reid">4.3 Metric learning and ReID</a></li>
-                <li class="toc-h2"><a href="#5-graph-based-mot">5. Graph-based MOT</a></li>
-                <li class="toc-h3"><a href="#51-cost-flow-networks">5.1 Cost-flow networks</a></li>
-                <li class="toc-h3"><a href="#52-learning-the-costs">5.2 Learning the costs</a></li>
-                <li class="toc-h3"><a href="#53-graph-optimization">5.3 Graph optimization</a></li>
-                <li class="toc-h3"><a href="#54-message-passing-networks">5.4 Message passing networks</a></li>
-                <li class="toc-h3"><a href="#55-mot-with-message-passing-networks">5.5 MOT with message passing networks</a></li>
+                <li class="toc-h2"><a href="#5-graph-based-mot-offline">5. Graph-based MOT (offline)</a></li>
+                <li class="toc-h3"><a href="#51-tracking-with-network-flows">5.1 Tracking with network flows</a></li>
+                <li class="toc-h3"><a href="#52-constructing-the-cost-flow-network">5.2 Constructing the cost-flow network</a></li>
+                <li class="toc-h3"><a href="#53-complete-graph-and-occlusions">5.3 Complete graph and occlusions</a></li>
+                <li class="toc-h3"><a href="#54-map-formulation">5.4 MAP formulation</a></li>
+                <li class="toc-h3"><a href="#55-optimisation">5.5 Optimisation</a></li>
+                <li class="toc-h3"><a href="#56-handling-occlusions-and-open-questions">5.6 Handling occlusions and open questions</a></li>
+                <li class="toc-h3"><a href="#57-end-to-end-learning-message-passing-networks">5.7 End-to-end learning: message passing networks</a></li>
+                <li class="toc-h3"><a href="#58-the-message-passing-algorithm">5.8 The message passing algorithm</a></li>
+                <li class="toc-h3"><a href="#59-mot-with-message-passing-networks">5.9 MOT with message passing networks</a></li>
                 <li class="toc-h2"><a href="#6-mot-evaluation">6. MOT evaluation</a></li>
+                <li class="toc-h2"><a href="#7-tracking-sota">7. Tracking SoTA</a></li>
                 <li class="toc-h2"><a href="#references">References</a></li>
                 </ul>
             </nav>
@@ -62,122 +75,624 @@
             <h1>Computer Vision III (IN2375) — Notes 2: Object Tracking</h1>
             <div class="post-meta">
                 <span>Published 23 August 2026</span> ·
-                <span>Updated 27 August 2026</span> ·
+                <span>Updated 29 August 2026</span> ·
                 <span class="post-category">Course notes › Computer Vision › Computer Vision III (IN2375)</span> ·
-                <span>807 words · 4 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>6,965 words · 27 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
 <blockquote>
 <p>本文笔记中英混杂，因为期末考试纯英文方便记忆，解释部分用中文方便理解</p>
 </blockquote>
-<p>As in the detection notes, we start from the motivation. We first frame
-tracking probabilistically — <strong>Bayesian tracking</strong> and <strong>graphical models</strong> —
-then look at single-object <strong>online tracking</strong> with GOTURN and MDNet. Moving to
-multiple objects, tracking becomes an association problem: the first approach
-combines a <strong>motion model</strong> with <strong>bipartite matching</strong>; the second,
-<strong>Tracktor</strong>, turns the detector itself into a tracker; <strong>metric learning</strong>
-and <strong>re-identification (ReID)</strong> supply the appearance cues. We then move to
-<strong>graph-based MOT</strong> — cost-flow networks, learning the costs, and full graph
-optimization — culminating in <strong>message passing networks</strong> and MOT with MPNs.
-We close with how multi-object tracking is <strong>evaluated</strong>.</p>
+<p>这篇笔记从motivation出发，先用<strong>Bayesian tracking</strong>和graphical model给tracking
+一个概率框架，然后讲单目标的online tracking（GOTURN、MDNet）。进入多目标后
+tracking变成<strong>association问题</strong>：第一种approach是motion model加bipartite
+matching，第二种是<strong>Tracktor</strong>直接把detector当tracker，配合<strong>metric learning</strong>
+和ReID提供appearance线索。之后是offline的<strong>graph-based MOT</strong>：cost-flow
+network、MAP formulation、如何learn costs，最后走到<strong>message passing
+networks</strong>。收尾讲MOT evaluation。</p>
 <h2 id="1-motivation">1. Motivation</h2>
+<p>为什么要做tracking：</p>
 <ol>
-<li>建造一个世界的<strong>动态模型</strong>， 理解where/what objects 和 object 如何 move</li>
-<li><strong>预测</strong>未来的运动（e.g. 行人是否穿越马路）</li>
-<li>仅凭外观无法辨别物体时辅助物体检测（to facilitate object detection when
-appearance alone is insufficient）</li>
+<li>建造一个世界的<strong>动态模型</strong>，理解where/what objects以及object如何move</li>
+<li><strong>预测</strong>未来的运动（比如行人是否会穿越马路）</li>
+<li>仅凭外观无法辨别物体时辅助object detection（to facilitate object detection
+   when appearance alone is insufficient）</li>
 </ol>
-<p>我们的目标是在给出 t帧时的observation, 建立目标检测与时序关联模型，找到他们与在t + n帧的观测结果的对应关系</p>
-<p>挑战有： Fast motions Changing appearance
-•Changing object pose
-•Dynamic backgrounds
-•Occlusions
-•Poor image quality 等等</p>
-<p>一个简单的想法是 tracking by detection, detect the object in every frame 例如 Eigenfaces(el. turk, matthew A,.... "face recognition using eigenfaces")。 如果场景中只有一个人，且该人始终保持正面朝向，我们可以采用基于滑动窗口的模板匹配方法（例如使用人脸的 PCA 模型，但我们不希望搜索整幅图像，因为这种做法效率低下，所以可以利用上一帧中的位置信息来限定搜索范围。
-但是问题是Many objects may be present, and the detector may misfire 我们不知道哪一个detection是哪一个
-idea: We could use the motion prior.</p>
+<p>我们的目标是：给出t帧时的observation，建立目标检测与时序关联模型，找到它们与
+第t+n帧观测结果的对应关系。</p>
+<p>挑战有：fast motions、changing appearance、changing object pose、
+dynamic backgrounds、occlusions、poor image quality等等。</p>
+<p>一个简单的想法是<strong>tracking by detection</strong>，即detect the object in every frame，
+例如Eigenfaces（Turk &amp; Pentland, "Face recognition using eigenfaces"）。如果
+场景中只有一个人、且该人始终保持正面朝向，我们可以采用基于sliding window的
+模板匹配方法（例如使用人脸的PCA模型）。但我们不希望搜索整幅图像，因为这种
+做法效率低下，所以可以利用上一帧中的位置信息来限定搜索范围。</p>
+<p>但问题是many objects may be present, and the detector may misfire，我们不知道
+哪一个detection对应哪一个物体。</p>
+<p><strong>Idea: we could use the motion prior</strong>，也就是用运动的先验知识来约束关联。</p>
 <h2 id="2-bayesian-tracking-and-graphical-models">2. Bayesian tracking and graphical models</h2>
-<p>直觉是 Illustration
-23
-[Michael Black]
-Goal: Estimate car position at each time instant (say, of the white car).
-Observations: Image sequence and known background.
-Background extraction
-24
-• Idea: Background is almost constant across all frames.
-Hence, it is well represented by a low-rank approx
-Example:
-• Video Resolution: 60 pixels by 80 pixels, 113 seconds, 10fps
-• We unroll frames, resulting in vectors of size 1 x 4800
-• We stack them into a matrix of size 11300 x 4800
-Video Matrix
-SVD
-Low Rank
-Illustration
-25
-[Michael Black]
-•Perform background subtraction.
-•Obtain binary map of possible cars.
-•But which one is the one we want to track?
-Bayesian tracking
-26
-[Michael Black]
-observations: images
-system state: car position (𝑥, 𝑦)
-Likelihood:
-Is there a car?
-Prior:
-Where was the car in
-the previous frame?
-Posterior:
-Bayesian update
-Notation
-27
-[Michael Black]
-• 𝑥𝑘 ∈ ℝ𝑛: internal state at 𝑘-th frame
-(hidden random variable, e.g., position of the object in the image).
-𝑋𝑘 = [𝑥1, 𝑥2, . . . , 𝑥𝑘]𝑇 history up to time step 𝑘.
-• 𝑧𝑘 ∈ ℝ𝑚: measurement at 𝑘-th frame
-(observable random variable, e.g. the given image).
-𝑍𝑘 = [𝑧1, 𝑧2, . . . , 𝑧𝑘]𝑇 history up to time step 𝑘</p>
-<p>我们的目标是 Goal
-28
-[Michael Black]
-Estimating posterior probability 𝑝(𝑥𝑘 ∣ 𝑍𝑘)
-How?
-One idea: recursion
-𝑝(𝑥𝑘−1 ∣ 𝑍𝑘−1) → 𝑝(𝑥𝑘 ∣ 𝑍𝑘)
-How to realise recursion?
-What assumptions are necessary?</p>
-<p>因此我们建立贝叶斯图模型， 
-<em>(recursive Bayesian filtering, prediction / update, Kalman filter, graphical-model view …)</em></p>
+<h3 id="21-illustration-tracking-a-car">2.1 Illustration: tracking a car</h3>
+<p>先看一个直觉的例子（[Michael Black]）：目标是估计每个时刻白色汽车的位置，
+observation是image sequence加上已知的background。</p>
+<p><strong>Background extraction</strong>：background在所有帧里几乎是恒定的，所以它可以用
+一个<strong>low-rank近似</strong>很好地表示。具体做法：</p>
+<ul>
+<li>视频分辨率60×80，113秒，10fps</li>
+<li>把每帧unroll成1×4800的向量</li>
+<li>堆成11300×4800的矩阵，做<strong>SVD</strong>取low rank部分</li>
+</ul>
+<figure><img alt="Background extraction via SVD" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/background.png" loading="lazy" decoding="async" width="1002" height="534"><figcaption>Background extraction via SVD</figcaption></figure>
+<p>拿到background之后做background subtraction，得到可能是车的binary map。
+但是<strong>哪一个才是我们要跟踪的那辆车</strong>？这就需要贝叶斯框架：</p>
+<figure><img alt="Bayesian tracking" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/bayesian_tracking.png" loading="lazy" decoding="async" width="876" height="509"><figcaption>Bayesian tracking</figcaption></figure>
+<div class="arithmatex">\[\underbrace{p(x_k \mid Z_k)}_{\text{Posterior}} \propto \underbrace{p(z_k \mid x_k)}_{\text{Likelihood}} \cdot \underbrace{p(x_k \mid Z_{k-1})}_{\text{Prior}}\]</div>
+<p>三个要素：</p>
+<ul>
+<li><strong>Likelihood</strong>：这里有车吗？<span class="arithmatex">\(p(FG \mid \text{car} = (x,y))\)</span></li>
+<li><strong>Prior</strong>：上一帧车在哪里？<span class="arithmatex">\(p(\text{car} = (x,y))\)</span></li>
+<li><strong>Posterior</strong>：Bayesian update的结果 <span class="arithmatex">\(p(\text{car} = (x,y) \mid FG)\)</span></li>
+</ul>
+<h3 id="22-notation">2.2 Notation</h3>
+<ul>
+<li><span class="arithmatex">\(x_k \in \mathbb{R}^n\)</span>：第k帧的<strong>internal state</strong>（hidden random variable，
+  比如物体在图像中的位置）。<span class="arithmatex">\(X_k = [x_1, x_2, \dots, x_k]^\top\)</span> 是到时刻k的历史</li>
+<li><span class="arithmatex">\(z_k \in \mathbb{R}^m\)</span>：第k帧的<strong>measurement</strong>（observable random variable，
+  比如给定的图像）。<span class="arithmatex">\(Z_k = [z_1, z_2, \dots, z_k]^\top\)</span> 是观测历史</li>
+</ul>
+<p><strong>目标</strong>：估计posterior probability <span class="arithmatex">\(p(x_k \mid Z_k)\)</span>。</p>
+<p><strong>怎么做？</strong> 一个想法是<strong>recursion</strong>：<span class="arithmatex">\(p(x_{k-1} \mid Z_{k-1}) \to p(x_k \mid Z_k)\)</span>。
+但要实现recursion，需要哪些assumptions？</p>
+<h3 id="23-bayesian-graphical-model">2.3 Bayesian graphical model</h3>
+<p>答案是用<strong>Hidden Markov Model（HMM）</strong>：</p>
+<figure><img alt="Bayesian graphical model: HMM" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/bayesian-graphical-model.png" loading="lazy" decoding="async" width="999" height="552"><figcaption>Bayesian graphical model: HMM</figcaption></figure>
+<p>两个assumption：</p>
+<ol>
+<li><strong>Measurement independence</strong>：<span class="arithmatex">\(p(z_k \mid x_k, Z_{k-1}) = p(z_k \mid x_k)\)</span>，
+   即当前观测只取决于当前状态</li>
+<li><strong>Markov assumption</strong>：<span class="arithmatex">\(p(x_k \mid x_{k-1}, Z_{k-1}) = p(x_k \mid x_{k-1})\)</span>，
+   即当前状态只取决于上一个状态</li>
+</ol>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span><span class="arithmatex">\(p(x_k \mid X_{k-1}) = p(x_k \mid x_{k-1})\)</span> 这个性质叫什么？</p>
+<p><strong>First-order Markov property</strong>（一阶马尔可夫性）：只考虑前一个状态。</p>
+<h3 id="24-recursive-estimation">2.4 Recursive estimation</h3>
+<p>有了这两个假设，就可以推导recursion：</p>
+<figure><img alt="Recursive estimation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/recursive-estimation.png" loading="lazy" decoding="async" width="999" height="552"><figcaption>Recursive estimation</figcaption></figure>
+<p>推导链条（每一步用到的规则标在右边）：</p>
+<div class="arithmatex">\[\begin{aligned}
+p(x_k \mid Z_k) &amp;= p(x_k \mid z_k, Z_{k-1}) &amp;&amp; \text{Expansion: } Z_k = (z_k, Z_{k-1}) \\
+&amp;\propto p(z_k \mid x_k, Z_{k-1}) \cdot p(x_k \mid Z_{k-1}) &amp;&amp; \text{Bayes rule} \\
+&amp;\propto p(z_k \mid x_k) \cdot p(x_k \mid Z_{k-1}) &amp;&amp; \text{Assumption 1} \\
+&amp;\propto p(z_k \mid x_k) \cdot \int p(x_k, x_{k-1} \mid Z_{k-1})\, dx_{k-1} &amp;&amp; \text{Marginalization} \\
+&amp;\propto p(z_k \mid x_k) \cdot \int p(x_k \mid x_{k-1}, Z_{k-1}) p(x_{k-1} \mid Z_{k-1})\, dx_{k-1} &amp;&amp; \text{Factorization} \\
+&amp;\propto p(z_k \mid x_k) \cdot \int p(x_k \mid x_{k-1}) p(x_{k-1} \mid Z_{k-1})\, dx_{k-1} &amp;&amp; \text{Assumption 2}
+\end{aligned}\]</div>
+<h3 id="25-bayesian-formulation-bayes-filter">2.5 Bayesian formulation (Bayes filter)</h3>
+<p>最终得到<strong>Bayes filter</strong>：</p>
+<figure><img alt="Bayes filter" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/bayes-filter.png" loading="lazy" decoding="async" width="999" height="552"><figcaption>Bayes filter</figcaption></figure>
+<div class="arithmatex">\[p(x_k \mid Z_k) = \kappa \cdot p(z_k \mid x_k) \cdot \int p(x_k \mid x_{k-1}) p(x_{k-1} \mid Z_{k-1})\, dx_{k-1}\]</div>
+<p>逐项解释：</p>
+<ul>
+<li><span class="arithmatex">\(p(x_k \mid Z_k)\)</span>：当前时刻的posterior probability</li>
+<li><span class="arithmatex">\(p(z_k \mid x_k)\)</span>：<strong>likelihood</strong>（观测模型）</li>
+<li><span class="arithmatex">\(p(x_k \mid x_{k-1})\)</span>：<strong>temporal prior</strong>（motion model）</li>
+<li><span class="arithmatex">\(p(x_{k-1} \mid Z_{k-1})\)</span>：上一时刻的posterior</li>
+<li><span class="arithmatex">\(\kappa\)</span>：normalizing term</li>
+</ul>
+<p>它其实是两步：</p>
+<ul>
+<li><strong>Step 1（prediction）</strong>：拿上一时刻的posterior <span class="arithmatex">\(p(x_{k-1} \mid Z_{k-1})\)</span>，
+  通过motion model <span class="arithmatex">\(p(x_k \mid x_{k-1})\)</span> 积分推到当前，得到
+  <span class="arithmatex">\(p(x_k \mid Z_{k-1})\)</span></li>
+<li><strong>Step 2（correction/update）</strong>：拿到新观测 <span class="arithmatex">\(z_k\)</span> 之后，用likelihood
+  <span class="arithmatex">\(p(z_k \mid x_k)\)</span> 修正，得到 <span class="arithmatex">\(p(x_k \mid Z_k)\)</span></li>
+</ul>
+<h3 id="26-estimators">2.6 Estimators</h3>
+<p>假设posterior已知，怎么给出一个具体的估计？</p>
+<ul>
+<li><strong>Posterior mean</strong>：<span class="arithmatex">\(\hat{x}_k = E(x_k \mid Z_k) = \int x_k\, p(x_k \mid Z_k)\, dx_k\)</span>，
+  对应<strong>minimum mean squared error</strong></li>
+<li><strong>Maximum a posteriori (MAP)</strong>：<span class="arithmatex">\(\hat{x}_k = \arg\max_{x_k} p(x_k \mid Z_k)\)</span>，
+  取概率最大的那个点</li>
+</ul>
+<p>posterior是多峰分布时两者会给出不同答案（图右侧）。</p>
+<h3 id="27-deep-networks-in-this-framework">2.7 Deep networks in this framework</h3>
+<p>网络的输入输出很容易看出来，但更有用（也更难）的是理解<strong>一个网络在Bayesian
+formulation里建模了什么</strong>（比如它怎么建模temporal prior）。</p>
+<p>通常网络被要求<strong>直接产生MAP</strong>：</p>
+<div class="arithmatex">\[\hat{x}_k = \arg\max_{x_k} p(x_k \mid Z_k) \approx f_\theta(Z_k, x_{k-1})\]</div>
+<p>也就是说<strong>不建模实际的state distribution</strong>，直接回归一个点估计。这是深度
+tracker和经典贝叶斯滤波（如Kalman filter）最大的区别。</p>
 <h2 id="3-single-object-online-tracking">3. Single-object online tracking</h2>
-<h3 id="31-goturn">3.1 GOTURN</h3>
-<p><em>(…)</em></p>
-<h3 id="32-mdnet">3.2 MDNet</h3>
-<p><em>(…)</em></p>
+<h3 id="31-online-vs-offline-tracking">3.1 Online vs offline tracking</h3>
+<ul>
+<li><strong>Online tracking</strong>："given observations so far, estimate the current state"</li>
+<li><strong>Offline tracking</strong>："given all observations, estimate any state"</li>
+<li>一个online模型也可以用于offline，我们的recursive Bayesian model照样成立</li>
+</ul>
+<p><strong>Online tracking</strong>：</p>
+<ul>
+<li>一次处理两帧</li>
+<li>适合real-time应用</li>
+<li><strong>prone to drifting</strong>，从错误或遮挡中恢复很困难</li>
+</ul>
+<p><strong>Offline tracking</strong>：</p>
+<ul>
+<li>处理一批帧，需要整段视频（或一个clip）</li>
+<li>不适合real-time</li>
+<li><strong>善于从遮挡中恢复</strong>（短遮挡，后面会看到）</li>
+<li>适合video analysis</li>
+</ul>
+<h3 id="32-goturn">3.2 GOTURN</h3>
+<p><a href="https://arxiv.org/abs/1604.01802">Held et al., 2016</a>。最直接的深度单目标
+tracker：</p>
+<figure><img alt="GOTURN" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/GOTURN.png" loading="lazy" decoding="async" width="813" height="428"><figcaption>GOTURN</figcaption></figure>
+<ul>
+<li><strong>Input</strong>：search region（当前帧裁剪出来的区域）+ template region
+  （上一帧的物体，即what to track）</li>
+<li><strong>Output</strong>：bounding box coordinates in the search region</li>
+<li>两路conv提特征，concat后过FC直接<strong>回归</strong>box坐标</li>
+</ul>
+<p>因为只是一次前向，所以非常快（100 FPS）。</p>
+<h3 id="33-mdnet">3.3 MDNet</h3>
+<p><a href="https://arxiv.org/abs/1510.07945">Nam &amp; Han, 2016</a>，思路完全不同：</p>
+<figure><img alt="MDNet" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/MDnet.png" loading="lazy" decoding="async" width="567" height="1111"><figcaption>MDNet</figcaption></figure>
+<ul>
+<li><strong>训练</strong>：shared layers学generic visual tracking representation，
+  每个训练视频（domain）配一个<strong>domain-specific的fc6头</strong>（K个domain就K个头）</li>
+<li><strong>测试</strong>：遇到新序列时，在<strong>第一帧上fine-tune</strong>一个新的fc6</li>
+<li><strong>Online adaptation</strong>：<span class="arithmatex">\(t \ge 2\)</span> 的每一帧，draw target candidates（在上一个
+  位置附近crop出很多候选）→ find the optimal state（选分最高的）→ collect
+  training samples → update the CNN if needed，然后repeat for the next frame</li>
+</ul>
+<p>对比一下两者的本质：<strong>GOTURN是box regression，MDNet是argmax over候选
+（本质上是R-CNN式的分类）</strong>。</p>
+<p>MDNet的online adaptation有个<strong>问题：self-training drift</strong>。因为伪标签来自
+模型自己，一旦某一帧跟错了人（比如跟到旁边的路人），错误会被当成正样本
+学进去，之后就一直错下去。这个思路在
+<a href="cv3-modern-approaches.html">note 4</a>的semi-supervised章节里叫self-training，
+OnAVOS用的是同一套机制。</p>
 <h2 id="4-multi-object-tracking-as-association">4. Multi-object tracking as association</h2>
-<p><em>(what breaks when there are many objects: data association, occlusion, identity switches …)</em></p>
-<h3 id="41-motion-models-and-bipartite-matching">4.1 Motion models and bipartite matching</h3>
-<p><em>(Hungarian algorithm …)</em></p>
-<h3 id="42-tracktor">4.2 Tracktor</h3>
-<p><em>(…)</em></p>
+<p>多物体的情况下，问题变成：<strong>哪个detection对应哪条轨迹</strong>。</p>
+<h3 id="41-approach-1-motion-model-bipartite-matching">4.1 Approach 1: motion model + bipartite matching</h3>
+<figure><img alt="Approach 1" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/MoTApproach1.png" loading="lazy" decoding="async" width="497" height="309"><figcaption>Approach 1</figcaption></figure>
+<p>三步：</p>
+<ol>
+<li><strong>Track initialization</strong>（比如用一个detector）</li>
+<li><strong>Prediction of the next position</strong>（motion model，就是2.5里的temporal
+   prior <span class="arithmatex">\(p(x_k \mid x_{k-1})\)</span>）</li>
+<li><strong>Matching</strong> predictions with detections（appearance model）</li>
+</ol>
+<p>第3步就是<strong>bipartite matching</strong>（二分图匹配）：</p>
+<figure><img alt="Bipartite matching" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/Bipartite_matching_normal.png" loading="lazy" decoding="async" width="991" height="550"><figcaption>Bipartite matching</figcaption></figure>
+<ol>
+<li>定义box之间的distance（比如 <span class="arithmatex">\(1 - IoU\)</span>），得到一个<strong>N×N矩阵</strong></li>
+<li>用<strong>Hungarian algorithm</strong>求解assignment problem，复杂度 <span class="arithmatex">\(O(N^3)\)</span></li>
+<li>bipartite matching的解对应<strong>最小总代价</strong>的全局匹配</li>
+</ol>
+<p>这里的Hungarian algorithm和<a href="cv3-modern-approaches.html">note 4</a>里DETR用来
+匹配prediction和GT的是同一个算法。</p>
+<p><strong>问题1：如果少了一个detection怎么办？</strong>（物体被遮挡、检测器漏检）</p>
+<figure><img alt="Missing detection" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/missing_bm.png" loading="lazy" decoding="async" width="971" height="493"><figcaption>Missing detection</figcaption></figure>
+<p>解决办法：加一个<strong>pseudo detection</strong>，代价固定（比如0）；照常跑Hungarian；
+最后<strong>丢弃分配到pseudo node的结果</strong>。</p>
+<p><strong>问题2：如果没有合适的prediction怎么办？</strong>（比如物体离开画面，或者出现了
+新物体）</p>
+<figure><img alt="No suitable prediction" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/no_suitable.png" loading="lazy" decoding="async" width="971" height="499"><figcaption>No suitable prediction</figcaption></figure>
+<p>同样用<strong>pseudo node</strong>：它的值定义了一个<strong>threshold</strong>（代价比它还高的匹配
+宁可不匹配），需要仔细balance。于是：</p>
+<ul>
+<li><strong>Remove tracks</strong>：匹配到★（pseudo detection）的轨迹被终止</li>
+<li><strong>New tracks</strong>：匹配到♣（pseudo prediction）的detection初始化为新轨迹</li>
+</ul>
+<h3 id="42-approach-2-tracktor">4.2 Approach 2: Tracktor</h3>
+<p><a href="https://arxiv.org/abs/1903.05625">Bergmann et al., 2019</a>，
+"Tracking without bells and whistles"。核心洞察：<strong>detector的bounding box
+regression head本身就能当tracker用</strong>。</p>
+<figure><img alt="Tracktor" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/approach2.png" loading="lazy" decoding="async" width="690" height="806"><figcaption>Tracktor</figcaption></figure>
+<p>四步：</p>
+<ol>
+<li>在第 <span class="arithmatex">\(k-1\)</span> 帧detect objects（用一个object detector）</li>
+<li>把box <strong>copy到第 <span class="arithmatex">\(k\)</span> 帧的同一位置</strong></li>
+<li>用detector的<strong>regression head refine</strong>这些box（把框"拉"到物体的新位置），
+   同时classification score <span class="arithmatex">\(s_t^k\)</span> 低于阈值 <span class="arithmatex">\(\tau\)</span> 的框被kill掉（说明物体
+   消失或被遮挡）</li>
+<li>再跑一次object detection，把没有被已有轨迹覆盖的新检测初始化为<strong>new tracks</strong></li>
+</ol>
+<p>妙处在于：<strong>完全不需要训练任何tracking-specific的东西</strong>，纯靠一个现成的
+detector就打败了当时很多专门设计的tracker。这也印证了
+<a href="cv3-modern-approaches.html">note 4</a>里ByteTrack的那个结论：MOT的第一要素
+是检测质量。</p>
 <h3 id="43-metric-learning-and-reid">4.3 Metric learning and ReID</h3>
-<p><em>(…)</em></p>
-<h2 id="5-graph-based-mot">5. Graph-based MOT</h2>
-<h3 id="51-cost-flow-networks">5.1 Cost-flow networks</h3>
-<p><em>(min-cost flow formulation …)</em></p>
-<h3 id="52-learning-the-costs">5.2 Learning the costs</h3>
-<p><em>(…)</em></p>
-<h3 id="53-graph-optimization">5.3 Graph optimization</h3>
-<p><em>(…)</em></p>
-<h3 id="54-message-passing-networks">5.4 Message passing networks</h3>
-<p><em>(…)</em></p>
-<h3 id="55-mot-with-message-passing-networks">5.5 MOT with message passing networks</h3>
-<p><em>(…)</em></p>
+<p>上面的matching还需要<strong>appearance model</strong>：怎么判断两个crop是不是同一个人？
+这类问题都可以归结为<strong>metric learning</strong>：</p>
+<figure><img alt="Metric learning: image retrieval" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/image_retrieval.png" loading="lazy" decoding="async" width="974" height="514"><figcaption>Metric learning: image retrieval</figcaption></figure>
+<p>以image retrieval为例：gallery里是不同identity的图片，给一个probe（比如
+Cam 1检测到的人），我们希望在feature space里
+<span class="arithmatex">\(d_\omega(f_\theta(p), f_\theta(q)) &lt; \tau\)</span> 的就是同一个人，从而retrieve
+top matches。在MOT里这就是<strong>re-identification（ReID）</strong>。</p>
+<p><strong>目标</strong>：学一个embedding <span class="arithmatex">\(f_\theta\)</span>，使得 <span class="arithmatex">\(d(A, B; \theta) &lt; d(A, C; \theta)\)</span>，
+其中 <span class="arithmatex">\((A,B)\)</span> 是positive pair、<span class="arithmatex">\((A,C)\)</span> 是negative pair。</p>
+<p><strong>第二次尝试的loss</strong>：</p>
+<div class="arithmatex">\[\theta^* := \arg\min_\theta \mathbb{E}_{A,B \in S^+}[d_\theta(A,B)] - \mathbb{E}_{B,C \in S^-}[d_\theta(B,C)]\]</div>
+<p>其中 <span class="arithmatex">\(S^+\)</span>、<span class="arithmatex">\(S^-\)</span> 是positive和negative pair的集合。<strong>但这个loss有问题</strong>：
+negative distance可以无限增大，导致 <span class="arithmatex">\(\mathcal{L} \to -\infty\)</span>。所以需要
+<strong>margin</strong>。</p>
+<p><strong>Hinge loss</strong>（<a href="https://ieeexplore.ieee.org/document/1467314">Chopra et al., 2005</a>）：
+对positive pair无界、对negative pair有界：</p>
+<figure><img alt="Hinge loss" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/hinge_loss.png" loading="lazy" decoding="async" width="822" height="932"><figcaption>Hinge loss</figcaption></figure>
+<div class="arithmatex">\[\mathcal{L}(A,B) = y^* \|f(A) - f(B)\|^2 + (1 - y^*) \max\big(0,\; m^2 - \|f(A) - f(B)\|^2\big)\]</div>
+<ul>
+<li><span class="arithmatex">\(y^* = 1\)</span> if <span class="arithmatex">\((A,B)\)</span> is a positive pair, 0 otherwise</li>
+<li>第一项是positive pair的<strong>L2距离</strong>（越近越好，无界）</li>
+<li>第二项是negative pair的<strong>hinge loss with margin <span class="arithmatex">\(m\)</span></strong>：一旦推开超过
+  margin就不再有惩罚</li>
+</ul>
+<p><strong>Triplet loss</strong>：把不等式 <span class="arithmatex">\(d(A,B;\theta) &lt; d(A,C;\theta)\)</span> 直接写进<strong>一个</strong>
+loss term：</p>
+<figure><img alt="Triplet loss" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/triplet_loss.png" loading="lazy" decoding="async" width="822" height="932"><figcaption>Triplet loss</figcaption></figure>
+<div class="arithmatex">\[\mathcal{L}(A,B,C) = \max\big(0,\; \|f(A) - f(B)\|^2 - \|f(A) - f(C)\|^2 + m\big)\]</div>
+<p>三元组是anchor <span class="arithmatex">\(A\)</span>、positive <span class="arithmatex">\(B\)</span>、negative <span class="arithmatex">\(C\)</span>。直觉：<strong>positive要拉到
+anchor附近，negative至少要推到margin之外</strong>，也就是要求
+<span class="arithmatex">\(d(A,P) + m \le d(A,N)\)</span>，本质上是一个<strong>ranking</strong>（排序）约束而不是绝对
+距离约束。</p>
+<p>这套metric learning就是<a href="cv3-modern-approaches.html">note 4</a>第2章
+contrastive learning的前身，区别只是那里的positive pair来自
+data augmentation（不需要标签），这里来自identity标签。</p>
+<p><strong>这一节小结</strong>：</p>
+<ul>
+<li>Bayesian tracking（一个general的框架）</li>
+<li>Deep single object trackers：GOTURN、MDNet（online adaptation）</li>
+<li>Tracking by detection：data association problem、bipartite matching</li>
+<li>Metric learning：hinge loss和triplet loss</li>
+</ul>
+<h2 id="5-graph-based-mot-offline">5. Graph-based MOT (offline)</h2>
+<p>上面的方法都是<strong>逐帧</strong>做关联（online）。如果我们能拿到整段视频，就可以做
+<strong>全局最优</strong>的关联，这就是offline的graph-based MOT。</p>
+<h3 id="51-tracking-with-network-flows">5.1 Tracking with network flows</h3>
+<p>把问题建成图：</p>
+<figure><img alt="Nodes and edges" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/flow-idea.png" loading="lazy" decoding="async" width="985" height="547"><figcaption>Nodes and edges</figcaption></figure>
+<ul>
+<li><strong>Node</strong> = object detection（<span class="arithmatex">\(d_1^t, d_2^t, d_3^t, d_1^{t+1}, \dots\)</span>）</li>
+<li><strong>Edge</strong> = temporal ID correspondence（两个detection是同一个物体）</li>
+<li><strong>Goal</strong>：找到一组<strong>disjoint set of trajectories</strong>（互不相交的轨迹）</li>
+</ul>
+<figure><img alt="Network flows" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/network-flow.png" loading="lazy" decoding="async" width="985" height="547"><figcaption>Network flows</figcaption></figure>
+<p>这被建模成<strong>minimum-cost maximum-flow problem</strong>："determine the maximum flow
+with a minimum cost"，其中<strong>1 unit of flow = 1 pedestrian</strong>：</p>
+<figure><img alt="Min-cost max-flow" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/min-cost-max-flow.png" loading="lazy" decoding="async" width="982" height="551"><figcaption>Min-cost max-flow</figcaption></figure>
+<p>优化目标：</p>
+<div class="arithmatex">\[f^* = \arg\min_f \sum_{i,j} C(i,j) f(i,j), \qquad f(i,j) \in \{0, 1\}\]</div>
+<ul>
+<li><span class="arithmatex">\(C(i,j)\)</span>：edge的<strong>cost</strong></li>
+<li><span class="arithmatex">\(f(i,j)\)</span>：<strong>indicator</strong>（0或1，这条边用不用）</li>
+<li>解 <span class="arithmatex">\(f^*\)</span> 就对应一组disjoint trajectories</li>
+</ul>
+<figure><img alt="Example costs" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/flow-costs.png" loading="lazy" decoding="async" width="995" height="1147"><figcaption>Example costs</figcaption></figure>
+<p>costs的例子：同一个人在 <span class="arithmatex">\(t\)</span> 和 <span class="arithmatex">\(t+1\)</span> 的两个检测，<span class="arithmatex">\(C(i,j) \approx 0.2\)</span>（像，
+代价低）；和另一个人 <span class="arithmatex">\(C(i,k) \approx 0.9\)</span>（不像，代价高）。</p>
+<h3 id="52-constructing-the-cost-flow-network">5.2 Constructing the cost-flow network</h3>
+<p><strong>Transition cost <span class="arithmatex">\(C_t\)</span></strong>（帧间的边）：</p>
+<figure><img alt="Transition costs" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/costflow-transition.png" loading="lazy" decoding="async" width="1010" height="559"><figcaption>Transition costs</figcaption></figure>
+<p>一层的所有node连到下一层的所有node（<strong>dense graph</strong>，图上省略了部分箭头）。
+<span class="arithmatex">\(C_t\)</span> 可以用：</p>
+<ul>
+<li><strong>Motion</strong>：比如Kalman filter预测 <span class="arithmatex">\(\hat{x}_{t+1}\)</span>，代价是
+  <span class="arithmatex">\(\|x_j - \hat{x}_{t+1}\|\)</span></li>
+<li><strong>Appearance</strong>：用metric learning学到的embedding算cosine distance，
+  <span class="arithmatex">\(C_{app}(i,j) = 1 - \frac{z_i^\top z_j}{\|z_i\| \|z_j\|}\)</span></li>
+</ul>
+<p><strong>Source和sink</strong>：</p>
+<figure><img alt="Source and sink" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/costflow-source-sink.png" loading="lazy" decoding="async" width="1010" height="559"><figcaption>Source and sink</figcaption></figure>
+<p>加两个特殊节点：source <span class="arithmatex">\(S\)</span> 和sink <span class="arithmatex">\(T\)</span>。</p>
+<ul>
+<li><span class="arithmatex">\(C_{in}\)</span>：<strong>entrance cost</strong>，开启一条轨迹的代价</li>
+<li><span class="arithmatex">\(C_{out}\)</span>：<strong>exit cost</strong>，结束一条轨迹的代价</li>
+</ul>
+<p><strong>Trajectory的定义</strong>：a <strong>path</strong> starting at S and ending at T。
+Trajectories are disjoint ordered sets（互不相交的有序集合）：</p>
+<figure><img alt="Trajectories as paths" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/costflow-trajectory.png" loading="lazy" decoding="async" width="1010" height="559"><figcaption>Trajectories as paths</figcaption></figure>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>edge的cost应该是什么符号？（全正、全负、还是都有）</p>
+<p>必须<strong>有正有负</strong>。如果所有代价都是正的，那么最优解就是"一条轨迹都不要"
+（总代价0最小）；必须有负代价的边来"奖励"合理的关联，才会真的连出轨迹。</p>
+<p><strong>Open question: 怎么把detection confidence也放进去？</strong></p>
+<p><strong>解决办法：把node拆成两个</strong>，中间连一条边，赋予<strong>detection cost <span class="arithmatex">\(C_{det}\)</span></strong>：</p>
+<figure><img alt="Node splitting" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/node-split-cdet.png" loading="lazy" decoding="async" width="1010" height="559"><figcaption>Node splitting</figcaption></figure>
+<p><span class="arithmatex">\(C_{det}\)</span> <strong>can be positive or negative</strong>：置信度高的检测给负代价（鼓励使用），
+置信度低的给正代价（抑制）。</p>
+<h3 id="53-complete-graph-and-occlusions">5.3 Complete graph and occlusions</h3>
+<p>完整的图长这样：</p>
+<figure><img alt="Complete graph" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/complete-graph.png" loading="lazy" decoding="async" width="1010" height="559"><figcaption>Complete graph</figcaption></figure>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>有多少种（轨迹）配置是可能的？（只考虑可见的边）</p>
+<p>以3个人为例：<span class="arithmatex">\(t-1 \to t\)</span> 有 <span class="arithmatex">\(3! = 6\)</span> 种匹配，<span class="arithmatex">\(t \to t+1\)</span> 又是6种，
+所以 <span class="arithmatex">\(t-1 \to t+1\)</span> 一共 <span class="arithmatex">\(6 \times 6 = 36\)</span> 种配置。可见<strong>组合爆炸</strong>，
+这正是需要高效优化算法的原因。</p>
+<p>但是……<strong>detections are not perfect</strong>。如果有遮挡，我们只能找到两条轨迹：</p>
+<figure><img alt="Occlusion cases" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/occlusion-cases.png" loading="lazy" decoding="async" width="1010" height="1127"><figcaption>Occlusion cases</figcaption></figure>
+<p>比如最后一帧发生遮挡，或者物体只在第二帧才出现。<strong>解决办法</strong>：把
+<strong>所有</strong>node都连到entrance/exit节点，这样轨迹可以在任意时刻开始或结束。</p>
+<p><strong>Constraints（flow conservation）</strong>：</p>
+<figure><img alt="Flow conservation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/flow-conservation.png" loading="lazy" decoding="async" width="1010" height="1127"><figcaption>Flow conservation</figcaption></figure>
+<div class="arithmatex">\[\sum_j f_t(j,i) + f_{in}(i) = f(i) = \sum_j f_t(i,j) + f_{out}(i), \qquad \forall f(\cdot) \in \{0,1\}\]</div>
+<p>意思是<strong>流入 = 流出</strong>：一个detection node的入流（来自前一帧的边，或者来自
+source）必须等于出流（去往后一帧的边，或者去往sink）。这个约束保证了
+每个detection最多属于一条轨迹。</p>
+<h3 id="54-map-formulation">5.4 MAP formulation</h3>
+<p>这个图优化问题和2.x的贝叶斯框架是相通的：</p>
+<figure><img alt="MAP formulation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/map-formulation.png" loading="lazy" decoding="async" width="1010" height="1127"><figcaption>MAP formulation</figcaption></figure>
+<p>给定observations <span class="arithmatex">\(\mathcal{X}\)</span>（detection responses），解是一组trajectories
+<span class="arithmatex">\(\mathcal{T}^* = \{T_k\}\)</span>（hypotheses）：</p>
+<div class="arithmatex">\[\begin{aligned}
+\mathcal{T}^* &amp;= \arg\max_\mathcal{T} P(\mathcal{T} \mid \mathcal{X}) &amp;&amp; \text{posterior} \\
+&amp;= \arg\max_\mathcal{T} P(\mathcal{X} \mid \mathcal{T}) P(\mathcal{T}) &amp;&amp; \text{Bayes rule} \\
+&amp;= \arg\max_\mathcal{T} \prod_i P(\mathbf{x}_i \mid \mathcal{T}) P(\mathcal{T}) &amp;&amp; \text{Assumption 1: conditional independence of observations} \\
+&amp;= \arg\max_\mathcal{T} \prod_i P(\mathbf{x}_i \mid \mathcal{T}) \prod_{T_i \in \mathcal{T}} P(T_i) &amp;&amp; \text{Assumption 2: independence of trajectories}
+\end{aligned}\]</div>
+<p>其中 <span class="arithmatex">\(\prod_i P(\mathbf{x}_i \mid \mathcal{T})\)</span> 是<strong>data likelihood</strong>，
+<span class="arithmatex">\(\prod_{T_i} P(T_i)\)</span> 是<strong>(motion) prior</strong>。</p>
+<p>取负对数转到<strong>log-space</strong>做优化（乘法变加法）：</p>
+<div class="arithmatex">\[= \arg\min_\mathcal{T} -\sum_i \log P(\mathbf{x}_i \mid \mathcal{T}) - \sum_{T_i \in \mathcal{T}} \log P(T_i)\]</div>
+<p><strong>怎么建模prior和likelihood？</strong></p>
+<figure><img alt="Prior and likelihood" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/map-prior-likelihood.png" loading="lazy" decoding="async" width="1026" height="1160"><figcaption>Prior and likelihood</figcaption></figure>
+<p><strong>Prior（trajectory model）</strong>：count the entrance, exit and transition costs。
+对 <span class="arithmatex">\(T_i := (\mathbf{x}_0, \mathbf{x}_1, \dots, \mathbf{x}_n)\)</span>：</p>
+<div class="arithmatex">\[P(T_i) = P_{in}(\mathbf{x}_0) \prod_{j=1,n} P_t(\mathbf{x}_j \mid \mathbf{x}_{j-1}) P_{out}(\mathbf{x}_n)\]</div>
+<p>取负对数后，三项正好对应图里的三种边：
+<span class="arithmatex">\(-\log P_{in} \to f_{in} C_{in}\)</span>、<span class="arithmatex">\(-\log P_t \to f_t C_t\)</span>、
+<span class="arithmatex">\(-\log P_{out} \to f_{out} C_{out}\)</span>。</p>
+<p><strong>Likelihood</strong>：用<strong>Bernoulli分布</strong>建模：</p>
+<div class="arithmatex">\[P(\mathbf{x}_i \mid \mathcal{T}) := \begin{cases} \gamma_i, &amp; \text{if } \exists T_j \in \mathcal{T},\ \mathbf{x}_i \in T_j \\ 1 - \gamma_i, &amp; \text{otherwise} \end{cases}\]</div>
+<p><span class="arithmatex">\(\gamma_i\)</span> 是<strong>prediction confidence</strong>（检测器给的）。展开负对数：</p>
+<div class="arithmatex">\[-\log P(\mathbf{x}_i \mid \mathcal{T}) = f(\mathbf{x}_i) \underbrace{\log \frac{1 - \gamma_i}{\gamma_i}}_{C_{det}(\mathbf{x}_i)} - \underbrace{\log(1 - \gamma_i)}_{\text{可以忽略}}\]</div>
+<p><strong>关键</strong>：<span class="arithmatex">\(C_{det} = \log\frac{1-\gamma_i}{\gamma_i}\)</span>，当 <span class="arithmatex">\(\gamma_i &gt; 0.5\)</span> 时
+它是<strong>负的</strong>（鼓励使用这个检测），<span class="arithmatex">\(\gamma_i &lt; 0.5\)</span> 时是<strong>正的</strong>。这正好回答了
+5.2的Quiz——代价必须有正有负，而且它是从概率模型里<strong>自然推导出来</strong>的。</p>
+<h3 id="55-optimisation">5.5 Optimisation</h3>
+<figure><img alt="Optimisation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/flow-optimisation.png" loading="lazy" decoding="async" width="1026" height="1160"><figcaption>Optimisation</figcaption></figure>
+<p><span class="arithmatex">\((C_{det}, C_{in}, C_{out}, C_t)\)</span> 从数据估计出来之后：</p>
+<ol>
+<li>从observation set <span class="arithmatex">\(\mathcal{X}\)</span> 构造图 <span class="arithmatex">\(G(V, E, C, f)\)</span></li>
+<li>从<strong>空流</strong>开始</li>
+<li>WHILE（<span class="arithmatex">\(f(G)\)</span> 还能augment）：把flow加1（即多找一条轨迹），用min-cost
+   flow算法求当前的最优解，如果当前min cost &lt; 全局最优则记录</li>
+<li>返回全局最优流作为best association hypothesis</li>
+</ol>
+<p>复杂度：外层用binary/Fibonacci search是 <span class="arithmatex">\(O(\log n)\)</span>，
+min-cost flow算法（network simplex）是 <span class="arithmatex">\(O(n^2 m \log n)\)</span>。</p>
+<p><strong>Summary</strong>：</p>
+<ul>
+<li>Min-cost max-flow formulation：<strong>最多的轨迹数配上最小的代价</strong></li>
+<li>优化过程最大化MAP：<strong>全局解且高效</strong>（多项式时间）</li>
+</ul>
+<h3 id="56-handling-occlusions-and-open-questions">5.6 Handling occlusions and open questions</h3>
+<p><strong>怎么处理遮挡？</strong> "Markovian" formulation可能不够用：</p>
+<figure><img alt="Dense graphs for occlusions" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/occlusion-dense-graph.png" loading="lazy" decoding="async" width="1026" height="1082"><figcaption>Dense graphs for occlusions</figcaption></figure>
+<p>一阶Markov只考虑前一个状态，物体被遮挡两帧就断了。解决办法是加
+<strong>skip edges</strong>（跨越多帧的边），形成dense graph。复杂度代价：每帧N个
+detection、T帧，原本是 <span class="arithmatex">\(O(TN^2)\)</span>，允许跨K帧后变成 <span class="arithmatex">\(O(TKN^2)\)</span>。</p>
+<p>更进阶的dense graph formulation可以看：Keuper et al.（TPAMI 2018，
+correlation co-clustering）、Tang et al.（CVPR 2015 subgraph decomposition；
+CVPR 2017 lifted multicut）。</p>
+<p><strong>Open questions</strong>：</p>
+<figure><img alt="Open questions" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/two-step-no-feedback.png" loading="lazy" decoding="async" width="988" height="566"><figcaption>Open questions</figcaption></figure>
+<ol>
+<li><strong>怎么处理遮挡？</strong>（skip edge加ReID）</li>
+<li><strong>怎么设置边上的cost？</strong> costs可能和具体的graph formulation、优化方法有关</li>
+</ol>
+<p>最根本的问题是这是个<strong>两阶段</strong>流程：Step 1学costs、Step 2做图优化，
+两步之间<strong>没有feedback</strong>。优化的结果无法回过头改进cost的学习。</p>
+<h3 id="57-end-to-end-learning-message-passing-networks">5.7 End-to-end learning: message passing networks</h3>
+<p><strong>能不能直接在图上学特征（编码costs）来编码解？</strong></p>
+<figure><img alt="End-to-end goal" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/gnn-setup.png" loading="lazy" decoding="async" width="988" height="566"><figcaption>End-to-end goal</figcaption></figure>
+<p>Goal：泛化我们用的graph structure，做<strong>end-to-end learning</strong>，也就是把
+feature learning和graph reasoning<strong>一起做</strong>。</p>
+<p><strong>Setup</strong>：</p>
+<ul>
+<li><strong>Input</strong>：task-encoding graph <span class="arithmatex">\(G = (V, E)\)</span><ul>
+<li><strong>nodes</strong>：detections编码成feature vector <span class="arithmatex">\(h_i^{(0)}\)</span></li>
+<li><strong>edges</strong>：node interaction（比如inter-frame），
+  <span class="arithmatex">\((i,j) \in E\)</span>，<span class="arithmatex">\(i \in t\)</span>，<span class="arithmatex">\(j \in t+1\)</span></li>
+</ul>
+</li>
+<li><strong>Output</strong>：graph partitioning into <strong>disjoint trajectories</strong>，
+  用edge label <span class="arithmatex">\(y_{ij} \in \{0,1\}\)</span> 编码（1表示detection <span class="arithmatex">\(i\)</span>、<span class="arithmatex">\(j\)</span> 属于同一条
+  轨迹）</li>
+</ul>
+<p>对比之前：以前每条edge是一个<strong>scalar cost</strong>，现在是一个<strong>learnable
+embedding</strong>。</p>
+<p><strong>为什么不能直接用MLP或CNN？</strong></p>
+<ul>
+<li><strong>MLP</strong>：图的大小会变（node和edge数量不固定），而且node没有固定顺序
+  （"which order?"），MLP要求固定维度的输入</li>
+<li><strong>CNN</strong>：CNN能处理任意大小的图像、不要求顺序，但它依赖<strong>网格结构</strong>
+  （"which grid?"），图没有局部网格结构</li>
+</ul>
+<p><strong>Key challenges</strong>：</p>
+<ol>
+<li>Graph can be of <strong>arbitrary size</strong>（node和edge数量任意）</li>
+<li>Need <strong>invariance to node permutations</strong></li>
+<li><strong>No fixed structure</strong>（不像CNN的grid、MLP的order）</li>
+</ol>
+<p>这属于<strong>Geometric Deep Learning</strong>的范畴
+（<a href="https://arxiv.org/abs/2104.13478">Bronstein et al., 2021</a>）：grids
+（欧氏样本，如图像）、groups（有全局对称性的齐次空间，如球面）、
+<strong>graphs</strong>（节点和连接，如社交网络）、geodesics &amp; gauges（流形，如3D mesh）：</p>
+<figure><img alt="Geometric deep learning" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/geometric-dl.png" loading="lazy" decoding="async" width="858" height="977"><figcaption>Geometric deep learning</figcaption></figure>
+<p><strong>Message Passing Networks (MPN)</strong> 就是为图设计的答案：</p>
+<figure><img alt="Message passing networks" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/mpn-layers.png" loading="lazy" decoding="async" width="1012" height="557"><figcaption>Message passing networks</figcaption></figure>
+<p>输入是带node和edge feature vector的图，中间<strong>在图上传播信息若干轮</strong>，
+输出是<strong>更新后的node（和edge）feature vector</strong>。</p>
+<h3 id="58-the-message-passing-algorithm">5.8 The message passing algorithm</h3>
+<p>传播过程分<strong>两步</strong>交替进行：<strong>node-to-edge</strong>和<strong>edge-to-node</strong> updates：</p>
+<figure><img alt="Two-step message passing" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/message-passing-steps.png" loading="lazy" decoding="async" width="1012" height="557"><figcaption>Two-step message passing</figcaption></figure>
+<p><strong>Notation</strong>：</p>
+<ul>
+<li>Graph：<span class="arithmatex">\(G = (V, E)\)</span></li>
+<li>初始embedding：node <span class="arithmatex">\(h_i^{(0)}, i \in V\)</span>；edge <span class="arithmatex">\(h_{(i,j)}^{(0)}, (i,j) \in E\)</span></li>
+<li><span class="arithmatex">\(l\)</span> 步之后：<span class="arithmatex">\(h_i^{(l)}\)</span>、<span class="arithmatex">\(h_{(i,j)}^{(l)}\)</span></li>
+</ul>
+<p><strong>Step 1: node-to-edge update</strong>：</p>
+<figure><img alt="Node-to-edge" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/node-to-edge.png" loading="lazy" decoding="async" width="1012" height="557"><figcaption>Node-to-edge</figcaption></figure>
+<div class="arithmatex">\[h_{(i,j)}^{(l)} = \mathcal{N}_e\big([h_i^{(l-1)}, h_{(i,j)}^{(l-1)}, h_j^{(l-1)}]\big)\]</div>
+<p><span class="arithmatex">\(\mathcal{N}_e\)</span> 是一个<strong>learnable function（比如MLP），在整个图上共享参数</strong>。
+把边两端的node embedding和边自己的embedding拼起来过MLP。</p>
+<p><strong>Step 2: edge-to-node update</strong>：</p>
+<figure><img alt="Edge-to-node" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/edge-to-node.png" loading="lazy" decoding="async" width="1012" height="557"><figcaption>Edge-to-node</figcaption></figure>
+<p>一轮edge update之后，每条edge embedding都包含了它两端node的信息。
+按类比可以写 <span class="arithmatex">\(h_i^{(l)} = \mathcal{N}_v([h_i^{(l-1)}, h_{(i,j)}^{l}])\)</span>，
+<strong>但是</strong>：一个node一般有<strong>任意数量的邻居</strong>（degree/valency不固定）。</p>
+<p>所以需要一个<strong>permutation-invariant的aggregation function</strong>：</p>
+<div class="arithmatex">\[\Phi^{(l)}(i) := \Phi\big(\{h^{(l)}(i,j)\}_{j \in Ne(i)}\big)\]</div>
+<p>输入是incident edge的embedding组成的<strong>set</strong>。</p>
+<p><strong>Quiz: 为什么不直接concatenate所有neighbor？</strong> 因为邻居数量不固定，
+而且concatenate的结果依赖顺序，破坏permutation invariance。</p>
+<p class="quiz-q"><span class="quiz-badge">QUIZ</span>哪些函数是permutation-invariant的？</p>
+<p><strong>sum、mean、max</strong>（比如 <span class="arithmatex">\(a + b + c = b + c + a\)</span>）。这正是PointNet
+（<a href="https://arxiv.org/abs/1612.00593">Qi et al., 2017</a>）处理点云用的技巧。</p>
+<p>于是general graph的edge-to-node update是：</p>
+<figure><img alt="Edge-to-node, general form" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/edge-to-node-general.png" loading="lazy" decoding="async" width="1012" height="646"><figcaption>Edge-to-node, general form</figcaption></figure>
+<div class="arithmatex">\[h_i^{(l)} = \mathcal{N}_v\big(h_i^{(l-1)},\; \Phi^{(l)}(i)\big)\]</div>
+<p>即<strong>new node = f(old node, aggregated neighbor information)</strong>，两项分别是
+previous state和context information from neighbours。</p>
+<p><strong>完整的message passing一轮</strong>：</p>
+<ol>
+<li><strong>node → edge</strong>：<span class="arithmatex">\(h_{ij}^{(l)} = \mathcal{N}_e([h_i^{(l-1)}, h_{ij}^{(l-1)}, h_j^{(l-1)}])\)</span></li>
+<li><strong>aggregate</strong>：<span class="arithmatex">\(m_i^{(l)} = \Phi(\{h_{ij}^{(l)}\}_{j \in Ne(i)})\)</span></li>
+<li><strong>edge → node</strong>：<span class="arithmatex">\(h_i^{(l)} = \mathcal{N}_v(h_i^{(l-1)}, m_i^{(l)})\)</span></li>
+</ol>
+<p><strong>Remarks</strong>：</p>
+<ul>
+<li><strong>Main goal</strong>：把<strong>context information</strong>聚合进node和edge embedding</li>
+<li>一轮更新让node/edge的<strong>receptive field增加1</strong>，所以实践中要<strong>迭代多次</strong>
+  （L轮 = L-hop的receptive field，是个hyperparameter）</li>
+<li>所有操作都<strong>可微</strong>（<span class="arithmatex">\(\mathcal{N}_e\)</span>、<span class="arithmatex">\(\mathcal{N}_v\)</span> 是MLP，aggregation是
+  sum/mean/max，都能backprop）</li>
+<li>所有vertices/edges<strong>平等对待</strong>，即<strong>参数共享</strong></li>
+</ul>
+<p>L轮之后，<span class="arithmatex">\(h_{ij}^{(L)}\)</span> 就是<strong>context-aware的edge embedding</strong>，可以直接
+预测 <span class="arithmatex">\(p_{ij} = \sigma(\text{MLP}_{cls}(h_{ij}^{(L)})) \in [0,1]\)</span>。</p>
+<p><strong>Additional reading</strong>：Scarselli et al.（GNN, 2009）、
+<a href="https://arxiv.org/abs/1609.02907">Kipf &amp; Welling</a>（GCN, ICLR 2017）、
+<a href="https://arxiv.org/abs/1704.01212">Gilmer et al.</a>（MPNN, ICML 2017）、
+<a href="https://arxiv.org/abs/1806.01261">Battaglia et al.</a>（relational inductive
+biases, 2018 review）。</p>
+<h3 id="59-mot-with-message-passing-networks">5.9 MOT with message passing networks</h3>
+<p><a href="https://arxiv.org/abs/1912.07515">Brasó &amp; Leal-Taixé, 2020</a>（就是本课程组的
+工作）把上面这套用到MOT：</p>
+<figure><img alt="MPN for MOT: overview" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/mpn-overview.png" loading="lazy" decoding="async" width="1028" height="554"><figcaption>MPN for MOT: overview</figcaption></figure>
+<p>流程：(a) input → (b) graph construction + feature encoding → (c) neural
+message passing → (d) edge classification → (e) output，<strong>整条链路
+end-to-end learning</strong>。</p>
+<p>三句话概括：把appearance和scene geometry线索编码进node和edge embedding；
+用neural message passing把线索<strong>传播到整张图</strong>；通过<strong>分类edge embedding</strong>
+直接预测min-cost flow问题的解。</p>
+<p><strong>Feature encoding</strong>：</p>
+<figure><img alt="Feature encoding" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/mpn-feature-encoding.png" loading="lazy" decoding="async" width="1028" height="663"><figcaption>Feature encoding</figcaption></figure>
+<ul>
+<li><strong>Node</strong>（appearance）：detection crop过CNN</li>
+<li><strong>Edge</strong>（geometry）：两个box <span class="arithmatex">\(i = (x_i, y_i, w_i, h_i, t_i)\)</span>、
+  <span class="arithmatex">\(j = (x_j, y_j, w_j, h_j, t_j)\)</span> 的<strong>相对</strong>几何量过MLP：</li>
+</ul>
+<div class="arithmatex">\[h_{ij}^{(0)} = \text{MLP}\left(\underbrace{\frac{2(y_j - y_i)}{h_i + h_j}, \frac{2(x_j - x_i)}{w_i + w_j}}_{\text{relative box position}},\ \underbrace{\log\frac{h_i}{h_j}, \log\frac{w_i}{w_j}}_{\text{relative box size}},\ \underbrace{t_j - t_i}_{\text{time difference}}\right)\]</div>
+<p>注意全部是<strong>relative</strong>的量（位置差除以尺寸、尺寸取log比、时间差），这样
+对绝对位置和尺度不敏感。</p>
+<p><strong>Temporal causality</strong>：</p>
+<figure><img alt="Temporal causality" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/temporal-causality.png" loading="lazy" decoding="async" width="1028" height="745"><figcaption>Temporal causality</figcaption></figure>
+<p>flow conservation要求一个node<strong>至多1条连向过去、至多1条连向未来</strong>的边。
+但普通的aggregation <span class="arithmatex">\(\Phi^{(l)}(i) = \Phi(\{h^{(l)}(i,j)\}_{j \in Ne(i)})\)</span>
+把过去和未来的边<strong>混在一起</strong>求和了，这样就无法区分"past A → i → future B"
+（合法）和"past A → i ← past B"（非法，两个过去的检测都连到i）。</p>
+<p><strong>Solution: decouple incident from outgoing edges</strong>，即<strong>time-aware message
+passing</strong>：</p>
+<figure><img alt="Time-aware message passing" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/time-aware-mp.png" loading="lazy" decoding="async" width="1028" height="582"><figcaption>Time-aware message passing</figcaption></figure>
+<p>把邻居分成past和future两组<strong>分别aggregate</strong>，再用一个额外的网络
+<span class="arithmatex">\(\mathcal{N}_v\)</span> 把两路结果合起来。</p>
+<p><strong>Classifying edges</strong>：</p>
+<figure><img alt="Edge classification loss" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/edge-classification-loss.png" loading="lazy" decoding="async" width="1028" height="639"><figcaption>Edge classification loss</figcaption></figure>
+<div class="arithmatex">\[\mathcal{L} = \frac{-1}{|E|} \sum_{l=l_0}^{l=L} \sum_{(i,j) \in E} w \cdot y_{(i,j)} \log(\hat{y}_{(i,j)}^{(l)}) + (1 - y_{(i,j)}) \log(1 - \hat{y}_{(i,j)}^{(l)})\]</div>
+<p>逐项：</p>
+<ul>
+<li><span class="arithmatex">\(\sum_{l=l_0}^{L}\)</span>：<strong>对最后几轮message passing都算loss</strong>（deep supervision，
+  让中间层也学到有用的表示）</li>
+<li><span class="arithmatex">\(w\)</span>：<strong>平衡active/inactive边的权重</strong>。因为图里negative edges远多于
+  positive edges（大部分候选关联都是错的）</li>
+<li>中间是标准的<strong>binary cross-entropy</strong>，<span class="arithmatex">\(\hat{y}^{(l)}\)</span> 是第 <span class="arithmatex">\(l\)</span> 轮的
+  edge prediction（过sigmoid）</li>
+</ul>
+<p><strong>Obtaining final solutions</strong>：</p>
+<p>分类完每条边得到0到1之间的预测，但<strong>直接thresholding不保证满足flow
+conservation约束</strong>（learned consistency ≠ guaranteed consistency）。
+实践中约<strong>98%的约束会自动满足</strong>，剩下的用轻量<strong>post-processing</strong>
+（rounding或linear programming）修正：比如一个node有两条future edge分别是
+0.91和0.83，就保留0.91那条。</p>
+<p>整体方法很快（约12 fps）且在MOT challenge上大幅领先。</p>
+<p><strong>Summary</strong>：</p>
+<ul>
+<li>对graph structure<strong>没有强假设</strong>，能处理遮挡</li>
+<li>costs<strong>从数据中学</strong></li>
+<li>准确且快（对offline tracker而言）</li>
+<li><strong>(几乎) end-to-end</strong>，还需要一点post-processing</li>
+</ul>
 <h2 id="6-mot-evaluation">6. MOT evaluation</h2>
-<p><em>(MOTA, IDF1, HOTA, identity switches …)</em></p>
+<p><strong>Evaluation metrics</strong>的第一步：<strong>per frame</strong>地在prediction和ground truth
+之间做匹配：</p>
+<p>给定GT <span class="arithmatex">\(T = \{g_i\}\)</span> 和prediction <span class="arithmatex">\(P = \{p_j\}\)</span>，代价
+<span class="arithmatex">\(C_{ij} = 1 - IoU(g_i, p_j)\)</span>，用<strong>Hungarian algorithm</strong>（又是它）匹配，
+配合一个<strong>IoU threshold</strong>。得到三类错误：</p>
+<ul>
+<li><strong>FP</strong> = false positives</li>
+<li><strong>FN</strong> = false negatives（漏检）</li>
+<li><strong>IDSW</strong> = "identity switches"（身份跳变）</li>
+</ul>
+<p><strong>怎么计算ID switch？</strong></p>
+<figure><img alt="ID switches" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/idsw.png" loading="lazy" decoding="async" width="1028" height="575"><figcaption>ID switches</figcaption></figure>
+<ul>
+<li>(a) 一条GT轨迹先被分配给红色、后被分配给蓝色，记一次<strong>ID switch</strong></li>
+<li>(b) 既记一次ID switch（红蓝都分配给了同一条GT），又记一次
+  <strong>fragmentation</strong>（GT的覆盖被切断了）</li>
+<li>(c) <strong>Identity is preserved</strong>：如果两条轨迹都和GT重叠（在阈值内），
+  选<strong>导致ID switch最少</strong>的那条（红色）</li>
+</ul>
+<p><strong>三个核心指标</strong>：</p>
+<figure><img alt="MOTA, IDF1, MOTP" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/mota-metrics.png" loading="lazy" decoding="async" width="1028" height="575"><figcaption>MOTA, IDF1, MOTP</figcaption></figure>
+<div class="arithmatex">\[\text{MOTA} = 1 - \frac{\sum_t (\text{FN}_t + \text{FP}_t + \text{IDSW}_t)}{\sum_t \text{GT}_t}\]</div>
+<p><strong>MOTA（multi-object tracking accuracy）</strong>：分子是所有<strong>tracking errors</strong>，
+分母是GT总数。注意 <span class="arithmatex">\(\text{MOTA} \le 1\)</span>，而且<strong>可以是负的</strong>（错误比GT还多时）。
+它主要衡量<strong>检测质量</strong>（FN和FP占大头，IDSW通常小得多）。</p>
+<div class="arithmatex">\[\text{IDF1} = \frac{2\sum_t \text{TP}_t}{\sum_t 2\text{TP}_t + \text{FP}_t + \text{FN}_t}\]</div>
+<p><strong>IDF1</strong>：F1-score的形式，更关注<strong>identity保持得好不好</strong>。</p>
+<div class="arithmatex">\[\text{MOTP} = \frac{\sum_{t,i} \text{IoU}_{t,i}}{\sum_t \text{TP}}\]</div>
+<p><strong>MOTP（multi-object tracking precision）</strong>：匹配上的框的平均IoU，衡量
+<strong>定位精度</strong>（而不是关联质量）。</p>
+<p>论文里的对比表（Brasó &amp; Leal-Taixé 2019）：vanilla vs time-aware的MPN，
+MOTA 63.0 → 64.0、IDF1 67.3 → 70.0、ID switches 1022 → 602、
+constraint satisfaction 82.1 → 98.8，可以看到<strong>time-aware message passing
+主要改善的是identity相关的指标</strong>。</p>
+<p><strong>Datasets</strong>：</p>
+<ul>
+<li><strong>MOTChallenge</strong>：<a href="https://motchallenge.net">motchallenge.net</a>（行人）</li>
+<li><strong>KITTI</strong>：<a href="http://www.cvlibs.net/datasets/kitti/">cvlibs.net/datasets/kitti</a>（车辆）</li>
+<li><strong>UA-Detrac</strong>（车辆）</li>
+</ul>
+<p>每个benchmark有各自的挑战。<strong>Unbiased view</strong>：在所有数据集上都有
+高/有竞争力的准确率才是我们想要的。</p>
+<h2 id="7-tracking-sota">7. Tracking SoTA</h2>
+<p>课件最后给了一张MOT方法的分类图（Guan et al., 2025的综述）：</p>
+<figure><img alt="Tracking SoTA" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note2/tracking-sota.png" loading="lazy" decoding="async" width="1029" height="570"><figcaption>Tracking SoTA</figcaption></figure>
+<p>两大分支：</p>
+<ul>
+<li><strong>Tracking by Detection</strong>：detection（one-stage如ByteTrack/RCT、two-stage如
+  AP-RCNN/IOUTracker）+ association（similarity metrics如MotionTrack/OC-SORT、
+  matching strategy如GMTracker/SUSHI）</li>
+<li><strong>End-to-End</strong>：CNN（ResNet系、LSTM系）和<strong>Transformer</strong>（temporal的
+  TrackFormer/TransTrack、graph的3DMOTFormer/ColTrack）</li>
+</ul>
+<p>综述指出的<strong>E2E模型的局限</strong>：MOT的轨迹往往跨越很多时间步，需要处理长序列，
+而<strong>transformer受限于序列长度</strong>（attention复杂度 <span class="arithmatex">\(O(T^2)\)</span>），在长序列场景
+效果受限；另外处理很多物体或高分辨率图像时<strong>计算资源开销大</strong>，在嵌入式
+系统或严格实时的应用里可能成为瓶颈。</p>
+<p>这条线之后的发展（TrackFormer、MOTR、ByteTrack、SUSHI、MOTIP等）我写在了
+<a href="cv3-modern-approaches.html">note 4</a>的1.9节，那里按时间顺序补到了2026年。</p>
 <h2 id="references">References</h2>
 <ul>
 <li>Held et al. <a href="https://arxiv.org/abs/1604.01802">Learning to Track at 100 FPS with Deep Regression Networks (GOTURN)</a>. ECCV 2016.</li>
@@ -185,6 +700,24 @@ What assumptions are necessary?</p>
 <li>Bergmann et al. <a href="https://arxiv.org/abs/1903.05625">Tracking without bells and whistles (Tracktor)</a>. ICCV 2019.</li>
 <li>Zhang, Li &amp; Nevatia. <a href="https://ieeexplore.ieee.org/document/4587584">Global Data Association for Multi-Object Tracking Using Network Flows</a>. CVPR 2008.</li>
 <li>Brasó &amp; Leal-Taixé. <a href="https://arxiv.org/abs/1912.07515">Learning a Neural Solver for Multiple Object Tracking (MPN)</a>. CVPR 2020.</li>
+<li>Chopra et al. <a href="https://ieeexplore.ieee.org/document/1467314">Learning a Similarity Metric Discriminatively, with Application to Face Verification</a>. CVPR 2005.</li>
+<li>Bronstein et al. <a href="https://arxiv.org/abs/2104.13478">Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges</a>. 2021.</li>
+<li>Kipf &amp; Welling. <a href="https://arxiv.org/abs/1609.02907">Semi-Supervised Classification with Graph Convolutional Networks</a>. ICLR 2017.</li>
+<li>Gilmer et al. <a href="https://arxiv.org/abs/1704.01212">Neural Message Passing for Quantum Chemistry</a>. ICML 2017.</li>
+<li>Battaglia et al. <a href="https://arxiv.org/abs/1806.01261">Relational Inductive Biases, Deep Learning, and Graph Networks</a>. 2018.</li>
+<li>Qi et al. <a href="https://arxiv.org/abs/1612.00593">PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation</a>. CVPR 2017.</li>
+<li>Leal-Taixé et al. <a href="https://arxiv.org/abs/1504.01942">MOTChallenge 2015: Towards a Benchmark for Multi-Target Tracking</a>. 2015.</li>
+<li>Keuper et al. <a href="https://ieeexplore.ieee.org/document/8481424">Motion Segmentation and Multiple Object Tracking by Correlation Co-Clustering</a>. TPAMI 2018.</li>
+<li>Tang et al. <a href="https://openaccess.thecvf.com/content_cvpr_2017/papers/Tang_Multiple_People_Tracking_CVPR_2017_paper.pdf">Multiple People Tracking by Lifted Multicut and Person Re-identification</a>. CVPR 2017.</li>
+</ul>
+<p><strong>Additional reading (optional)</strong></p>
+<ul>
+<li>Ning et al. Spatially Supervised Recurrent Convolutional Neural Networks for Visual Object Tracking. ISCAS 2017.</li>
+<li>Elezi et al. <a href="https://arxiv.org/abs/1912.00385">The Group Loss for Deep Metric Learning</a>. ECCV 2020.</li>
+<li>Manmatha et al. <a href="https://arxiv.org/abs/1706.07567">Sampling Matters in Deep Embedding Learning</a>. ICCV 2017.</li>
+<li>Wang et al. <a href="https://arxiv.org/abs/1904.06627">Multi-Similarity Loss with General Pair Weighting for Deep Metric Learning</a>. CVPR 2019.</li>
+<li>Leal-Taixé et al. Learning by Tracking: Siamese CNN for Robust Target Association. CVPRW 2016.</li>
+<li>Schulter et al. Deep Network Flow for Multi-Object Tracking. CVPR 2017.</li>
 </ul>
 
             <!-- Share -->
