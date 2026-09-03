@@ -30,7 +30,19 @@
         </div>
     </nav>
 
-    <div class="page-wrapper narrow">
+    <div class="page-wrapper narrow with-toc">
+        <aside class="post-toc-col">
+            <nav class="post-toc">
+                <div class="post-toc-title">Contents</div>
+                <ul>
+                <li class="toc-h2"><a href="#1-introduction">1. Introduction</a></li>
+                <li class="toc-h3"><a href="#pinhole-cameraphotography">从小孔成像pinhole camera到photography.</a></li>
+                <li class="toc-h3"><a href="#computational-imaging">什么是计算成像(computational imaging)?</a></li>
+                <li class="toc-h3"><a href="#applications-and-examples-of-computational-imaging">Applications and examples of computational Imaging</a></li>
+                <li class="toc-h3"><a href="#_1">如何计算 计算方法</a></li>
+                </ul>
+            </nav>
+        </aside>
         <main class="main-content post-page">
 
             <a class="back-link" href="../blog.html">&larr; Back to blog</a>
@@ -38,12 +50,489 @@
             <h1>GAMES204 — Computational Imaging: Notes</h1>
             <div class="post-meta">
                 <span>Published 24 August 2026</span> ·
-                <span class="post-category">Course notes › Computer Graphics › Rendering › Games204</span> ·
-                <span>3 words · 1 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>Updated 3 September 2026</span> ·
+                <span class="post-category">Course notes › Computational Imaging and Display › Computational Imaging › GameS204</span> ·
+                <span>3,281 words · 12 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
-<p><em>(Notes coming soon.)</em></p>
+<p>本笔记结合 GAMES204 的 Introduction 部分以及 Human Visual System、Color and Display 章节，主要用于建立对计算成像（Computational Imaging）的整体认识。课程首先从传统摄影和针孔相机出发，说明成像的本质是将真实三维世界中的光学信息经过光学系统、传感器和后续处理转换为可观测的数据；随后进一步引出计算成像与传统摄影、计算摄影之间的区别，即计算成像不仅关注“如何处理已经拍到的图像”，还会主动设计光学系统、传感器、照明方式和编码策略，使现实世界中的空间、时间、角度、光谱、偏振等信息能够以更适合后续恢复的形式被记录下来。从统一数学视角看，整个过程可以表示为由物理模型定义的 forward problem，再根据 measurement 求解 inverse problem，并借助 image prior、regularization、optimization 或 learning-based methods 来恢复目标信息。Introduction 还通过 HDR、低光摄影、偏振成像、CT/PET、light field、hyperspectral imaging、NLOS、ToF、transient imaging 等例子说明计算成像的应用范围。Human Visual System 与 Color 部分则补充了成像系统最终面向“人眼感知”这一层基础，介绍人眼视觉范围、动态范围、对比度、视网膜与锥细胞响应，以及光谱功率分布、颜色匹配、色彩空间和显示颜色等内容，从而建立起从真实光场、相机采集、计算恢复到人眼最终感知的完整链路。</p>
+<h2 id="1-introduction">1. Introduction</h2>
+<h3 id="pinhole-cameraphotography">从小孔成像pinhole camera到photography.</h3>
+<p>假设一个物点 <span class="arithmatex">\(P\)</span> 发出的光向所有方向传播，但小孔只允许非常窄的一束光通过，于是这个物点最终只会落到屏幕上的一个位置。</p>
+<p>几何上就是：</p>
+<div class="arithmatex">\[ \frac{x'}{x}=-\frac{f}{Z} \]</div>
+<p>或者计算机视觉里你更熟悉的：</p>
+<p>x=f
+Z
+X
+    ​</p>
+<p>,y=f
+Z
+Y
+    ​
+最初 photography 的词源大概就是：</p>
+<div class="arithmatex">\[ photo = light,\qquad graphy=writing \]</div>
+<p>所以可以理解为：</p>
+<div class="arithmatex">\[ \boxed{\text{writing with light}} \]</div>
+<p>也就是“用光写作”。 <img alt="alt text" src="image.png" loading="lazy" decoding="async"> </p>
+<h3 id="computational-imaging">什么是计算成像(computational imaging)?</h3>
+<p>Computational Imaging (Photography)
+optically encode
+information about the real world
+in images aimed for
+computational decoding
+Ø Computational Display
+computationally encode
+information so that it can be
+optically decoded
+to form images to be presented to a user<br>
+探索：</p>
+<div class="arithmatex">\[ \boxed{ \text{new optics} } \]</div>
+<p>比如：</p>
+<p>coded aperture
+diffractive optical element
+metasurface
+phase mask
+$$ \boxed{\text{new sensors}} $$</p>
+<p>例如：</p>
+<p>event camera
+SPAD
+polarization sensor
+ToF
+spectral sensor
+$$ \boxed{\text{new illumination}} $$</p>
+<p>例如：</p>
+<p>structured light
+laser
+coded illumination
+active illumination</p>
+<p>以及：</p>
+<div class="arithmatex">\[ \boxed{\text{new algorithms}} \]</div>
+<p>例如：</p>
+<p>inverse optimization
+compressed sensing
+deconvolution
+deep learning
+differentiable rendering</p>
+<p>Computational Imaging
+Ø With Optics Optimized for Target
+Computational Photography
+Ø Traditional Optics
+Ø Mostly used for mobile camera
+<img alt="alt text" src="image-1.png" loading="lazy" decoding="async"></p>
+<h3 id="applications-and-examples-of-computational-imaging">Applications and examples of computational Imaging</h3>
+<p><img alt="alt text" src="image-2.png" loading="lazy" decoding="async">
+google pixel手机夜景。</p>
+<p>低光下：</p>
+<div class="arithmatex">\[ I=S+N \]</div>
+<p>signal 很弱，noise 很明显。</p>
+<p>手机会连续拍：</p>
+<div class="arithmatex">\[ I_1,I_2,\dots,I_N \]</div>
+<p>对齐：</p>
+<div class="arithmatex">\[ \text{registration} \]</div>
+<p>然后融合：</p>
+<div class="arithmatex">\[ \hat I= \frac1N\sum_i I_i \]</div>
+<p>简单情况下，独立噪声标准差大致降为：</p>
+<div class="arithmatex">\[ \sigma_{\text{new}} = \frac{\sigma}{\sqrt N} \]</div>
+<p>现代算法当然复杂很多，还会做：</p>
+<p>motion handling
+HDR
+denoise
+demosaicing
+tone mapping
+learning-based reconstruction</p>
+<p><img alt="alt text" src="image-3.png" loading="lazy" decoding="async">
+17. Polarizer Imager</p>
+<p>下一页是偏振成像。</p>
+<p>普通 RGB sensor 主要测：</p>
+<div class="arithmatex">\[ I \]</div>
+<p>即光强。</p>
+<p>但是光还有 polarization。</p>
+<p>例如传感器前面放不同方向的 polarizer：</p>
+<div class="arithmatex">\[ 0^\circ,\quad 45^\circ,\quad 90^\circ,\quad 135^\circ \]</div>
+<p>测：</p>
+<div class="arithmatex">\[ I_0,I_{45},I_{90},I_{135} \]</div>
+<p>然后可以恢复 Stokes parameters：</p>
+<div class="arithmatex">\[ S_0=I_0+I_{90} $$ $$ S_1=I_0-I_{90} $$ $$ S_2=I_{45}-I_{135} \]</div>
+<p>进而：</p>
+<div class="arithmatex">\[ DoLP= \frac{\sqrt{S_1^2+S_2^2}}{S_0} \]</div>
+<p>和 polarization angle：</p>
+<div class="arithmatex">\[ AoLP= \frac12 \tan^{-1}\frac{S_2}{S_1} \]</div>
+<p>这些信息 RGB 看不到。</p>
+<ol start="18">
+<li>偏振有什么用？</li>
+</ol>
+<p>slide 右边展示的例子就是：</p>
+<p>普通 RGB：</p>
+<div class="arithmatex">\[ \text{reflection严重} \]</div>
+<p>但 polarization 可以区分反射特性，因此可用于：</p>
+<div class="arithmatex">\[ \text{dehazing} $$ $$ \text{reflection removal} $$ $$ \text{material recognition} $$ $$ \text{surface normal estimation} $$ $$ \text{transparent object perception} \]</div>
+<p>汽车视觉里也很有价值。</p>
+<p><img alt="alt text" src="image-4.png" loading="lazy" decoding="async">19. CT：Computed Tomography</p>
+<p>CT 是 computational imaging 的超级经典例子。</p>
+<p>你真正想知道的是人体内部：</p>
+<div class="arithmatex">\[ f(x,y,z) \]</div>
+<p>但你根本不能直接“拍摄”内部。</p>
+<p>X-ray 穿过人体时测到的是：</p>
+<div class="arithmatex">\[ p(\theta,s) = \int_{\text{ray}} f(x,y)\,dl \]</div>
+<p>也就是说测到的是一条 ray 上的积分。</p>
+<p>这叫：</p>
+<div class="arithmatex">\[ \boxed{\text{Radon Transform}} \]</div>
+<p>很多角度：</p>
+<div class="arithmatex">\[ \theta_1,\theta_2,\dots \]</div>
+<p>得到 projection，然后做 inverse Radon transform：</p>
+<div class="arithmatex">\[ f = \mathcal R^{-1}(p) \]</div>
+<p>于是得到内部断层图。</p>
+<p>这就是非常标准的：</p>
+<div class="arithmatex">\[ \boxed{ measurement + inverse problem = image } \]</div>
+<p>注意：</p>
+<p>CT 得到的“图像”本来就不是相机直接看到的，而是计算出来的。</p>
+<p>这就是为什么它叫 Computed Tomography。</p>
+<ol start="20">
+<li>PET-CT</li>
+</ol>
+<p>PET 检测的是体内放射性 tracer。</p>
+<p>正电子 annihilation 后会产生两个大约反向传播的：</p>
+<div class="arithmatex">\[ 511\,keV \]</div>
+<p>gamma photon。</p>
+<p>探测器测 coincidence：</p>
+<div class="arithmatex">\[ \text{detector}_i \leftrightarrow \text{detector}_j \]</div>
+<p>推断事件大概发生在这条 line of response 上。</p>
+<p>然后再通过 reconstruction 恢复：</p>
+<div class="arithmatex">\[ 3D\ activity\ distribution \]</div>
+<p>PET 更偏：</p>
+<div class="arithmatex">\[ \text{functional imaging} \]</div>
+<p>CT 更偏：</p>
+<div class="arithmatex">\[ \text{structural imaging} \]</div>
+<p>两者融合：</p>
+<p>PET-CT</p>
+<p><img alt="alt text" src="image-5.png" loading="lazy" decoding="async"> Light Field Imaging</p>
+<p>这个对 Graphics / Computational Imaging 特别重要。</p>
+<p>普通 camera 每个 pixel 大概只记录：</p>
+<div class="arithmatex">\[ I(x,y) \]</div>
+<p>也就是落到这个 pixel 的所有方向光的总和。</p>
+<p>Light field 想记录：</p>
+<div class="arithmatex">\[ \boxed{L(x,y,u,v)} \]</div>
+<p>其中：</p>
+<div class="arithmatex">\[ (x,y) \]</div>
+<p>表示空间位置，</p>
+<div class="arithmatex">\[ (u,v) \]</div>
+<p>表示方向。</p>
+<p>所以普通图像是 2D，而 light field 可以认为是 4D。</p>
+<ol start="22">
+<li>为什么 light field 有用？</li>
+</ol>
+<p>因为知道光线方向后，可以事后重新合成不同视角或者不同焦距。</p>
+<p>例如 refocusing：</p>
+<div class="arithmatex">\[ I_\alpha(x,y) = \int L(x+\alpha u,y+\alpha v,u,v)\,du\,dv \]</div>
+<p>所以可以：</p>
+<div class="arithmatex">\[ \boxed{\text{shoot first, focus later}} \]</div>
+<p>还可以：</p>
+<p>depth estimation
+view synthesis
+3D reconstruction
+VR / light-field display
+23. Light Field Display</p>
+<p>这是反方向：</p>
+<p>Light Field Camera：</p>
+<div class="arithmatex">\[ \text{world} \rightarrow L(x,y,u,v) \]</div>
+<p>Light Field Display：</p>
+<div class="arithmatex">\[ L(x,y,u,v) \rightarrow \text{human eye} \]</div>
+<p>普通显示器基本只控制：</p>
+<div class="arithmatex">\[ RGB(x,y) \]</div>
+<p>而 light-field display 还希望控制：</p>
+<div class="arithmatex">\[ direction \]</div>
+<p>所以不同观看方向看到不同内容，可以产生真正的 3D parallax。</p>
+<p><img alt="alt text" src="image-6.png" loading="lazy" decoding="async"> Black Hole Imaging</p>
+<p>那张黑洞照片也是 computational imaging 的绝佳例子。</p>
+<p>Event Horizon Telescope 并不是一个巨大的“相机镜头”。</p>
+<p>而是全球多个 radio telescope：</p>
+<div class="arithmatex">\[ T_1,T_2,\dots,T_N \]</div>
+<p>组合成：</p>
+<div class="arithmatex">\[ \boxed{\text{Very Long Baseline Interferometry}} \]</div>
+<p>它实际上采样的是图像 Fourier domain 的一部分：</p>
+<div class="arithmatex">\[ V(u,v) \approx \mathcal F\{I(x,y)\} \]</div>
+<p>但采样极其稀疏。</p>
+<p>因此问题变成：</p>
+<div class="arithmatex">\[ \text{sparse Fourier measurements} \rightarrow \text{reconstruct image} \]</div>
+<p>也就是典型 inverse imaging：</p>
+<div class="arithmatex">\[ \hat I = \arg\min_I \|\mathcal F_S(I)-y\|^2 + \lambda R(I) \]</div>
+<p>最后才得到大家看到的黑洞图像。</p>
+<p><img alt="alt text" src="image-7.png" loading="lazy" decoding="async"> Non-Line-of-Sight Imaging</p>
+<p>这个是非常典型的“传统相机不可能做到”的东西。</p>
+<p>场景：</p>
+<div class="arithmatex">\[ camera \]</div>
+<p>看不到被墙挡住的物体。</p>
+<p>但是：</p>
+<div class="arithmatex">\[ laser \rightarrow wall \rightarrow hidden\ object \rightarrow wall \rightarrow camera \]</div>
+<p>光经过多次反射还是会回来。</p>
+<p>如果使用超快 detector，例如：</p>
+<div class="arithmatex">\[ \boxed{\text{SPAD}} \]</div>
+<p>可以测 photon time-of-flight。</p>
+<p>光走的距离：</p>
+<div class="arithmatex">\[ d=ct \]</div>
+<p>所以不同时间到达的 photon 对应不同路径长度。</p>
+<p>通过大量 transient measurement：</p>
+<div class="arithmatex">\[ I(x,y,t) \]</div>
+<p>再求 inverse problem，可以恢复墙后物体。</p>
+<p>所以这叫：</p>
+<p>$$ \boxed{\text{seeing around corners}} $$
+26. Long-range 3D Imaging</p>
+<p>slide 上写：</p>
+<div class="arithmatex">\[ 45\,km \]</div>
+<p>这种系统通常也是主动光学 + photon detector。</p>
+<p>发射 laser：</p>
+<div class="arithmatex">\[ t_0 \]</div>
+<p>接收到：</p>
+<div class="arithmatex">\[ t_1 \]</div>
+<p>则距离：</p>
+<div class="arithmatex">\[ d= \frac{c(t_1-t_0)}2 \]</div>
+<p>为什么除以 2？</p>
+<p>因为：</p>
+<div class="arithmatex">\[ camera\rightarrow object\rightarrow camera \]</div>
+<p>光走了往返两倍距离。</p>
+<p>超远距离情况下 photon 极少，所以需要：</p>
+<div class="arithmatex">\[ SPAD \]</div>
+<p>或类似 single-photon detector，再配合 statistical reconstruction。</p>
+<p><img alt="alt text" src="image-8.png" loading="lazy" decoding="async"> 第一张左边是 Light L16。</p>
+<p>它不是传统的：</p>
+<div class="arithmatex">\[ \text{one lens}\rightarrow\text{one sensor} \]</div>
+<p>而是很多不同焦距、不同位置的小相机组成 camera array。</p>
+<p>每个 camera 得到：</p>
+<div class="arithmatex">\[ I_i(x,y) \]</div>
+<p>因为不同 camera 的：</p>
+<p>viewpoint 不一样
+focal length 不一样
+exposure 可以不一样</p>
+<p>所以最终收集的是很多不同的 measurement：</p>
+<div class="arithmatex">\[ \{I_1,I_2,\dots,I_N\} \]</div>
+<p>然后软件做：</p>
+<div class="arithmatex">\[ \text{alignment} \rightarrow \text{depth estimation} \rightarrow \text{fusion} \rightarrow \text{super-resolution} \]</div>
+<p>最后产生一张高质量照片。</p>
+<p>它就是很典型的：</p>
+<div class="arithmatex">\[ \boxed{\text{hardware coding + computational reconstruction}} \]</div>
+<p>而不是单纯“镜头越大越好”。</p>
+<ol start="2">
+<li>Unstructured Gigapixel Videography</li>
+</ol>
+<p>右边那个很夸张的多相机系统是在做 Gigapixel video。</p>
+<p>核心思想是：</p>
+<p>我不要求一台相机拍完整场景，而让很多相机分别负责不同区域。</p>
+<p>图里有：</p>
+<p>Global camera：拍整体，低分辨率
+Local cameras：拍局部，高分辨率</p>
+<p>可以理解成：</p>
+<div class="arithmatex">\[ I_G=\text{global view} \]</div>
+<p>以及：</p>
+<div class="arithmatex">\[ I_{L_1},I_{L_2},\dots \]</div>
+<p>然后把局部高分辨率信息注册到 global camera：</p>
+<div class="arithmatex">\[ T_i: I_{L_i}\rightarrow I_G \]</div>
+<p>最终得到巨大分辨率的视频：</p>
+<div class="arithmatex">\[ \boxed{\text{many cameras}\rightarrow\text{gigapixel video}} \]</div>
+<p>它和普通 stitching 相似，但难点更大，因为是动态视频，还要处理：</p>
+<p>camera calibration
+synchronization
+temporal consistency
+overlap registration
+occlusion</p>
+<p><img alt="alt text" src="image-9.png" loading="lazy" decoding="async"> Snapshot Hyperspectral Imaging</p>
+<p>这一页非常重要。</p>
+<p>普通 RGB camera：</p>
+<div class="arithmatex">\[ I(x,y,c),\qquad c\in\{R,G,B\} \]</div>
+<p>每个 pixel 只有三个通道。</p>
+<p>但真实世界光谱其实是：</p>
+<div class="arithmatex">\[ I(x,y,\lambda) \]</div>
+<p>例如：</p>
+<div class="arithmatex">\[ \lambda=450,451,\dots,650\,nm \]</div>
+<p>所以 hyperspectral image 是一个三维 data cube：</p>
+<div class="arithmatex">\[ \boxed{H\times W\times N_\lambda} \]</div>
+<p>可能不是 3 个 channel，而是几十甚至几百个 wavelength channel。</p>
+<p>为什么要“Snapshot”？</p>
+<p>传统 hyperspectral camera 经常需要：</p>
+<div class="arithmatex">\[ \text{scan wavelength} \]</div>
+<p>或者：</p>
+<div class="arithmatex">\[ \text{scan spatial line} \]</div>
+<p>所以一幅 hyperspectral image 不是一次曝光得到的。</p>
+<p>Snapshot hyperspectral imaging 希望：</p>
+<div class="arithmatex">\[ \boxed{\text{one shot}\rightarrow H\times W\times N_\lambda} \]</div>
+<p>怎么做到？</p>
+<p>就是在 optics 里做 coding。</p>
+<p>图里的 DOE：</p>
+<div class="arithmatex">\[ \boxed{\text{Diffractive Optical Element}} \]</div>
+<p>会让不同波长产生不同 PSF：</p>
+<div class="arithmatex">\[ h_\lambda(x,y) \]</div>
+<p>比如：</p>
+<div class="arithmatex">\[ 450nm\rightarrow h_{450} $$ $$ 550nm\rightarrow h_{550} $$ $$ 650nm\rightarrow h_{650} \]</div>
+<p>sensor 得到：</p>
+<div class="arithmatex">\[ y(x,y) = \sum_\lambda x_\lambda*h_\lambda \]</div>
+<p>然后 reconstruction algorithm 反推：</p>
+<div class="arithmatex">\[ \{x_\lambda\} \]</div>
+<p>这就是：</p>
+<div class="arithmatex">\[ \boxed{\text{spectral information encoded into spatial PSF}} \]</div>
+<p>非常标准的 computational imaging。</p>
+<ol start="4">
+<li>Transient Imaging</li>
+</ol>
+<p>Transient imaging 不只是记录：</p>
+<div class="arithmatex">\[ I(x,y) \]</div>
+<p>而是记录：</p>
+<div class="arithmatex">\[ \boxed{I(x,y,t)} \]</div>
+<p>也就是：</p>
+<p>光什么时候到达 sensor。</p>
+<p>普通相机把 exposure window 内的 photons 全加起来：</p>
+<div class="arithmatex">\[ I(x,y) = \int I(x,y,t)\,dt \]</div>
+<p>所以时间维度丢掉了。</p>
+<p>Transient camera 则尽量保留：</p>
+<div class="arithmatex">\[ t \]</div>
+<p>于是可以看到光在空间中传播的过程。</p>
+<p>因为：</p>
+<div class="arithmatex">\[ d=ct \]</div>
+<p>所以时间信息直接对应距离信息。</p>
+<p>例如 round-trip ToF：</p>
+<div class="arithmatex">\[ d=\frac{ct}{2} \]</div>
+<p>这就是很多：</p>
+<p>ToF camera
+NLOS imaging
+LiDAR
+light-in-flight imaging</p>
+<p>的基础。</p>
+<p><img alt="alt text" src="image-10.png" loading="lazy" decoding="async"> Smart IR Sensor</p>
+<p>左边那个烟囱热图讲的是 infrared imaging。</p>
+<p>可见光 sensor 测：</p>
+<div class="arithmatex">\[ 400-700\,nm \]</div>
+<p>而 IR sensor 测更长波长。</p>
+<p>物体温度对应 thermal radiation，因此 IR camera 可以看到肉眼看不到的：</p>
+<div class="arithmatex">\[ \boxed{\text{temperature / thermal radiation}} \]</div>
+<p>图里说：</p>
+<p>triggered and enabled by signal</p>
+<p>意思很可能是 sensor 不是一直高速工作，而可以针对感兴趣信号触发，实现：</p>
+<p>low power
+event-driven sensing
+high dynamic range
+smart sensing</p>
+<p>所以 computational imaging 不只是算法，sensor architecture 本身也可以重新设计。</p>
+<ol start="6">
+<li>Extended Depth of Field</li>
+</ol>
+<p>右边是老师自己的工作之一：</p>
+<div class="arithmatex">\[ \boxed{\text{Extended Depth of Field Imaging}} \]</div>
+<p>传统 lens 有有限的 depth of field。</p>
+<p>只有某个 depth 附近：</p>
+<div class="arithmatex">\[ z\approx z_f \]</div>
+<p>清晰。</p>
+<p>离开这个 depth：</p>
+<div class="arithmatex">\[ PSF(z) \]</div>
+<p>会迅速变大，于是 blur。</p>
+<p>图里 Sony lens 在：</p>
+<div class="arithmatex">\[ 0.5m,\quad0.7m,\quad1.0m,\quad1.5m \]</div>
+<p>PSF 明显变化。</p>
+<p>他们的想法是什么？</p>
+<p>重新设计 optics，使：</p>
+<div class="arithmatex">\[ PSF(z) \]</div>
+<p>在不同深度下尽量保持某种稳定、可逆的结构：</p>
+<div class="arithmatex">\[ h_{0.5m}\approx h_{0.7m}\approx h_{1m}\approx h_{1.5m} \]</div>
+<p>或者至少让 reconstruction network 容易 invert。</p>
+<p>于是：</p>
+<div class="arithmatex">\[ \text{scene} \xrightarrow{\text{custom lens}} \text{coded blur} \xrightarrow{\text{deconvolution/network}} \text{sharp image} \]</div>
+<p>这又是：</p>
+<div class="arithmatex">\[ \boxed{\text{optics-algorithm co-design}} \]</div>
+<p>所以你上一轮看到的 differentiable lens 正是干这种事情的。</p>
+<p><img alt="alt text" src="image-11.png" loading="lazy" decoding="async">Marine Imaging / Photogrammetry</p>
+<p>Marine imaging 最大的问题是水下环境：</p>
+<div class="arithmatex">\[ \text{absorption}+\text{scattering} \]</div>
+<p>尤其不同 wavelength 衰减不同。</p>
+<p>红光通常衰减得比蓝绿光严重。</p>
+<p>所以 underwater image 常出现：</p>
+<p>blue/green cast
+haze
+low contrast
+scattering</p>
+<p>如果做 photogrammetry，还希望：</p>
+<div class="arithmatex">\[ \text{multiple images} \rightarrow 3D geometry \]</div>
+<p>这时候不仅要做普通 SfM/MVS，还要考虑水下成像模型。</p>
+<ol start="8">
+<li>Optimal Optics Encoding</li>
+</ol>
+<p>右边非常值得理解。</p>
+<p>图中：</p>
+<p>without mask</p>
+<p>raw image 看起来比较正常，但 reconstruction 后效果可能很差。</p>
+<p>with mask</p>
+<p>raw image 反而看起来更模糊、更奇怪，但 reconstruction 后更好。</p>
+<p>这就是 computational imaging 最反直觉的思想：</p>
+<div class="arithmatex">\[ \boxed{\text{Sensor 上看到的图，不必是“好看的图”。}} \]</div>
+<p>真正目标是：</p>
+<div class="arithmatex">\[ \boxed{\text{最终任务结果最好}} \]</div>
+<p>假设 measurement：</p>
+<div class="arithmatex">\[ y=A_\theta x \]</div>
+<p>传统 optics 的目标可能是：</p>
+<div class="arithmatex">\[ A_\theta x\approx x \]</div>
+<p>也就是 sensor image 尽量像 scene。</p>
+<p>但 computational imaging 可以直接优化：</p>
+<div class="arithmatex">\[ \min_{\theta,\phi} L(f_\phi(A_\theta x),x) \]</div>
+<p>所以：</p>
+<div class="arithmatex">\[ A_\theta x \]</div>
+<p>本身非常丑也没关系，只要：</p>
+<div class="arithmatex">\[ f_\phi(A_\theta x) \]</div>
+<p>恢复得好。</p>
+<p>这就是 optimal optical encoding。</p>
+<ol start="9">
+<li>Terahertz Imaging with Metasurface</li>
+</ol>
+<p>Terahertz：</p>
+<div class="arithmatex">\[ 10^{11}-10^{13}\,Hz \]</div>
+<p>大致位于：</p>
+<div class="arithmatex">\[ \text{microwave} \leftrightarrow \text{infrared} \]</div>
+<p>之间。</p>
+<p>它有一些很特别的材料穿透性质，所以可以用于：</p>
+<p>security inspection
+material characterization
+biomedical sensing
+spectroscopy</p>
+<p>图里使用：</p>
+<div class="arithmatex">\[ \boxed{\text{metasurface}} \]</div>
+<p>metasurface 是由亚波长结构组成的人工光学表面。</p>
+<p>通过设计单元：</p>
+<div class="arithmatex">\[ \phi(x,y) \]</div>
+<p>可以控制：</p>
+<p>phase
+amplitude
+polarization
+direction</p>
+<p>相当于把传统厚 lens 的功能压到一个薄层上。</p>
+<ol start="10">
+<li>11 TOPS Optical CNN</li>
+</ol>
+<p>右边是更激进的方向：</p>
+<div class="arithmatex">\[ \boxed{\text{用光来做神经网络计算}} \]</div>
+<p>普通 convolution：</p>
+<div class="arithmatex">\[ y[k] = \sum_i w_i x_{k-i} \]</div>
+<p>在电子芯片里需要大量：</p>
+<div class="arithmatex">\[ MAC=\text{multiply-accumulate} \]</div>
+<p>但是 optics 本身能天然实现很多 linear operation。</p>
+<p>例如 Fourier optics：</p>
+<div class="arithmatex">\[ \mathcal F(x) \]</div>
+<p>lens 本身就可以完成 Fourier transform。</p>
+<p>或者用：</p>
+<p>wavelength
+time
+spatial mode</p>
+<p>并行编码。</p>
+<p>于是 optical system 可以做：</p>
+<div class="arithmatex">\[ y=W x \]</div>
+<p>甚至 convolution。</p>
+<p>11 TOPS：</p>
+<div class="arithmatex">\[ 11\times10^{12} \]</div>
+<p>operations per second。</p>
+<p>它利用光的优势：</p>
+<div class="arithmatex">\[ \boxed{\text{massive parallelism}} \]</div>
+<p>因为很多 wavelength / spatial channel 可以同时传播。</p>
+<figure><img alt=" " src="image-12.png" loading="lazy" decoding="async"><figcaption> </figcaption></figure>
+<h3 id="_1">如何计算 计算方法</h3>
+<p><img alt="alt text" src="image-13.png" loading="lazy" decoding="async"> <img alt="alt text" src="image-14.png" loading="lazy" decoding="async"></p>
+<p><img alt="alt text" src="image-15.png" loading="lazy" decoding="async"> <img alt="alt text" src="image-16.png" loading="lazy" decoding="async"> <img alt="alt text" src="image-17.png" loading="lazy" decoding="async"></p>
+<figure><img alt="alt text" src="image-18.png" loading="lazy" decoding="async"><figcaption>alt text</figcaption></figure>
 
             <!-- Share -->
             <div class="post-share">
@@ -63,9 +552,9 @@
             <div class="post-related">
                 <h2 class="post-comments-title">You may also like</h2>
                 <ul>
-                    <li><span class="rel-date">24 Aug 2026</span><a href="games101.html">GAMES101 — Modern Computer Graphics: Notes</a></li>
-                    <li><span class="rel-date">24 Aug 2026</span><a href="games202.html">GAMES202 — Real-Time High Quality Rendering: Notes</a></li>
+                    <li><span class="rel-date">24 Aug 2026</span><a href="foAI.html">Fundamentals of Artificial Intelligence (IN2406) — Notes</a></li>
                     <li><span class="rel-date">24 Aug 2026</span><a href="games103-note1.html">GAMES103 — Physically-Based Animation Note1: Intro and Math Basics</a></li>
+                    <li><span class="rel-date">24 Aug 2026</span><a href="games103-note2.html">GAMES103 — Physically-Based Animation Note2: Rigid Body Dynamics and Contacts</a></li>
                 </ul>
             </div>
 
@@ -128,6 +617,29 @@
         paint();
     })();
     </script>
-
+    <script>
+    (function () {
+        var links = document.querySelectorAll(".post-toc a");
+        if (!links.length) { return; }
+        var map = {};
+        var heads = [];
+        links.forEach = Array.prototype.forEach;
+        links.forEach.call(links, function (a) {
+            var id = decodeURIComponent(a.getAttribute("href").slice(1));
+            var h = document.getElementById(id);
+            if (h) { map[id] = a; heads.push(h); }
+        });
+        function activate(id) {
+            for (var k in map) { map[k].classList.toggle("active", k === id); }
+        }
+        var obs = new IntersectionObserver(function (entries) {
+            var visible = entries.filter(function (e) { return e.isIntersecting; });
+            if (visible.length) {
+                activate(visible[0].target.id);
+            }
+        }, { rootMargin: "0px 0px -70% 0px", threshold: 0 });
+        heads.forEach(function (h) { obs.observe(h); });
+    })();
+    </script>
 </body>
 </html>

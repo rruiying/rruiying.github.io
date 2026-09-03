@@ -37,7 +37,7 @@
                 <ul>
                 <li class="toc-h2"><a href="#1-segmentation-as-grouping">1. Segmentation as grouping</a></li>
                 <li class="toc-h3"><a href="#11-superpixels">1.1 Superpixels</a></li>
-                <li class="toc-h3"><a href="#12-clustering-k-means-spectral-clustering-mean-shift">1.2 Clustering: k-means, spectral clustering, mean shift</a></li>
+                <li class="toc-h3"><a href="#12-clustering-k-means-and-spectral-clustering">1.2 Clustering: k-means and spectral clustering</a></li>
                 <li class="toc-h3"><a href="#13-normalized-cuts">1.3 Normalized cuts</a></li>
                 <li class="toc-h2"><a href="#2-energy-based-models-crfs">2. Energy-based models: CRFs</a></li>
                 <li class="toc-h2"><a href="#3-deep-semantic-segmentation">3. Deep semantic segmentation</a></li>
@@ -48,6 +48,7 @@
                 <li class="toc-h3"><a href="#41-mask-r-cnn">4.1 Mask R-CNN</a></li>
                 <li class="toc-h3"><a href="#42-the-roi-rounding-problem">4.2 The RoI rounding problem</a></li>
                 <li class="toc-h3"><a href="#43-coordinate-based-networks-pointrend">4.3 Coordinate-based networks: PointRend</a></li>
+                <li class="toc-h3"><a href="#44-proposal-free-methods-solov2">4.4 Proposal-free methods: SOLOv2</a></li>
                 <li class="toc-h2"><a href="#5-panoptic-segmentation">5. Panoptic segmentation</a></li>
                 <li class="toc-h3"><a href="#51-panoptic-fpn">5.1 Panoptic FPN</a></li>
                 <li class="toc-h3"><a href="#52-panoptic-fcn">5.2 Panoptic FCN</a></li>
@@ -68,9 +69,9 @@
             <h1>Computer Vision III (IN2375) — Notes 3: Image Segmentation</h1>
             <div class="post-meta">
                 <span>Published 23 August 2026</span> ·
-                <span>Updated 27 August 2026</span> ·
+                <span>Updated 3 September 2026</span> ·
                 <span class="post-category">Course notes › Computer Vision › Computer Vision III (IN2375)</span> ·
-                <span>473 words · 3 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>11,047 words · 44 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
@@ -93,44 +94,986 @@ built on <strong>optical flow</strong> (FlowNet, correlation layers, SegFlow);
 appearance-only VOS (OSVOS, OnAVOS, MaskTrack); and metric-based approaches
 that cast VOS as <strong>pixel-wise retrieval</strong>.</p>
 <h2 id="1-segmentation-as-grouping">1. Segmentation as grouping</h2>
+<p><strong>Task definition</strong>：给每个pixel打标签。输入一张 <span class="arithmatex">\(H \times W\)</span> 的图，输出一张
+<span class="arithmatex">\(H \times W\)</span> 的<strong>label map</strong>，即一个<strong>dense prediction</strong>问题，每个像素都要
+预测一个类别。</p>
+<figure><img alt="Task definition: per-pixel labelling" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/task-definition.png" loading="lazy" decoding="async" width="1010" height="565"><figcaption>Task definition: per-pixel labelling</figcaption></figure>
+<p>Segmentation有几种flavour，区别在于"分到什么粒度"：</p>
+<ul>
+<li><strong>Semantic segmentation</strong>：label every pixel with a semantic category，只回答
+  "这个像素是哪一类"，同一类的两个物体不区分</li>
+<li><strong>Instance segmentation</strong>：group object pixels as a separate category，即把
+  每个object单独分出来。它<strong>忽略背景（"stuff"）类</strong>比如road、sky、building，
+  只关心"things"。可以是class-agnostic的，也可以带上object classification，
+  后者叫<strong>semantic instance segmentation</strong></li>
+<li><strong>Panoptic segmentation</strong>：semantic + instance，既分stuff又分things</li>
+<li>更高granularity：<strong>part segmentation</strong>，比如把person再分成head、arm、leg，
+  通常只针对一个物体</li>
+</ul>
+<p><img alt="Flavours of image segmentation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/flavours-of-segmentation.png" loading="lazy" decoding="async" width="1010" height="565">
+<img alt="Semantic vs instance vs panoptic vs part segmentation on one street scene" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/flavours-example.png" loading="lazy" decoding="async" width="1010" height="565"></p>
+<p>这一章的路线和前两章一样，从classical方法一路走到deep learning：</p>
+<ol>
+<li><strong>Clustering</strong>：k-means、spectral clustering、mean shift
+   （Comaniciu and Meer, 2002）等</li>
+<li><strong>Normalised cuts（Ncut）</strong></li>
+<li><strong>Energy-based models</strong>：Conditional Random Fields（CRFs）</li>
+<li><strong>Deep learning</strong>：fully convolutional networks</li>
+</ol>
 <h3 id="11-superpixels">1.1 Superpixels</h3>
-<p><em>(…)</em></p>
-<h3 id="12-clustering-k-means-spectral-clustering-mean-shift">1.2 Clustering: k-means, spectral clustering, mean shift</h3>
-<p><em>(…)</em></p>
+<p><strong>Superpixel</strong>是<strong>local class-agnostic pixel grouping</strong>，即把一组局部相似的
+像素聚成一个小块，不关心它属于什么类别。下图（Mori et al., 2004）展示了一条
+经典pipeline：先在两个scale上做Canny edge找到edge pixels，再得到boundaries，
+最后用Ncut切出superpixels。</p>
+<figure><img alt="Superpixels: Canny edges, boundaries, and NCut superpixels" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/superpixels.png" loading="lazy" decoding="async" width="1010" height="565"><figcaption>Superpixels: Canny edges, boundaries, and NCut superpixels</figcaption></figure>
+<p>Superpixel的意义在于，后续的处理单元从几十万个像素变成几百个小块，而且这些
+小块基本贴合物体边界，所以后面的clustering或CRF都可以建立在superpixel上。</p>
+<h3 id="12-clustering-k-means-and-spectral-clustering">1.2 Clustering: k-means and spectral clustering</h3>
+<h4 id="k-means">k-means</h4>
+<p>最直接的想法是把segmentation当成<strong>clustering</strong>。K-means的四步：</p>
+<ol>
+<li>随机初始化K个cluster centres</li>
+<li>用一个distance metric把每个点分配给最近的cluster：
+   <span class="arithmatex">\(c_i = \arg\min_k \|x_i - \mu_k\|^2\)</span></li>
+<li>用cluster内所有点的平均更新centre：<span class="arithmatex">\(\mu_k = \frac{1}{|C_k|}\sum_{i \in C_k} x_i\)</span></li>
+<li>重复2和3直到收敛</li>
+</ol>
+<p>整体优化的目标是</p>
+<div class="arithmatex">\[\min_{C_1,\dots,C_K} \sum_k \sum_{x_i \in C_k} \|x_i - \mu_k\|^2\]</div>
+<p>即让每个cluster里的点尽量靠近自己的centre。</p>
+<figure><img alt="K-means" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/kmeans.png" loading="lazy" decoding="async" width="1010" height="565"><figcaption>K-means</figcaption></figure>
+<p><strong>它总是work吗？</strong> 不。K-means只看点到centroid的Euclidean distance，所以它
+假设cluster是<strong>compact / spherical</strong>的。下面这个two-moons的例子里两个cluster是
+non-convex的，Euclidean distance alone is insufficient，我们真正想要的是基于
+<strong>connectedness</strong>来cluster。</p>
+<figure><img alt="K-means fails on non-convex clusters" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/kmeans-limitation.png" loading="lazy" decoding="async" width="1010" height="565"><figcaption>K-means fails on non-convex clusters</figcaption></figure>
+<h4 id="spectral-clustering">Spectral clustering</h4>
+<p>把所有data points表示成一个<strong>fully connected undirected graph</strong>，edge weights
+encode proximity。定义<strong>affinity matrix</strong></p>
+<div class="arithmatex">\[\mathbf{A} := (a_{i,j}) \in \mathbb{R}^{n \times n}, \qquad a_{i,j} \ge 0\]</div>
+<p><span class="arithmatex">\(a_{i,j}\)</span>衡量node <span class="arithmatex">\(i\)</span>和<span class="arithmatex">\(j\)</span>的similarity，可以由一个distance metric得到：</p>
+<div class="arithmatex">\[a_{i,j} := \exp(-\gamma \cdot d(i,j))\]</div>
+<p>距离越大，<span class="arithmatex">\(a_{i,j}\)</span>越接近0，similarity越低；距离为0时<span class="arithmatex">\(a_{i,j} = e^0 = 1\)</span>。</p>
+<p><strong>Quiz: <span class="arithmatex">\(\mathbf{A}\)</span>对称吗？</strong> 只要<span class="arithmatex">\(d(i,j) = d(j,i)\)</span>，<span class="arithmatex">\(\mathbf{A}\)</span>就是对称的，
+undirected graph正是这种情况。如果是有向图，<span class="arithmatex">\(i \to j\)</span>和<span class="arithmatex">\(j \to i\)</span>的权重可能
+不同，<span class="arithmatex">\(\mathbf{A}\)</span>就不对称。</p>
+<figure><img alt="Affinity matrix" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/affinity-matrix.png" loading="lazy" decoding="async" width="1010" height="652"><figcaption>Affinity matrix</figcaption></figure>
+<p>接着定义<strong>graph Laplacian</strong></p>
+<div class="arithmatex">\[L := D - A, \qquad D_{ii} = \sum_j A_{ij}\]</div>
+<p>其中<span class="arithmatex">\(D\)</span>是对角的<strong>degree matrix</strong>。对unweighted graph，<span class="arithmatex">\(D_{ii}\)</span>就是node <span class="arithmatex">\(i\)</span>连
+出去的边数；在spectral clustering里<span class="arithmatex">\(A_{ij}\)</span>是similarity，所以<span class="arithmatex">\(D_{ii}\)</span>是node
+<span class="arithmatex">\(i\)</span>的total connection strength。</p>
+<p><img alt="Graph Laplacian and degree matrix" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/graph-laplacian.png" loading="lazy" decoding="async" width="1010" height="601">
+<img alt="Example: adjacency, degree, and Laplacian matrices of a small weighted graph" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/laplacian-example.png" loading="lazy" decoding="async" width="1010" height="551"></p>
+<p><strong>Laplacian encode了什么？</strong> 它encode了graph的connectivity structure。写开来看</p>
+<div class="arithmatex">\[(Lf)_i = D_{ii} f_i - \sum_j A_{ij} f_j = \sum_j A_{ij}(f_i - f_j)\]</div>
+<p>即当前值减去邻居的加权平均值：applying the Laplacian to a function returns how
+far that value is from the neighbourhood average，这是一种<strong>smoothness</strong>的度量。
+在1D line graph上<span class="arithmatex">\((Lf)_i = 2\left(f_i - \frac{f_{i-1} + f_{i+1}}{2}\right)\)</span>，
+所以Laplacian等价于second derivative：<span class="arithmatex">\(\Delta f = \sum_i \frac{\partial^2 f}{\partial x_i^2}\)</span>。</p>
+<figure><img alt="Laplacian intuition: deviation from the neighbourhood average" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/laplacian-intuition.png" loading="lazy" decoding="async" width="1024" height="589"><figcaption>Laplacian intuition: deviation from the neighbourhood average</figcaption></figure>
+<p><span class="arithmatex">\(L\)</span>是<strong>symmetric and positive semi-definite</strong>的，因为可以证明</p>
+<div class="arithmatex">\[\mathbf{x}^T L \mathbf{x} = \frac{1}{2}\sum_{i,j} A_{ij}(x_i - x_j)^2 \ge 0\]</div>
+<p>这个量叫<strong>Dirichlet energy</strong>或graph smoothness energy，由此所有eigenvalue
+<span class="arithmatex">\(\lambda_i \ge 0\)</span>。我们感兴趣的解是</p>
+<div class="arithmatex">\[\{\mathbf{x}^*\} = \arg\min_{\mathbf{x}} \mathbf{x}^T L \mathbf{x} \quad \text{with } \|\mathbf{x}\| = 1\]</div>
+<p>约束<span class="arithmatex">\(\|\mathbf{x}\| = 1\)</span>是为了排除<span class="arithmatex">\(\mathbf{x} = 0\)</span>这个trivial解。</p>
+<figure><img alt="Laplacian quadratic form" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/laplacian-quadratic-form.png" loading="lazy" decoding="async" width="1024" height="589"><figcaption>Laplacian quadratic form</figcaption></figure>
+<p>直觉上，要让<span class="arithmatex">\(\frac{1}{2}\sum A_{ij}(x_i - x_j)^2 \approx 0\)</span>，需要：</p>
+<ul>
+<li>如果<span class="arithmatex">\(x_i \ne x_j\)</span>（<span class="arithmatex">\(i\)</span>和<span class="arithmatex">\(j\)</span>在不同cluster），那么<span class="arithmatex">\(A_{ij} \approx 0\)</span>（no similarity）</li>
+<li>如果<span class="arithmatex">\(A_{ij} &gt; 0\)</span>（<span class="arithmatex">\(i\)</span>和<span class="arithmatex">\(j\)</span>相似），那么<span class="arithmatex">\(x_i \approx x_j\)</span>（same cluster）</li>
+</ul>
+<p>所以<span class="arithmatex">\(\mathbf{x}\)</span>本身就是一种"cluster assignment"。用Lagrange multiplier正式推导：</p>
+<div class="arithmatex">\[\arg\min_{\mathbf{x}} \mathbf{x}^T L \mathbf{x} + \lambda(\mathbf{x}^T \mathbf{x})
+\;\Rightarrow\;
+\nabla = 2L\mathbf{x} + 2\lambda\mathbf{x} = 0
+\;\Rightarrow\;
+L\mathbf{x} = \lambda\mathbf{x}\]</div>
+<p>所以<strong>解是<span class="arithmatex">\(L\)</span>的最小eigenvalue对应的eigenvectors</strong>。</p>
+<figure><img alt="Solutions are eigenvectors of the smallest eigenvalues" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/spectral-eigenvector-solution.png" loading="lazy" decoding="async" width="1024" height="589"><figcaption>Solutions are eigenvectors of the smallest eigenvalues</figcaption></figure>
+<p><strong>Special case (I): zero eigenvalue</strong>。<span class="arithmatex">\(\mathbf{x}^T L \mathbf{x} = 0\)</span>意味着所有
+相连的<span class="arithmatex">\(x_i = x_j\)</span>，常数向量（all-ones）永远满足，所以<span class="arithmatex">\(\lambda = 0\)</span>一定是<span class="arithmatex">\(L\)</span>的
+一个eigenvalue，对应的eigenvector是常数向量。</p>
+<figure><img alt="Zero eigenvalue quiz" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/spectral-zero-eigenvalue.png" loading="lazy" decoding="async" width="1024" height="589"><figcaption>Zero eigenvalue quiz</figcaption></figure>
+<p><strong>Special case (II): connected components</strong>。<strong>Proposition</strong>：eigenvalue 0的
+multiplicity <span class="arithmatex">\(k\)</span>等于graph的connected components数量，对应的eigenspace由各个
+component的indicator vectors张成。也就是说$\dim \ker L = $ 连通分量数。理由：
+graph有disconnected components时，<span class="arithmatex">\(A\)</span>、<span class="arithmatex">\(D\)</span>、<span class="arithmatex">\(L\)</span>都是diagonal block结构</p>
+<div class="arithmatex">\[A = \begin{pmatrix} A_1 &amp; &amp; \\ &amp; A_2 &amp; \\ &amp; &amp; A_3 \end{pmatrix},\;
+D = \begin{pmatrix} D_1 &amp; &amp; \\ &amp; D_2 &amp; \\ &amp; &amp; D_3 \end{pmatrix},\;
+L = \begin{pmatrix} L_1 &amp; &amp; \\ &amp; L_2 &amp; \\ &amp; &amp; L_3 \end{pmatrix}\]</div>
+<p>而block-diagonal矩阵的eigenvectors是各个block eigenvectors的union，每个block
+贡献一个<span class="arithmatex">\(\lambda = 0\)</span>的常数（indicator）向量。整个pipeline是：pixel当nodes，
+similarity<span class="arithmatex">\((i,j)\)</span>当<span class="arithmatex">\(A_{ij}\)</span>，算<span class="arithmatex">\(D\)</span>和<span class="arithmatex">\(L = D - A\)</span>，对<span class="arithmatex">\(L\)</span>做eigendecomposition
+<span class="arithmatex">\(L u = \lambda u\)</span>。</p>
+<figure><img alt="Multiplicity of eigenvalue 0 equals the number of connected components" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/spectral-connected-components.png" loading="lazy" decoding="async" width="1024" height="589"><figcaption>Multiplicity of eigenvalue 0 equals the number of connected components</figcaption></figure>
+<p><strong>Eigenvectors长什么样？</strong> 在1D line graph上，Laplacian的eigenvectors就是
+<span class="arithmatex">\(\sin(kx)\)</span>、<span class="arithmatex">\(\cos(kx)\)</span>，因为它对应连续算子<span class="arithmatex">\(-\frac{d^2}{dx^2}\)</span>的eigenfunctions。
+小eigenvalue对应low graph frequency（<span class="arithmatex">\(\phi_0\)</span>是常数，<span class="arithmatex">\(\phi_1\)</span>单调），大
+eigenvalue对应high graph frequency。2D grid graph上的eigenvectors就是2D
+<strong>Fourier modes</strong>。</p>
+<p><img alt="Eigenvectors of a line graph" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/eigenvectors-line-graph.png" loading="lazy" decoding="async" width="1024" height="581">
+<img alt="Eigenvectors of a 2D graph: Fourier modes" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/eigenvectors-2d-graph.png" loading="lazy" decoding="async" width="1024" height="581"></p>
+<p><strong>Spectral embedding</strong>：把每个node <span class="arithmatex">\(i\)</span>映射到<span class="arithmatex">\((\phi_1(i), \phi_2(i), \dots)\)</span>，
+即用前几个eigenvectors的第<span class="arithmatex">\(i\)</span>个分量作为坐标。下图里三个紧密相连的小团在
+embedding空间里各自聚成一堆。</p>
+<p><strong>Quiz: 为什么node 9和10的spectral embedding完全一样？</strong> 因为它们在graph里
+的connectivity完全相同（连接的是同一组邻居、权重一样），交换9和10不改变
+graph，所以embedding相同。</p>
+<figure><img alt="Spectral embedding" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/spectral-embedding.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>Spectral embedding</figcaption></figure>
+<p><strong>In practice</strong>（von Luxburg, "A tutorial on spectral clustering", 2007）：</p>
+<ol>
+<li>由<span class="arithmatex">\(A\)</span>、<span class="arithmatex">\(D\)</span>得到<span class="arithmatex">\(L\)</span>，计算<span class="arithmatex">\(L\)</span>的前<span class="arithmatex">\(k\)</span>个（最小eigenvalue的）eigenvectors
+   <span class="arithmatex">\(u_1, \dots, u_k\)</span></li>
+<li>令<span class="arithmatex">\(U \in \mathbb{R}^{n \times k}\)</span>以它们为列</li>
+<li>对<span class="arithmatex">\(i = 1, \dots, n\)</span>，取<span class="arithmatex">\(U\)</span>的第<span class="arithmatex">\(i\)</span>行<span class="arithmatex">\(y_i \in \mathbb{R}^k\)</span>作为node <span class="arithmatex">\(i\)</span>的
+   spectral coordinates</li>
+<li>在<span class="arithmatex">\(\mathbb{R}^k\)</span>里对<span class="arithmatex">\((y_i)\)</span>做<strong>k-means</strong>，得到clusters <span class="arithmatex">\(C_1, \dots, C_k\)</span></li>
+<li>输出<span class="arithmatex">\(A_i = \{j \mid y_j \in C_i\}\)</span></li>
+</ol>
+<p>这样two-moons在Euclidean geometry里分不开，但经过graph connectivity的
+变换之后，同一个弯内部strongly connected、两个弯之间weakly connected，
+在spectral coordinates里就变成了两团可分的点。</p>
+<figure><img alt="Spectral clustering algorithm in practice" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/spectral-clustering-algorithm.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>Spectral clustering algorithm in practice</figcaption></figure>
+<p><strong>First (Fiedler) eigenvalue</strong>：对connected graph，<span class="arithmatex">\(\lambda_0 = 0\)</span>，真正有
+信息的是<span class="arithmatex">\(\lambda_1\)</span>，叫<strong>Fiedler value</strong>或<strong>algebraic connectivity</strong>，对应的
+eigenvector叫<strong>Fiedler vector</strong>。<span class="arithmatex">\(\lambda_1\)</span>表示graph有多connected：
+<span class="arithmatex">\(\lambda_1 \approx 0\)</span>说明graph几乎能被切成两半，<span class="arithmatex">\(\lambda_1\)</span>越大说明
+connectivity越强、越难切开。</p>
+<figure><img alt="Fiedler eigenvalue as algebraic connectivity" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/fiedler-eigenvalue.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>Fiedler eigenvalue as algebraic connectivity</figcaption></figure>
+<p>同样的思路可以直接用在<strong>3D shape segmentation</strong>上：mesh的vertex当graph node，
+mesh edges给出connectivity，算出<span class="arithmatex">\(\phi_1, \dots, \phi_5\)</span>之后在这个feature
+space里做k-means。</p>
+<figure><img alt="3D shape segmentation: Laplacian eigenvectors on a mesh, then k-means in feature space" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/3d-shape-segmentation.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>3D shape segmentation: Laplacian eigenvectors on a mesh, then k-means in feature space</figcaption></figure>
+<p><strong>Summary of spectral clustering</strong>：</p>
+<ul>
+<li>能处理complex distributions</li>
+<li>复杂度是<span class="arithmatex">\(O(n^3)\)</span>，因为要做eigendecomposition</li>
+<li>有efficient variants，比如用sparse affinity matrices</li>
+</ul>
+<figure><img alt="Spectral clustering summary" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/spectral-clustering-summary.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>Spectral clustering summary</figcaption></figure>
 <h3 id="13-normalized-cuts">1.3 Normalized cuts</h3>
-<p><em>(…)</em></p>
+<p><strong>Normalised cut（Ncut）</strong>把spectral clustering看成一个<strong>min cut</strong>问题。
+把image变成graph <span class="arithmatex">\(G = (V, E)\)</span>：<span class="arithmatex">\(V\)</span>是nodes（pixel或superpixel），<span class="arithmatex">\(E\)</span>是edges，
+edge weight <span class="arithmatex">\(w_{ij}\)</span>是<span class="arithmatex">\(i\)</span>、<span class="arithmatex">\(j\)</span>的similarity，比如<span class="arithmatex">\(w_{ij} = \exp(-\gamma d(i,j))\)</span>。
+目标是把<span class="arithmatex">\(V\)</span>切成两部分<span class="arithmatex">\(A \cup B = V\)</span>、<span class="arithmatex">\(A \cap B = \emptyset\)</span>，切断的边尽量"便宜"。</p>
+<figure><img alt="Spectral clustering as a min cut" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/ncut-as-min-cut.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>Spectral clustering as a min cut</figcaption></figure>
+<p><strong>Min cut的问题</strong>：定义<span class="arithmatex">\(\text{cut}(A, B) = \sum_{i \in A, j \in B} w_{ij}\)</span>，
+直接最小化它会<strong>偏向切出unbalanced的孤立小cluster</strong>。下图里把角落的一两个点
+单独切出去（min-cut 1、min-cut 2）比中间那条"better cut"便宜得多，因为
+孤立点连出去的边本来就少。所以raw min-cut会产生很不平衡的partition。</p>
+<figure><img alt="Problem with min cuts: unbalanced isolated clusters" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/min-cut-problem.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>Problem with min cuts: unbalanced isolated clusters</figcaption></figure>
+<p><strong>Balanced cut</strong>：Shi and Malik（2000）提出的Ncut用两边的"体积"做归一化</p>
+<div class="arithmatex">\[\text{Ncut}(A, B) = \text{cut}(A, B)\left(\text{assoc}^{-1}(A, V) + \text{assoc}^{-1}(B, V)\right)\]</div>
+<p>其中<span class="arithmatex">\(\text{cut}(A, B) = \sum_{i \in A, j \in B} w_{ij}\)</span>是切开<span class="arithmatex">\(A\)</span>、<span class="arithmatex">\(B\)</span>的代价，
+<span class="arithmatex">\(\text{assoc}(A, V) = \sum_{i \in A, j \in V} w_{ij}\)</span>是<span class="arithmatex">\(A\)</span>中所有点和整个graph
+的总连接强度，也叫<span class="arithmatex">\(\text{vol}(A)\)</span>。直觉上是<strong>minimise the similarity between
+groups A and B, while maximising the similarity within each group</strong>：分子是
+between-cluster similarity要小，分母是within-cluster similarity要大。如果<span class="arithmatex">\(A\)</span>
+只有一个孤立点，<span class="arithmatex">\(\text{assoc}(A, V)\)</span>很小，<span class="arithmatex">\(\text{assoc}^{-1}\)</span>就很大，这种cut
+会被惩罚。</p>
+<figure><img alt="Normalised cut: balanced cut" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/ncut-balanced-cut.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>Normalised cut: balanced cut</figcaption></figure>
+<p><strong>Ncut算法</strong>（Shi and Malik, 2001; Shi, 2009）：</p>
+<ol>
+<li>定义graph <span class="arithmatex">\(G := (V, E)\)</span>，<span class="arithmatex">\(V\)</span>是代表pixel的nodes，<span class="arithmatex">\(E\)</span>定义两个node的similarity，
+   <span class="arithmatex">\(W = [w_{ij}]\)</span>就是前面的<span class="arithmatex">\(A\)</span>，<span class="arithmatex">\(d(i) = \sum_j w_{ij}\)</span>，Laplacian <span class="arithmatex">\(L = D - W\)</span></li>
+<li>解一个<strong>generalised eigenvalue problem</strong> <span class="arithmatex">\((D - W)\mathbf{x} = \lambda D\mathbf{x}\)</span></li>
+<li>用<strong>第二小eigenvalue</strong>对应的eigenvector来切graph</li>
+<li>需要的话递归，即继续subdivide切出来的两组node</li>
+</ol>
+<p><img alt="Ncut algorithm" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/ncut-algorithm.png" loading="lazy" decoding="async" width="1024" height="581">
+<img alt="Ncut eigenvectors on a real image" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/ncut-eigenvectors.png" loading="lazy" decoding="async" width="1024" height="581"></p>
+<p><strong>为什么是generalised eigenvalue problem？</strong> 它等价于最小化
+<span class="arithmatex">\(\frac{\mathbf{x}^T L \mathbf{x}}{\mathbf{x}^T D \mathbf{x}}\)</span>，分母<span class="arithmatex">\(\mathbf{x}^T D \mathbf{x}\)</span>
+是partition的graph volume，即把上面的Ncut归一化写成了Rayleigh quotient的形式。
+从<span class="arithmatex">\(L\mathbf{x} = \lambda D\mathbf{x}\)</span>可以等价地写成</p>
+<div class="arithmatex">\[D^{-\frac{1}{2}}(D - W)D^{-\frac{1}{2}}\mathbf{x} = \lambda\mathbf{x}\]</div>
+<p>这里<span class="arithmatex">\(L_{\text{sym}} = I - D^{-\frac{1}{2}} W D^{-\frac{1}{2}}\)</span>叫<strong>symmetric
+normalised Laplacian</strong>，所以Ncut就是<strong>normalised spectral clustering</strong>：它关注
+的是<strong>relative connectivity</strong>，而不是absolute connectivity。</p>
+<figure><img alt="Ncut as a generalised eigenvalue problem" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/ncut-normalized-laplacian.png" loading="lazy" decoding="async" width="1024" height="581"><figcaption>Ncut as a generalised eigenvalue problem</figcaption></figure>
+<p><strong>Quiz: 为什么用second smallest eigenvector？</strong> 因为<span class="arithmatex">\(\lambda_0 = 0\)</span>对应的
+eigenvector是常数向量，它给出的是trivial partition（所有点在一组）。第二个
+eigenvector是<strong>smoothest non-trivial partition</strong>，正是我们要的Fiedler vector。
+更多细节见Shi and Malik（2000）的Sec. 2.1。</p>
 <h2 id="2-energy-based-models-crfs">2. Energy-based models: CRFs</h2>
-<p><em>(…)</em></p>
+<p><strong>Conditional Random Field（CRF）</strong>把segmentation写成一个energy minimisation
+问题。以Boykov and Jolly（2001）的interactive segmentation为例：</p>
+<div class="arithmatex">\[E(x, y) = \sum_i \varphi(x_i, y_i) + \sum_{ij} \psi(x_i, x_j)\]</div>
+<ul>
+<li><strong>Variables</strong>：<span class="arithmatex">\(x_i\)</span>是binary variable（foreground / background），<span class="arithmatex">\(y_i\)</span>是
+  annotation（foreground / background / empty，即用户画的涂鸦）</li>
+<li><strong>Unary term</strong> <span class="arithmatex">\(\varphi(x_i, y_i) = K[x_i \ne y_i]\)</span>：如果预测和annotation
+  不一致就付出penalty <span class="arithmatex">\(K\)</span>，一致时为0。它保证不会无视用户的标注</li>
+<li><strong>Pairwise term</strong> <span class="arithmatex">\(\psi(x_i, x_j) = [x_i \ne x_j]\, w_{ij}\)</span>：<span class="arithmatex">\(w_{ij}\)</span>是pixel
+  <span class="arithmatex">\(i\)</span>、<span class="arithmatex">\(j\)</span>的affinity。相邻pixel label相同时<span class="arithmatex">\(\psi = 0\)</span>；label不同时付出<span class="arithmatex">\(w_{ij}\)</span>，
+  如果两个像素很相似（<span class="arithmatex">\(w_{ij} \gg 0\)</span>）却被分开，penalty很大。这一项鼓励
+  <strong>smooth annotations</strong>，即让边界落在affinity低的地方</li>
+</ul>
+<figure><img alt="Conditional Random Fields: unary and pairwise terms" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/crf-energy.png" loading="lazy" decoding="async" width="304" height="171"><figcaption>Conditional Random Fields: unary and pairwise terms</figcaption></figure>
+<p><strong>Energy minimisation with graph cuts</strong>：构造一个graph，source <span class="arithmatex">\(S\)</span>是object
+terminal，sink <span class="arithmatex">\(T\)</span>是background terminal。每个pixel和<span class="arithmatex">\(S\)</span>、<span class="arithmatex">\(T\)</span>之间的<strong>T-links</strong>
+承载unary cost，相邻pixel之间的<strong>N-links</strong>承载pairwise cost。根据<strong>max-flow
+min-cut theorem</strong>（the maximum value of an s-t flow is equal to the minimum
+capacity over all s-t cuts），最小化<span class="arithmatex">\(E\)</span>等价于找minimum s-t cut，而max-flow
+有多项式时间算法，所以对binary labelling可以求<strong>全局最优</strong>。</p>
+<figure><img alt="Energy minimisation with graph cuts" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/graph-cuts-energy-minimisation.png" loading="lazy" decoding="async" width="1026" height="578"><figcaption>Energy minimisation with graph cuts</figcaption></figure>
+<p>从概率的角度看，给定image <span class="arithmatex">\(x\)</span>，segmentation <span class="arithmatex">\(y\)</span>的分布是</p>
+<div class="arithmatex">\[P(y \mid x) = \frac{1}{Z(x)}\exp(-E(x, y)), \qquad Z(x) = \sum_y \exp(-E(x, y))\]</div>
+<p><span class="arithmatex">\(Z\)</span>是partition function。Energy越低，概率越高，所以
+<span class="arithmatex">\(\arg\max_y P(y \mid x) = \arg\min_y E(x, y)\)</span>。</p>
+<p>两类CRF：</p>
+<ul>
+<li><strong>Grid structured random fields</strong>：每个pixel只和邻居有edge（sparse graph）。
+  用Maxflow/Mincut有<strong>efficient solution</strong>，对binary labelling是<strong>optimal</strong>的
+  （Boykov &amp; Kolmogorov, 2004），复杂度大约<span class="arithmatex">\(O(n)\)</span></li>
+<li><strong>Fully connected models</strong>：每个pixel和其他所有pixel都有edge，直接做是
+  <span class="arithmatex">\(O(n^2)\)</span>。Krähenbühl &amp; Koltun（2011）用<strong>mean-field approximation</strong>做
+  efficient inference（属于variational methods，在CV I里讲过）。它的pairwise
+  potential是Gaussian edge potentials：</li>
+</ul>
+<div class="arithmatex">\[\psi_{ij}(y_i, y_j) = \mu(y_i, y_j)\left(w_1 \exp\left(-\frac{\|p_i - p_j\|^2}{2\sigma_\alpha^2} - \frac{\|I_i - I_j\|^2}{2\sigma_\beta^2}\right) + w_2 \exp\left(-\frac{\|p_i - p_j\|^2}{2\sigma_\gamma^2}\right)\right)\]</div>
+<p>第一个kernel同时看position和colour，叫<strong>bilateral kernel</strong>，让颜色相近且位置
+相近的像素倾向于同一label；第二个kernel只看position，负责smoothness。</p>
+<figure><img alt="Grid-structured vs fully connected CRFs" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/crf-grid-vs-fully-connected.png" loading="lazy" decoding="async" width="1026" height="578"><figcaption>Grid-structured vs fully connected CRFs</figcaption></figure>
+<p><strong>Remark</strong>：</p>
+<ul>
+<li>"Classical"方法今天仍然高度相关，比如作为postprocessing或loss function</li>
+<li>Deep networks学到的是有用的feature representation（或metrics），学完之后
+  standard clustering（k-means、Ncut）仍然可以直接用</li>
+<li>给每个pixel都产生deep feature是有挑战的</li>
+<li><strong>Fully connected CRF是一个好用的off-the-shelf post-processing工具</strong></li>
+</ul>
+<p>一个典型例子是<strong>DeepLab</strong>（Chen et al., 2016）：DCNN输出一张coarse score
+map，bilinear interpolation放大回原分辨率，最后用fully connected CRF refine
+边界得到final output。下图展示了fully connected CRF的mean-field迭代：0次迭代
+时<span class="arithmatex">\(Q(\text{bird})\)</span>和<span class="arithmatex">\(Q(\text{sky})\)</span>的分布很模糊，2次迭代之后边界已经很清晰，
+10次迭代后基本收敛。</p>
+<p><img alt="DeepLab: DCNN + bilinear upsampling + fully connected CRF" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/deeplab-crf.png" loading="lazy" decoding="async" width="1026" height="881">
+<img alt="Fully connected CRF mean-field iterations" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/crf-iterations.png" loading="lazy" decoding="async" width="1003" height="570"></p>
 <h2 id="3-deep-semantic-segmentation">3. Deep semantic segmentation</h2>
+<p>回忆用于classification的deep network：image（<span class="arithmatex">\(221 \times 221 \times 3\)</span>）经过
+CNN得到feature map（<span class="arithmatex">\(5 \times 5 \times 1024\)</span>），<strong>Global Average Pooling
+（GAP）</strong>把它平均成<span class="arithmatex">\(1 \times 1 \times 1024\)</span>的feature，再经过fully connected
+layer（<span class="arithmatex">\(1024 \times\)</span> num. classes）得到class distribution。</p>
+<figure><img alt="Deep networks for classification" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/cnn-classification.png" loading="lazy" decoding="async" width="1003" height="570"><figcaption>Deep networks for classification</figcaption></figure>
+<p><strong>怎么把它扩展到segmentation？</strong> 我们想要的输出是<span class="arithmatex">\(5 \times 5 \times\)</span> num.
+classes，即每个空间位置一个class distribution。但GAP把空间信息全部平均掉了，
+所以第一步是<strong>去掉GAP</strong>。</p>
+<figure><img alt="How can we extend this to segmentation?" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/cnn-to-segmentation.png" loading="lazy" decoding="async" width="1003" height="570"><figcaption>How can we extend this to segmentation?</figcaption></figure>
+<p>去掉GAP直接接FC layer的问题：FC的参数量是<span class="arithmatex">\(5 \cdot 5 \cdot 1024 \cdot (5 \cdot 5 \cdot C) = 640000\,C\)</span>；
+输入size被固定住了，因为FC的输入维度写死了；而且没有translation invariance。</p>
+<figure><img alt="Removing GAP: parameter increase, fixed input size, no translation invariance" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/cnn-remove-gap.png" loading="lazy" decoding="async" width="1003" height="570"><figcaption>Removing GAP: parameter increase, fixed input size, no translation invariance</figcaption></figure>
+<p><strong>Replace fully connected layer with convolution</strong>：用<strong>1×1 convolution</strong>
+代替FC。</p>
+<p><strong>Quiz: 现在有多少参数？</strong> 输出<span class="arithmatex">\(C\)</span>个channel，每个filter是<span class="arithmatex">\(1 \times 1 \times 1024\)</span>
+再加一个bias，所以是<span class="arithmatex">\((1 \times 1 \times 1024)\,C + C\)</span>，比FC少了625倍。好处是
+<strong>few parameters、variable input size、translation invariance</strong>（更准确地说
+conv是equivariance）。</p>
+<figure><img alt="Replace the FC layer with a 1x1 convolution" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/cnn-1x1-conv.png" loading="lazy" decoding="async" width="1003" height="570"><figcaption>Replace the FC layer with a 1x1 convolution</figcaption></figure>
 <h3 id="31-fcn-and-11-convolutions">3.1 FCN and 1×1 convolutions</h3>
-<p><em>(…)</em></p>
+<p><strong>Fully Convolutional Network（FCN）</strong>（Long, Shelhamer, Darrell, CVPR 2015）：</p>
+<ul>
+<li>把FC layers全部换成convolutional layers</li>
+<li>把最后一层的输出<strong>upsample回original resolution</strong>，比如transposed
+  convolution或bilinear interpolation</li>
+<li>用<strong>pixelwise cross-entropy</strong> + SGD训练：<span class="arithmatex">\(L = -\sum_i \log p_i(y_i)\)</span>，<span class="arithmatex">\(i\)</span>
+  遍历每个pixel</li>
+</ul>
+<figure><img alt="Fully convolutional neural networks" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/fcn.png" loading="lazy" decoding="async" width="1003" height="570"><figcaption>Fully convolutional neural networks</figcaption></figure>
+<p><strong>1×1 "convolution"到底是什么</strong>：每个feature pixel是一个multi-dimensional
+feature，1×1 conv对每个位置做<span class="arithmatex">\(x_i' = W x_i\)</span>，即<strong>对每个pixel feature应用同一个
+shared fully connected layer</strong>。实际上在deep learning framework里完全不需要用
+conv op来实现它，虽然大家常这么写。</p>
+<figure><img alt="1x1 convolution" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/1x1-convolution.png" loading="lazy" decoding="async" width="1003" height="570"><figcaption>1x1 convolution</figcaption></figure>
+<p><strong>1×1 convolution facts</strong>：</p>
+<ul>
+<li>它是一个<strong>pixel-wise linear projection</strong>：<span class="arithmatex">\(X' := WX\)</span>，其中
+  <span class="arithmatex">\(X \in [D, \text{pixels}]\)</span>，<span class="arithmatex">\(W \in [D', D]\)</span>，<span class="arithmatex">\(X' \in [D', \text{pixels}]\)</span></li>
+<li><strong>每个pixel被同样对待</strong>（shared parameters），对比3×3 conv会混合邻居</li>
+<li>输出和FC层一样处理：后面接normalisation和non-linearity（output layer除外）</li>
+</ul>
+<figure><img alt="1x1 convolution facts" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/1x1-convolution-facts.png" loading="lazy" decoding="async" width="150" height="2"><figcaption>1x1 convolution facts</figcaption></figure>
 <h3 id="32-the-trouble-with-pixel-level-prediction">3.2 The trouble with pixel-level prediction</h3>
-<p><em>(resolution loss from pooling / striding …)</em></p>
+<p><strong>Output stride</strong> = input resolution / output resolution（通常指encoder的）。
+FCN论文里FCN-32s、FCN-16s、FCN-8s分别对应output stride 32、16、8，可以看到
+<strong>降低output stride能提高segmentation accuracy</strong>，边界越来越贴合ground truth。</p>
+<p><strong>Quiz: 为什么不在所有层都保持高feature resolution？</strong> 两个问题：</p>
+<ol>
+<li><strong>Receptive field size</strong>：每去掉一个stride-2操作，receptive field面积就
+   缩小约4倍，网络能看到的context information就变少。而large receptive field
+   对segment large objects很重要，比如下图里要认出整辆车需要看到远超一个
+   patch的范围</li>
+<li><strong>Computational footprint</strong>（memory和FLOPs）：每去掉一个stride-2操作，
+   feature tensor大4倍</li>
+</ol>
+<figure><img alt="Receptive field: a large receptive field helps to segment large objects" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/receptive-field.png" loading="lazy" decoding="async" width="990" height="552"><figcaption>Receptive field: a large receptive field helps to segment large objects</figcaption></figure>
+<p>解决思路：</p>
+<ul>
+<li>问题1：把stride-2操作换成<strong>dilation-2</strong>操作，保持receptive field不变</li>
+<li>问题2：为了让计算可行，我们还是得降低feature resolution，即使receptive
+  field不再是问题。所以需要<strong>有效的upsampling策略</strong></li>
+</ul>
 <h3 id="33-dilated-convolutions-and-upsampling">3.3 Dilated convolutions and upsampling</h3>
-<p><em>(transposed convolutions, skip connections …)</em></p>
+<h4 id="dilated-convolutions">Dilated convolutions</h4>
+<p>要保持receptive field size，一种做法是把一个stride-2操作换成多个stride-1
+操作，但网络更深就更难、更贵。更好的选择是<strong>dilated convolution</strong>：用stride 1
+的同时保持receptive field size。</p>
+<p>普通convolution是dilation = 1的特例；dilation为<span class="arithmatex">\(N\)</span>时kernel在相邻采样点之间
+"跳过"<span class="arithmatex">\(N - 1\)</span>个pixel。参数量不变，kernel size <span class="arithmatex">\(K\)</span>、dilation <span class="arithmatex">\(D\)</span>的receptive
+field是</p>
+<div class="arithmatex">\[D(K - 1) + 1\]</div>
+<p><img alt="Dilated convolutions 2D" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/dilated-convolutions.png" loading="lazy" decoding="async" width="990" height="552">
+<img alt="Dilated convolution: parameters and receptive field" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/dilated-receptive-field.png" loading="lazy" decoding="async" width="716" height="217"></p>
+<p><strong>Stride 2 vs dilated</strong>（DeepLab, Chen et al., 2016）：上面一条路是
+downsampling（stride 2）→ convolution（kernel 7）→ upsampling（stride 2），
+结果是模糊的低分辨率响应；下面一条路直接用atrous convolution（kernel 7，
+rate 2，stride 1），在全分辨率上得到同样receptive field的响应。</p>
+<figure><img alt="Stride 2 vs dilated (atrous) convolution" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/stride2-vs-dilated.png" loading="lazy" decoding="async" width="991" height="551"><figcaption>Stride 2 vs dilated (atrous) convolution</figcaption></figure>
+<p>Dilation还能<strong>改善scale invariance</strong>：在同一层里用多个不同的dilation，通常
+放在网络的bottleneck部分。DeepLab的<strong>ASPP（Atrous Spatial Pyramid Pooling）</strong>
+就是在Pool5之后并行四个3×3 conv，rate分别是6、12、18、24，各自接1×1 conv，
+最后sum-fusion。</p>
+<p><img alt="Multiple dilations in one layer" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/dilation-scale-invariance.png" loading="lazy" decoding="async" width="991" height="551">
+<img alt="ASPP: Atrous Spatial Pyramid Pooling" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/aspp.png" loading="lazy" decoding="async" width="991" height="551"></p>
+<h4 id="transposed-convolution">Transposed convolution</h4>
+<p><strong>能不能用convolution来增大output resolution？</strong> 先回忆convolution写成矩阵
+乘法的形式（<strong>im2col</strong>）：把kernel拉成<span class="arithmatex">\([1 \times K]\)</span>的向量，把input的每个
+patch拉成列组成<span class="arithmatex">\([K \times n]\)</span>的矩阵，相乘加bias得到<span class="arithmatex">\([1 \times n]\)</span>，再reshape
+回去。</p>
+<figure><img alt="Convolution as matrix multiplication: im2col" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/im2col.png" loading="lazy" decoding="async" width="991" height="551"><figcaption>Convolution as matrix multiplication: im2col</figcaption></figure>
+<p>即<span class="arithmatex">\(X' = WX\)</span>。反过来做<span class="arithmatex">\(X = W^T X'\)</span>（<span class="arithmatex">\([K \times n] = [K \times 1][1 \times n]\)</span>）
+就把每个输出值"broadcast"回一个<span class="arithmatex">\(K\)</span>维的patch，输出size变大，这就是
+<strong>transposed convolution</strong>。</p>
+<figure><img alt="Transposed convolution as W^T" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/transposed-convolution-matrix.png" loading="lazy" decoding="async" width="991" height="551"><figcaption>Transposed convolution as W^T</figcaption></figure>
+<p>Transposed convolution也叫"up-convolution"，也有人叫"deconvolution"（这是
+不准确的叫法）。实现上：给input的每个pixel周围pad（比如零），然后用一个
+kernel（比如3×3）做卷积，padding和stride的量决定output resolution。比如
+3×3的input可以变成5×5的output。</p>
+<figure><img alt="Transposed convolution: pad then convolve" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/transposed-convolution.png" loading="lazy" decoding="async" width="991" height="551"><figcaption>Transposed convolution: pad then convolve</figcaption></figure>
+<p><strong>问题：checkerboard artefacts</strong>。当kernel size不能被stride整除时会出现
+"uneven overlap"，比如kernel 3、stride 2，有些output位置被两个kernel覆盖，
+有些只被一个覆盖，结果就是棋盘格状的纹路（distill.pub, 2016）。</p>
+<figure><img alt="Checkerboard artefacts from uneven overlap" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/checkerboard-artefacts.png" loading="lazy" decoding="async" width="972" height="535"><figcaption>Checkerboard artefacts from uneven overlap</figcaption></figure>
+<h4 id="resize-convolution">Resize-convolution</h4>
+<p>Transposed convolution需要<strong>careful parameterization</strong>，即使kernel和stride
+选得合适（比如stride 2、kernel 4），boundaries仍然可能有问题。更好的
+选择是<strong>interpolation（比如bilinear）followed by standard convolution</strong>。</p>
+<figure><img alt="Transposed convolution needs careful parameterization" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/upsampling-interpolation.png" loading="lazy" decoding="async" width="972" height="560"><figcaption>Transposed convolution needs careful parameterization</figcaption></figure>
+<p>Feature可以像image一样interpolate：nearest neighbour、bilinear、bicubic。</p>
+<figure><img alt="Interpolation: nearest neighbour, bilinear, bicubic" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/interpolation-types.png" loading="lazy" decoding="async" width="972" height="560"><figcaption>Interpolation: nearest neighbour, bilinear, bicubic</figcaption></figure>
+<p><strong>Resize-convolution = interpolate + convolution</strong>。下图的image reconstruction
+例子里，transposed convolution的结果有明显的棋盘纹，resize-convolution没有。
+不同层用deconv会产生不同frequency的artifact：最后两层用deconv有frequency 2
+和4的artifact，只有最后一层用deconv有frequency 2的artifact，全部用
+resize-convolution则没有artifact，<strong>而且在训练之前就是这样</strong>，说明这是结构
+本身带来的问题。</p>
+<p><img alt="Resize-convolution vs transposed convolution" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/resize-convolution.png" loading="lazy" decoding="async" width="972" height="560">
+<img alt="Artifacts of different frequencies, even before training" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/resize-convolution-artifacts.png" loading="lazy" decoding="async" width="972" height="560"></p>
+<p>不过即使upsampling做得好，downsampling时丢掉的信息还是丢了：一般来说
+upsampling有多个plausible的结果。</p>
+<h4 id="mitigating-information-loss-skip-connections">Mitigating information loss: skip connections</h4>
+<p><strong>高分辨率的信息从哪来？</strong> 从encoder的前几层，通过<strong>skip connection</strong>接过来。
+<strong>U-Net</strong>（Ronneberger et al., MICCAI 2015）是典型例子：encoder每次max pool
+2×2下采样，decoder每次up-conv 2×2上采样，同分辨率的encoder feature map
+通过copy and crop接到decoder，然后<strong>append</strong>（concatenate）到上采样的
+feature上，即传递的是整个feature map。</p>
+<p><strong>Quiz: 我们已经见过的另一个例子？</strong> 上一章的<strong>FPN（Feature Pyramid
+Network）</strong>，它同样把高分辨率的bottom-up feature和上采样的top-down feature
+合并。</p>
+<p><img alt="U-Net skip connections" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/unet.png" loading="lazy" decoding="async" width="972" height="560">
+<img alt="U-Net zoom in: the whole feature map is appended" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/unet-zoom.png" loading="lazy" decoding="async" width="972" height="560"></p>
+<p>另一种做法是<strong>SegNet</strong>（Badrinarayanan et al., TPAMI 2016）：不传整个feature
+map，只把encoder max pooling时的<strong>pooling indices</strong>传给decoder，decoder用
+它做"unpooling"，把值放回原来的位置，再用conv填补。</p>
+<figure><img alt="SegNet: unpooling with pooling indices" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/segnet.png" loading="lazy" decoding="async" width="972" height="560"><figcaption>SegNet: unpooling with pooling indices</figcaption></figure>
+<p><strong>Summary</strong>：</p>
+<ul>
+<li><strong>Transposed convolutions</strong>：带可学习参数的upsampling，可能产生artefacts</li>
+<li>更实用的是<strong>resize-convolution</strong>：先interpolate再convolve</li>
+<li><strong>Skip connections</strong>：连接前面的高分辨率层，可能需要stage-wise training
+  （先训练深层）</li>
+</ul>
 <h2 id="4-instance-segmentation">4. Instance segmentation</h2>
+<p>回忆两者的区别：<strong>semantic segmentation</strong>给每个pixel打label，包括背景（sky、
+grass、road），但不区分同一类的不同instance；<strong>instance segmentation</strong>不给
+uncountable的"stuff"打label，但区分同一类的不同instance。</p>
+<figure><img alt="Semantic vs instance segmentation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/instance-vs-semantic.png" loading="lazy" decoding="async" width="972" height="560"><figcaption>Semantic vs instance segmentation</figcaption></figure>
+<p>两大类方法：</p>
+<ul>
+<li><strong>Proposal-based</strong>：先得到proposals（比如bounding boxes），再对每个proposal
+  做segment and classify</li>
+<li><strong>Proposal-free</strong>：先做semantic segmentation（可选），再把pixel group成
+  instances</li>
+</ul>
+<figure><img alt="Instance segmentation methods: proposal-based vs proposal-free" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/proposal-based-vs-free.png" loading="lazy" decoding="async" width="972" height="560"><figcaption>Instance segmentation methods: proposal-based vs proposal-free</figcaption></figure>
 <h3 id="41-mask-r-cnn">4.1 Mask R-CNN</h3>
-<p><em>(…)</em></p>
+<p>Proposal-based方法需要bounding boxes，而我们已经知道怎么得到它们了。所以
+问题是：<strong>能不能把最好的object detector扩展成instance segmentation？</strong> 从
+<strong>Faster R-CNN</strong>出发，它有RPN、bounding box regression head和classification
+head。<strong>再加一个head</strong>，即"mask head"，就得到了<strong>Mask R-CNN</strong>（He et al.,
+ICCV 2017）。</p>
+<p><img alt="Starting from Faster R-CNN" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/mask-rcnn-faster-rcnn.png" loading="lazy" decoding="async" width="972" height="560">
+<img alt="Add a mask head" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/mask-rcnn-mask-head.png" loading="lazy" decoding="async" width="972" height="560"></p>
+<p>具体结构：RoI经过backbone得到<span class="arithmatex">\(7 \times 7 \times 1024\)</span>，再经过res5得到
+<span class="arithmatex">\(7 \times 7 \times 2048\)</span>，这部分feature是<strong>object recognition head</strong>和
+<strong>segmentation head</strong>共享的。Recognition head做average pooling后输出class和
+box；segmentation head是一个<strong>conv-only</strong>的分支，输出<span class="arithmatex">\(14 \times 14 \times 256\)</span>
+再到<span class="arithmatex">\(14 \times 14 \times 80\)</span>的mask，80是class数量，即<strong>每个class预测一张
+mask</strong>。Mask loss是<strong>cross-entropy per pixel</strong>。</p>
+<p><img alt="Mask R-CNN heads: most features are shared" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/mask-rcnn-heads.png" loading="lazy" decoding="async" width="972" height="560">
+<img alt="Mask R-CNN: Faster R-CNN + conv-only mask head, with RoIAlign" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/mask-rcnn-architecture.png" loading="lazy" decoding="async" width="972" height="560"></p>
+<p>除了mask head，另一个新东西是<strong>RoIAlign</strong>。</p>
 <h3 id="42-the-roi-rounding-problem">4.2 The RoI rounding problem</h3>
-<p><em>(…)</em></p>
+<p>回忆<strong>RoIPool</strong>：512×512的image经过CNN变成16×16的feature grid，predicted
+bounding box映射到feature grid上时坐标是分数。RoIPool做了<strong>两次quantisation</strong>：</p>
+<ol>
+<li><strong>Bounding box alignment</strong>：把box的边界round到feature grid上</li>
+<li><strong>Bin alignment</strong>：把box分成（比如2×2）bins时，bin边界也round到grid上</li>
+</ol>
+<p>然后在每个bin里做pooling（max或average）。这对object detection足够好，因为
+只用来classification；但mask prediction需要<strong>accurate localisation</strong>，两次
+rounding带来的偏移会直接反映在mask边界上。</p>
+<p><img alt="Recall RoIPool" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/roipool-recall.png" loading="lazy" decoding="async" width="972" height="560">
+<img alt="RoIPool: two quantisations" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/roipool-quantisation.png" loading="lazy" decoding="async" width="972" height="560"></p>
+<p><strong>RoIAlign</strong>：</p>
+<ul>
+<li><strong>No quantisation</strong>，box和bin的边界保持分数坐标</li>
+<li>每个bin里定义4个regularly placed sampling points</li>
+<li>每个sampling point的feature值用<strong>bilinear interpolation</strong>从周围4个grid
+  point算出来</li>
+<li>然后像之前一样aggregate每个bin（max或average pooling）</li>
+</ul>
+<p>论文的ablation里RoIAlign比RoIPool的mask AP高约3个点，AP<span class="arithmatex">\(_{75}\)</span>高约5个点，
+说明proper alignment是RoI layer之间差距的主要来源。</p>
+<figure><img alt="RoIAlign" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/roialign.png" loading="lazy" decoding="async" width="972" height="560"><figcaption>RoIAlign</figcaption></figure>
+<p>Mask R-CNN看起来只是incremental的改进，整体设计很简单，但拿了CVPR 2017的
+best paper award，效果见下面的qualitative results。</p>
+<p><img alt="Mask R-CNN summary" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/mask-rcnn-summary.png" loading="lazy" decoding="async" width="972" height="560">
+<img alt="Mask R-CNN qualitative results" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/mask-rcnn-results.png" loading="lazy" decoding="async" width="1003" height="1139"></p>
+<p><strong>Mask R-CNN的后续改进</strong>：</p>
+<ul>
+<li>Kirillov et al., "PointRend: Image Segmentation as Rendering" (2020)</li>
+<li>Huang et al., "Mask Scoring R-CNN" (2019)</li>
+<li>Liu et al., "Path Aggregation Network for Instance Segmentation" (2018)</li>
+<li>Cai and Vasconcelos, "Cascade R-CNN: High Quality Object Detection and
+  Instance Segmentation" (2019)</li>
+</ul>
 <h3 id="43-coordinate-based-networks-pointrend">4.3 Coordinate-based networks: PointRend</h3>
-<p><em>(…)</em></p>
+<p><strong>问题：low mask resolution</strong>。Mask head的输出只有<span class="arithmatex">\(28 \times 28\)</span>（或
+<span class="arithmatex">\(14 \times 14\)</span>），bilinear upsampling到原图之后边界是一块一块的。</p>
+<figure><img alt="Problem: low mask resolution" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pointrend-low-resolution.png" loading="lazy" decoding="async" width="991" height="544"><figcaption>Problem: low mask resolution</figcaption></figure>
+<p><strong>为什么不给mask head加一个decoder？</strong> 可以，比如Faster R-CNN w/ FPN的版本
+把<span class="arithmatex">\(14 \times 14 \times 256\)</span>上采样到<span class="arithmatex">\(28 \times 28 \times 256\)</span>再输出mask。这确实
+提高accuracy，但需要更多参数和计算。而且bilinear upsampling真正出问题的地方
+主要在<strong>boundaries</strong>，即fine details，内部区域其实没问题。所以在整张mask上
+均匀地加分辨率是浪费。</p>
+<p><img alt="Why not equip the mask head with a decoder?" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pointrend-decoder.png" loading="lazy" decoding="async" width="991" height="544">
+<img alt="Bilinear upsampling is problematic at the boundaries" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pointrend-boundaries.png" loading="lazy" decoding="async" width="991" height="544"></p>
+<p><strong>Coordinate-based neural representation</strong>：Mask head是把一个discrete signal
+representation（pixel）映射到一个desired value（binary mask）。PointRend
+（Kirillov et al., 2020）改成把mask参数化成一个<strong>continuous function</strong>，它的
+输入是signal domain里的坐标<span class="arithmatex">\((x, y)\)</span>：</p>
+<div class="arithmatex">\[f_\theta(3, 8) = 0, \quad f_\theta(14, 14) = 1, \quad f_\theta(27.1, 15.7) = 1\]</div>
+<p><span class="arithmatex">\(f_\theta(x, y)\)</span>是一个<strong>coordinate-based net</strong>。它有用的地方在于我们可以
+<strong>query fractional coordinates</strong>，即任意分辨率都能问。</p>
+<figure><img alt="Coordinate-based neural representation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/coordinate-based-representation.png" loading="lazy" decoding="async" width="991" height="544"><figcaption>Coordinate-based neural representation</figcaption></figure>
+<p><strong>Remarks</strong>：</p>
+<ul>
+<li>实际上是给每个坐标算一个<strong>point-wise feature</strong>，用bilinear interpolation
+  从feature map上采样</li>
+<li>可以从多个feature map上采样再concatenate</li>
+<li>Point head <span class="arithmatex">\(f_\theta\)</span>是在这些feature上训练的，<strong>不是在坐标值上</strong></li>
+</ul>
+<p><strong>Quiz: 为什么不直接在坐标值上训练？</strong> 因为坐标本身不包含任何image content，
+只在坐标上训练的网络只能记住一个固定形状，不能泛化到不同物体。Point-wise
+feature带着这个位置的appearance信息，而且feature是translation-equivariant的，
+所以head学到的是"这样的feature对应边界"，对所有RoI通用。</p>
+<p><strong>训练：focus on the boundaries</strong>。训练coordinate-based mask representation
+时不均匀采样，而是把采样点集中在boundaries，即prediction不确定的地方。
+Uniform sampling和boundary sampling之间的trade-off由hyperparameter控制。</p>
+<figure><img alt="Training: uniform sampling vs sampling at the boundaries" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pointrend-sampling.png" loading="lazy" decoding="async" width="991" height="544"><figcaption>Training: uniform sampling vs sampling at the boundaries</figcaption></figure>
+<p><strong>测试：adaptive subdivision</strong>，用学到的coordinate mapping来<strong>refine
+boundaries</strong>。一次迭代：<span class="arithmatex">\(4 \times 4\)</span>的initial mask，bilinear上采样2×到
+<span class="arithmatex">\(8 \times 8\)</span>，只在uncertain的点上query <span class="arithmatex">\(f_\theta(x, y)\)</span>做point prediction，
+得到refined <span class="arithmatex">\(8 \times 8\)</span> mask。重复：<span class="arithmatex">\(28 \to 56 \to 112 \to 224\)</span>，最终得到
+边界清晰的高分辨率mask，而计算只花在边界上。</p>
+<p><img alt="Adaptive subdivision step at test time" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pointrend-subdivision.png" loading="lazy" decoding="async" width="991" height="544">
+<img alt="Adaptive subdivision: 28 to 224" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pointrend-subdivision-example.png" loading="lazy" decoding="async" width="984" height="536">
+<img alt="PointRend qualitative results" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pointrend-results.png" loading="lazy" decoding="async" width="1000" height="554"></p>
+<h3 id="44-proposal-free-methods-solov2">4.4 Proposal-free methods: SOLOv2</h3>
+<p>Proposal-free方法从一张semantic map出发，而我们已经知道怎么得到它（FCN）。</p>
+<figure><img alt="Semantic map from an FCN" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/semantic-map-fcn.png" loading="lazy" decoding="async" width="1000" height="554"><figcaption>Semantic map from an FCN</figcaption></figure>
+<p>回忆semantic segmentation的最后一层是一个1×1 convolution，即一个linear
+classifier：</p>
+<div class="arithmatex">\[Y = KX, \qquad Y \in [C \times HW],\; K \in [C \times D],\; X \in [D \times HW]\]</div>
+<p><span class="arithmatex">\(Y\)</span>是pixelwise class scores，<span class="arithmatex">\(K\)</span>是layer parameters（1×1 conv），<span class="arithmatex">\(X\)</span>是features。
+<strong>为什么不把同样的策略用到instance segmentation？</strong> 问题是：<strong>kernel的数量不能
+固定</strong>，因为一张图里有多少个instance是不确定的。</p>
+<figure><img alt="The last layer is a 1x1 convolution, a linear classifier" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/solov2-linear-classifier.png" loading="lazy" decoding="async" width="1000" height="554"><figcaption>The last layer is a 1x1 convolution, a linear classifier</figcaption></figure>
+<p><strong>SOLOv2</strong>（Wang et al., 2020）的idea：<strong>predict the kernels</strong>。</p>
+<ul>
+<li>FCN提取feature <span class="arithmatex">\(I\)</span>，然后分两个branch</li>
+<li><strong>Kernel branch</strong>输出<span class="arithmatex">\(G: S \times S \times D\)</span>，即把图划成<span class="arithmatex">\(S \times S\)</span>的
+  grid，每个grid cell <span class="arithmatex">\((i, j)\)</span>预测一个<span class="arithmatex">\(D\)</span>维的kernel</li>
+<li><strong>Feature branch</strong>输出<span class="arithmatex">\(F: H \times W \times E\)</span></li>
+<li>每个grid cell的mask是一次convolution：<span class="arithmatex">\(M_{i,j} = G_{i,j} * F\)</span></li>
+<li><span class="arithmatex">\(D\)</span>取决于kernel size，1×1就够用，所以<span class="arithmatex">\(D = E\)</span></li>
+</ul>
+<p>也就是说，落在grid cell <span class="arithmatex">\((i, j)\)</span>里的物体由这个cell预测的kernel负责，kernel
+和feature卷积得到它的mask。</p>
+<p><img alt="SOLOv2: predict the kernels" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/solov2-predict-kernels.png" loading="lazy" decoding="async" width="1000" height="554">
+<img alt="SOLOv2: kernel dimensionality" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/solov2-kernel-dimension.png" loading="lazy" decoding="async" width="1000" height="554"></p>
+<p>一些细节：kernel branch同时预测一个<span class="arithmatex">\(S \times S\)</span> grid的class distribution；
+class prediction不确定的kernel直接丢掉；最后对mask做<strong>NMS</strong>。</p>
+<figure><img alt="SOLOv2: a few details" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/solov2-details.png" loading="lazy" decoding="async" width="1000" height="554"><figcaption>SOLOv2: a few details</figcaption></figure>
+<p>SOLOv2概念上非常简单，是semantic segmentation模型的自然扩展，而且又快又准：
+COCO mask AP和inference time的曲线上它全面压过Mask R-CNN、TensorMask、
+YOLACT、PolarMask、BlendMask，mask的细节也更好。</p>
+<figure><img alt="SOLOv2: fast and accurate" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/solov2-results.png" loading="lazy" decoding="async" width="1000" height="554"><figcaption>SOLOv2: fast and accurate</figcaption></figure>
+<p><strong>其他proposal-free方法</strong>：</p>
+<ul>
+<li><strong>Graph- or cluster-based</strong>：Silberman et al. "Instance Segmentation of
+  Indoor Scenes using a Coverage Loss" (2012)；Liang et al. "Proposal-free
+  Network for Instance-level Object Segmentation" (2015)；De Brabandere et al.
+  "Semantic Instance Segmentation with a Discriminative Loss Function" (2017)；
+  Kirillov et al. "InstanceCut: from Edges to Instances with MultiCut" (2017)；
+  Bai and Urtasun "Deep Watershed Transform for Instance Segmentation" (2017)</li>
+<li><strong>End-to-end deep nets</strong>：Bolya et al. "YOLACT++" (2019)；Chen et al.
+  "TensorMask" (2019)；Chen et al. "BlendMask" (2020)；Lee et al.
+  "CenterMask" (2020)；Xie et al. "PolarMask" (2020)；Wang et al. "SOLO" (2020)
+  和 "SOLOv2" (2020)</li>
+<li><strong>Recurrent approaches</strong>：Romera-Paredes &amp; Torr "Recurrent instance
+  segmentation" (2016)；Ren &amp; Zemel "End-to-end instance segmentation with
+  recurrent attention" (2017)；Araslanov et al. "Actor-critic Instance
+  Segmentation" (2019)。概念上有意思，可以利用之前prediction的context，但
+  计算量随instance数量线性增长，在物体很多的场景里表现不好</li>
+</ul>
+<p><strong>Instance segmentation summary</strong>：proposal-free和proposal-based提供的是
+accuracy vs. efficiency的trade-off，结论和object detector类似：</p>
+<ul>
+<li><strong>Proposal-based</strong>更准（对scale variation robust），但效率低</li>
+<li><strong>Proposal-free</strong>更快，accuracy有竞争力，对large-scale objects的分割准确</li>
+</ul>
 <h2 id="5-panoptic-segmentation">5. Panoptic segmentation</h2>
+<p><strong>Panoptic segmentation = semantic segmentation + instance segmentation</strong>。它给
+uncountable的"<strong>stuff</strong>"（sky、road等）打label，像FCN类的网络一样；同时区分
+同一类的不同instance，即countable的"<strong>things</strong>"（cars、pedestrians等）。</p>
+<figure><img alt="Panoptic segmentation: semantic + instance, stuff and things" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-definition.png" loading="lazy" decoding="async" width="1000" height="1080"><figcaption>Panoptic segmentation: semantic + instance, stuff and things</figcaption></figure>
+<p>这个任务并不新：<strong>holistic scene understanding</strong>（Yao et al., 2012）和
+<strong>image parsing</strong>（Tu et al., 2005）都在做类似的事，只是deep learning让它
+变得可行。</p>
+<figure><img alt="Back in the day: holistic scene understanding and image parsing" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-back-in-the-day.png" loading="lazy" decoding="async" width="1000" height="547"><figcaption>Back in the day: holistic scene understanding and image parsing</figcaption></figure>
+<p><strong>Challenges</strong>：</p>
+<ul>
+<li>能不能把预测"stuff"和"things"的architecture统一起来？Semantic和instance
+  segmentation的pipeline差别很大</li>
+<li>能不能通过parameter sharing提高计算效率？</li>
+</ul>
+<p>两大类：</p>
+<ul>
+<li><strong>Top-down</strong>：典型的是two-stage proposal-based</li>
+<li><strong>Bottom-up</strong>：学一个适合grouping pixels的feature representation</li>
+</ul>
+<p><strong>Overview</strong>：Kirillov et al., "Panoptic Feature Pyramid Networks", CVPR 2019；
+Xiong et al., "UPSNet: A Unified Panoptic Segmentation Network", CVPR 2019；
+Cheng et al., "Panoptic-DeepLab", CVPR 2020；Li et al., "Fully Convolutional
+Networks for Panoptic Segmentation", CVPR 2021。</p>
+<p>典型的early architecture（de Geus et al., 2018）：一个feature extractor
+（ResNet-50）后面接两个CNN，一个做semantic segmentation，一个做instance
+segmentation，最后<strong>combine</strong>成panoptic output。</p>
+<figure><img alt="Typical early architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-early-architecture.png" loading="lazy" decoding="async" width="1000" height="547"><figcaption>Typical early architecture</figcaption></figure>
 <h3 id="51-panoptic-fpn">5.1 Panoptic FPN</h3>
-<p><em>(…)</em></p>
+<p><strong>Panoptic FPN</strong>（Kirillov et al., CVPR 2019）把上面的框架具体化：</p>
+<ul>
+<li><strong>Feature extractor</strong>：feature pyramid backbone（FPN）</li>
+<li><strong>Instance segmentation</strong>：Mask R-CNN，在FPN的各个level上取RoI</li>
+<li><strong>Semantic segmentation decoder</strong>：把FPN的每一层（1/32、1/16、1/8、1/4）
+  通过若干conv + 2×上采样都变成<span class="arithmatex">\(128 \times 1/4\)</span>分辨率，然后逐元素相加，最后
+  conv + 4×上采样得到<span class="arithmatex">\(C \times 1\)</span>的输出。这里把所有things classes换成一个
+  class "<strong>other</strong>"，因为things由instance branch负责</li>
+</ul>
+<p><img alt="Panoptic FPN: feature pyramid backbone" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fpn-backbone.png" loading="lazy" decoding="async" width="1000" height="547">
+<img alt="Panoptic FPN: Mask R-CNN for instance segmentation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fpn-instance.png" loading="lazy" decoding="async" width="1000" height="547">
+<img alt="Panoptic FPN: semantic segmentation decoder" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fpn-semantic-decoder.png" loading="lazy" decoding="async" width="1000" height="547"></p>
+<p><strong>Merge things and stuff</strong>：</p>
+<ul>
+<li>对instances做<strong>NMS</strong></li>
+<li>Stuff和things冲突时<strong>in favour of things</strong></li>
+<li>去掉label为"other"或者面积很小的stuff regions</li>
+</ul>
+<figure><img alt="Panoptic FPN: merging things and stuff" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fpn-merge.png" loading="lazy" decoding="async" width="1000" height="547"><figcaption>Panoptic FPN: merging things and stuff</figcaption></figure>
+<p><strong>Loss function</strong>：</p>
+<div class="arithmatex">\[L = \underbrace{L_c + L_b + L_m}_{\text{instance branch}} + \lambda_s \underbrace{L_s}_{\text{semantic branch}}\]</div>
+<p><span class="arithmatex">\(L_c\)</span>、<span class="arithmatex">\(L_b\)</span>、<span class="arithmatex">\(L_m\)</span>是Mask R-CNN的classification、box、mask loss，<span class="arithmatex">\(L_s\)</span>是
+semantic segmentation的pixelwise cross-entropy，<span class="arithmatex">\(\lambda_s\)</span>是trade-off
+hyperparameter。<strong>Remark</strong>：带多个loss term的训练（multi-task learning）可能
+很challenging，因为不同loss对feature representation的要求可能会"compete"。</p>
+<p><img alt="Panoptic FPN loss" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fpn-loss.png" loading="lazy" decoding="async" width="978" height="551">
+<img alt="Panoptic FPN results" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fpn-results.png" loading="lazy" decoding="async" width="978" height="551"></p>
+<p><strong>Panoptic FPN summary</strong>：</p>
+<ul>
+<li>用simple heuristics合并things和stuff</li>
+<li>Instance和semantic两个branch是<strong>独立</strong>处理的，即semantic branch收不到
+  instance supervision的gradient，反之亦然</li>
+</ul>
+<figure><img alt="Panoptic FPN summary" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fpn-summary.png" loading="lazy" decoding="async" width="1183" height="646"><figcaption>Panoptic FPN summary</figcaption></figure>
 <h3 id="52-panoptic-fcn">5.2 Panoptic FCN</h3>
-<p><em>(…)</em></p>
+<p><strong>什么样的feature是好的？</strong> Countable的things偏好<strong>instance-aware</strong>的feature，
+uncountable的stuff偏好<strong>semantically consistent</strong>的feature。<strong>Panoptic FCN</strong>
+（Li et al., CVPR 2021）的key idea是：<strong>用generated kernels在一个fully
+convolutional pipeline里统一地表示和预测things和stuff</strong>。Kernel generator负责
+生成kernel weights，feature encoder负责shared feature encoding。</p>
+<figure><img alt="Panoptic FCN vs Panoptic FPN" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fcn.png" loading="lazy" decoding="async" width="1183" height="646"><figcaption>Panoptic FCN vs Panoptic FPN</figcaption></figure>
+<p>这和SOLOv2是同一个思路：回忆SOLOv2用kernel branch为每个grid cell预测一个
+kernel，和feature branch卷积得到mask。</p>
+<figure><img alt="Recall SOLOv2" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/solov2-recap.png" loading="lazy" decoding="async" width="1183" height="646"><figcaption>Recall SOLOv2</figcaption></figure>
+<p><strong>Architecture</strong>：</p>
+<ul>
+<li>Backbone是FPN。每个single-stage feature <span class="arithmatex">\(X_i\)</span>（<span class="arithmatex">\(C_i \times W_i \times H_i\)</span>）
+  送入<strong>kernel generator</strong>；高分辨率feature <span class="arithmatex">\(F^h\)</span>（<span class="arithmatex">\(C_e \times W/4 \times H/4\)</span>）
+  送入<strong>feature encoder</strong></li>
+<li><strong>Kernel generator</strong>有两个head：</li>
+<li><strong>Position head</strong>（3×conv）输出object centers map <span class="arithmatex">\(L_i^{th}\)</span>
+    （<span class="arithmatex">\(N_{th} \times W_i \times H_i\)</span>）和stuff regions map <span class="arithmatex">\(L_i^{st}\)</span>
+    （<span class="arithmatex">\(N_{st} \times W_i \times H_i\)</span>）</li>
+<li><strong>Kernel head</strong>（+coord &amp; 3×conv）输出kernels <span class="arithmatex">\(G_i\)</span>（<span class="arithmatex">\(C_e \times W_i \times H_i\)</span>）</li>
+<li><strong>Kernel fusion</strong>把各level选出的kernel合成<span class="arithmatex">\(K\)</span>，共<span class="arithmatex">\((M + N)\)</span>个（<span class="arithmatex">\(M\)</span>个things，
+  <span class="arithmatex">\(N\)</span>个stuff），每个<span class="arithmatex">\(C_e \times 1 \times 1\)</span></li>
+<li><strong>Feature encoder</strong>（+coord &amp; 3×conv）得到encoded feature <span class="arithmatex">\(F^e\)</span>
+  （<span class="arithmatex">\(C_e \times W/4 \times H/4\)</span>）</li>
+<li><strong>Prediction</strong> <span class="arithmatex">\(P = K \otimes F^e\)</span>，输出<span class="arithmatex">\((M + N) \times W/4 \times H/4\)</span>，
+  每个kernel卷出一张mask</li>
+</ul>
+<figure><img alt="Panoptic FCN architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fcn-architecture.png" loading="lazy" decoding="async" width="1157" height="647"><figcaption>Panoptic FCN architecture</figcaption></figure>
+<p><strong>Position head：localization and classification</strong>。通过两个branch分别生成
+object centers的map和stuff regions的map。Object centers是heat map，表示每个
+pixel是object center的likelihood（同CenterNet, Zhou et al., 2019）。Loss用
+<strong>focal loss</strong>：</p>
+<div class="arithmatex">\[\mathcal{L}_{pos}^{th} = \sum_i \text{FL}(\mathbf{L}_i^{th}, \mathbf{Y}_i^{th}) / N_{th}, \qquad
+\mathcal{L}_{pos}^{st} = \sum_i \text{FL}(\mathbf{L}_i^{st}, \mathbf{Y}_i^{st}) / W_i H_i\]</div>
+<p><span class="arithmatex">\(\mathbf{Y}_i^{th}\)</span>是center keypoint heatmap，<span class="arithmatex">\(\mathbf{Y}_i^{st}\)</span>是bilinear
+interpolated的segmentation masks。</p>
+<figure><img alt="Panoptic FCN position head" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fcn-position-head.png" loading="lazy" decoding="async" width="1178" height="653"><figcaption>Panoptic FCN position head</figcaption></figure>
+<p><strong>Kernel head：predicts the kernel weights</strong>。先把<span class="arithmatex">\(i\)</span>、<span class="arithmatex">\(j\)</span>坐标作为两个额外
+channel concatenate到feature上（<span class="arithmatex">\(c \to c + 2\)</span>，即CoordConv），再过3×conv。
+有了position head的预测之后，<span class="arithmatex">\(G_i\)</span>里<strong>同一坐标</strong>上的kernel weights被选出来
+代表对应的instance。ID怎么确定：things的kernel如果cosine similarity超过阈值
+就合并成一个ID；stuff的kernel只要category相同就标为同一个ID。</p>
+<figure><img alt="Panoptic FCN kernel head" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fcn-kernel-head.png" loading="lazy" decoding="async" width="1193" height="665"><figcaption>Panoptic FCN kernel head</figcaption></figure>
+<p>结果：在MS-COCO val上的PQ vs latency曲线里Panoptic FCN同时超过box-based
+（Panoptic FPN、UPSNet）和box-free（Panoptic-DeepLab、DeeperLab）的方法，
+<strong>efficiency和accuracy都更好，architecture更简单</strong>。</p>
+<figure><img alt="Panoptic FCN results" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/panoptic-fcn-results.png" loading="lazy" decoding="async" width="1193" height="665"><figcaption>Panoptic FCN results</figcaption></figure>
 <h3 id="53-evaluating-panoptic-segmentation">5.3 Evaluating panoptic segmentation</h3>
-<p><em>(panoptic quality …)</em></p>
+<p><strong>Panoptic Quality（PQ）</strong>（Kirillov et al., "Panoptic Segmentation", CVPR 2019）。
+看例子：ground truth里有三个person、一只dog，prediction里有三个person（其中
+一个把两个person合并了，dog的位置预测成了person）。对person这个class：
+TP是两对匹配上的segment，FN是被漏掉的那个person，FP是dog位置上多出来的person。</p>
+<figure><img alt="PQ example" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pq-example.png" loading="lazy" decoding="async" width="1188" height="657"><figcaption>PQ example</figcaption></figure>
+<p><strong>不需要定义IoU threshold吗？</strong> 需要。PQ规定prediction和ground truth
+<strong>match当且仅当IoU &gt; 0.5</strong>，而且这个match如果存在就是<strong>unique</strong>的。</p>
+<p><strong>Matching theorem</strong>：每个ground-truth segment最多和一个prediction的IoU大于
+0.5。Proof hint：如果<span class="arithmatex">\(p_1\)</span>、<span class="arithmatex">\(p_2\)</span>不相交，那么
+<span class="arithmatex">\(\text{IoU}(p_1, g) + \text{IoU}(p_2, g) \le 1\)</span>，所以不可能两个都超过0.5。
+这就是为什么panoptic里的segment互不重叠这个性质让matching变得简单，不需要
+像detection那样处理多个候选。下图的cat例子里，几个competing的predictions
+只有IoU = 0.6的那个能匹配上。</p>
+<figure><img alt="Matching a segment with a ground truth label" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pq-matching-example.png" loading="lazy" decoding="async" width="1188" height="657"><figcaption>Matching a segment with a ground truth label</figcaption></figure>
+<p><strong>计算步骤</strong>：</p>
+<ol>
+<li>"Match" ground truth和predictions</li>
+<li>数TPs、FPs和FNs</li>
+<li>对每个class计算</li>
+</ol>
+<div class="arithmatex">\[PQ = \underbrace{\frac{\sum_{(p, g) \in TP} \text{IoU}(p, g)}{|TP|}}_{\text{SQ}} \times
+\underbrace{\frac{|TP|}{|TP| + \frac{1}{2}|FP| + \frac{1}{2}|FN|}}_{\text{RQ}}\]</div>
+<ol start="4">
+<li>然后across classes取平均</li>
+</ol>
+<figure><img alt="PQ formula" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pq-formula.png" loading="lazy" decoding="async" width="1188" height="657"><figcaption>PQ formula</figcaption></figure>
+<p>两个因子：</p>
+<ul>
+<li><strong>SQ（Segmentation Quality）</strong>：true positives的平均mask IoU，衡量predicted
+  masks的<strong>pixel-level accuracy</strong>。看起来很眼熟，因为它和MOT里的<strong>MOTP</strong>
+  <span class="arithmatex">\(= \frac{\sum_{t,i} \text{IoU}_{t,i}}{\sum_t TP}\)</span>是一回事</li>
+<li><strong>RQ（Recognition Quality）</strong>：<strong>object-level accuracy</strong>。它就是<strong>F-score
+  （<span class="arithmatex">\(F_1\)</span>）</strong>，即precision和recall的harmonic mean</li>
+</ul>
+<p><img alt="SQ: segmentation quality" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pq-sq.png" loading="lazy" decoding="async" width="1188" height="657">
+<img alt="RQ: recognition quality" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pq-rq.png" loading="lazy" decoding="async" width="1188" height="657"></p>
+<p><strong>Observation 1</strong>：<span class="arithmatex">\(PQ, RQ, SQ \in [0, 1]\)</span>。</p>
+<p><strong>Observation 2：漏掉一个物体对PQ有什么影响？</strong> 比如上面把dog预测成person：
+dog这个class多一个FN，<strong>同时</strong>person这个class多一个FP，所以<strong>两个class的PQ
+都下降</strong>。常见的trick是把不确定的预测标成"<strong>unknown</strong>" class，这样FP不会
+影响别的class。</p>
+<figure><img alt="Missing one object reduces the PQ of two classes" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pq-missing-object.png" loading="lazy" decoding="async" width="1188" height="657"><figcaption>Missing one object reduces the PQ of two classes</figcaption></figure>
+<p><strong>Dealing with unknown</strong>：</p>
+<ul>
+<li>Predicted segment里所有在ground truth中标为"void"的pixel会从prediction中
+  移除，不参与IoU计算</li>
+<li>Matching之后，unmatched的predicted segments如果包含的void pixel比例超过
+  matching threshold，就被移除，不算FP</li>
+<li>Output里也可以有void pixel，它们不影响evaluation</li>
+</ul>
+<p><strong>Further reading</strong>。CNN类：Xiong et al., "UPSNet" (CVPR 2019)；Wang et al.,
+"Axial-DeepLab" (ECCV 2020)；Wang et al., "MaX-DeepLab" (CVPR 2021)。
+Transformer类（课程后面会讲）：Cheng et al., "Masked-attention Mask Transformer
+for Universal Image Segmentation" (<strong>Mask2Former</strong>, CVPR 2022)，一个universal
+architecture，在panoptic、instance、semantic三个任务上都超过了各自的
+specialized SOTA。</p>
+<figure><img alt="Current research: Mask2Former" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/mask2former.png" loading="lazy" decoding="async" width="1188" height="657"><figcaption>Current research: Mask2Former</figcaption></figure>
 <h2 id="6-video-object-segmentation">6. Video object segmentation</h2>
+<p>前面两章的关系可以这样看：object detection在时间维度上延伸就是object
+tracking，object segmentation在时间维度上延伸就是<strong>video object
+segmentation（VOS）</strong>。</p>
+<figure><img alt="From detection and segmentation to tracking and VOS" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/vos-overview.png" loading="lazy" decoding="async" width="1188" height="657"><figcaption>From detection and segmentation to tracking and VOS</figcaption></figure>
+<p><strong>Goal</strong>：为视频里的物体生成<strong>accurate and temporally consistent</strong>的pixel
+masks。挑战有strong viewpoint / appearance changes、occlusions、scale
+changes、illumination、shape变化等等。</p>
+<p>我们需要两类模型：</p>
+<ul>
+<li><strong>Appearance model</strong>：assumption是constant appearance；input是1帧；output
+  是segmentation mask</li>
+<li><strong>Motion model</strong>：assumption是smooth displacement和brightness constancy；
+  input是2帧；output是motion，即optical flow</li>
+</ul>
+<p>Advanced的方法会同时利用两者。</p>
 <h3 id="61-one-shot-semi-supervised-vs-zero-shot-unsupervised-vos">6.1 One-shot (semi-supervised) vs zero-shot (unsupervised) VOS</h3>
-<p><em>(…)</em></p>
+<p>VOS有两种task setting：</p>
+<ul>
+<li><strong>"Semi-supervised"（one-shot）VOS</strong>：inference时输入video加上<strong>第一帧的
+  object mask</strong>，目标是把这个物体在整个视频里分割出来。这节课主要讲这个
+  setting，重点在<strong>temporal consistency</strong></li>
+<li><strong>"Unsupervised"（zero-shot）VOS</strong>：inference时只有video，没有任何label，
+  模型自己决定要分割什么</li>
+</ul>
+<figure><img alt="VOS tasks: semi-supervised vs unsupervised" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/vos-tasks.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>VOS tasks: semi-supervised vs unsupervised</figcaption></figure>
+<p>Semi-supervised VOS的task formulation：<strong>Given</strong> target object(s)在第一帧的
+segmentation mask，<strong>Goal</strong>是整个视频的pixel-accurate segmentation。这样把
+"<strong>what</strong> to track"和实际的tracking隔离开了，所以它常被用作pixel-level
+tracking的benchmark。</p>
+<figure><img alt="Semi-supervised VOS" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/semi-supervised-vos.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>Semi-supervised VOS</figcaption></figure>
+<p><strong>What to track?</strong> 选择要跟踪的物体可能是<strong>subjective</strong>的，尤其是online的
+情况：赛车场上是跟车还是跟人？舞台上跟舞者还是观众？Offline tracking因为能看
+整个视频，可能给出更好的线索，比如基于object permanence。</p>
+<figure><img alt="What to track" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/what-to-track.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>What to track</figcaption></figure>
 <h3 id="62-motion-based-vos-optical-flow">6.2 Motion-based VOS: optical flow</h3>
-<p><em>(FlowNet, correlation layer, SegFlow …)</em></p>
+<h4 id="recap-optical-flow">Recap: optical flow</h4>
+<p>回忆Computer Vision I里的<strong>optical flow</strong>：a pattern of apparent motion
+（Lucas and Kanade, 1981; Horn and Schunck, 1981）。给定<span class="arithmatex">\(t\)</span>和<span class="arithmatex">\(t+1\)</span>两帧，
+optical flow estimation输出一个2D vector field，把第<span class="arithmatex">\(t\)</span>帧按这个field做
+（forward）warping就得到第<span class="arithmatex">\(t+1\)</span>帧。</p>
+<p><img alt="Optical flow estimation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/optical-flow.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="Optical flow as forward warping" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/optical-flow-warping.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<p><strong>Minimise brightness difference</strong>：对一个区域<span class="arithmatex">\(R\)</span>，找位移<span class="arithmatex">\((u, v)\)</span>最小化</p>
+<div class="arithmatex">\[E_{\text{SSD}}(u, v) = \sum_{(x, y) \in R} \big(I(x + u, y + v, t + 1) - I(x, y, t)\big)^2\]</div>
+<p>brightness是空间<span class="arithmatex">\((u, v)\)</span>和时间<span class="arithmatex">\(t\)</span>的函数。</p>
+<figure><img alt="Minimise brightness difference" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/brightness-difference-ssd.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>Minimise brightness difference</figcaption></figure>
+<p>这背后有三个assumption：</p>
+<ol>
+<li><strong>Brightness constancy</strong>：一个小区域里的image measurements（brightness）
+   保持不变，<span class="arithmatex">\(I(x + u(x, y), y + v(x, y), t + 1) = I(x, y, t)\)</span>，其中<span class="arithmatex">\(u\)</span>是
+   horizontal motion、<span class="arithmatex">\(v\)</span>是vertical motion</li>
+<li><strong>Spatial coherence</strong>：场景里相邻的点通常属于同一个surface，所以通常有相似
+   的3D motion</li>
+<li><strong>Temporal persistence</strong>：一个surface patch的image motion随时间<strong>gradually</strong>
+   变化</li>
+</ol>
+<p><img alt="Brightness constancy" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/brightness-constancy.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="Spatial coherence" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/spatial-coherence.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="Temporal persistence" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/temporal-persistence.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<p><strong>推导（Lucas-Kanade）</strong>。对<span class="arithmatex">\(I(x + \Delta_x, y + \Delta_y, t + \Delta_t)\)</span>做
+first-order Taylor approximation：</p>
+<div class="arithmatex">\[I(x, y, t) + \Delta_x \frac{\partial}{\partial x} I(x, y, t) + \Delta_y \frac{\partial}{\partial y} I(x, y, t) + \Delta_t \frac{\partial}{\partial t} I(x, y, t) + \epsilon\]</div>
+<p><span class="arithmatex">\(\epsilon\)</span>是approximation error。代入<span class="arithmatex">\(E_{\text{SSD}}\)</span>（<span class="arithmatex">\(\Delta_x = u\)</span>，
+<span class="arithmatex">\(\Delta_y = v\)</span>，<span class="arithmatex">\(\Delta_t = 1\)</span>）：</p>
+<div class="arithmatex">\[E_{\text{SSD}} \approx \sum_{(x, y) \in R} \big(u \cdot I_x(x, y, t) + v \cdot I_y(x, y, t) + I_t(x, y, t)\big)^2\]</div>
+<figure><img alt="First-order Taylor approximation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/taylor-approximation.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>First-order Taylor approximation</figcaption></figure>
+<p>对<span class="arithmatex">\(u\)</span>和<span class="arithmatex">\(v\)</span>求导并令其为零：</p>
+<div class="arithmatex">\[\frac{\partial E_{\text{SSD}}}{\partial u} \approx 2 \sum_R (u \cdot I_x + v \cdot I_y + I_t) I_x = 0, \qquad
+\frac{\partial E_{\text{SSD}}}{\partial v} \approx 2 \sum_R (u \cdot I_x + v \cdot I_y + I_t) I_y = 0\]</div>
+<figure><img alt="Differentiate w.r.t. u and v" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/lucas-kanade-derivative.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>Differentiate w.r.t. u and v</figcaption></figure>
+<p>整理得到2个方程2个未知数的线性系统：</p>
+<div class="arithmatex">\[\begin{bmatrix} \sum_R I_x^2 &amp; \sum_R I_x I_y \\ \sum_R I_x I_y &amp; \sum_R I_y^2 \end{bmatrix}
+\begin{bmatrix} u \\ v \end{bmatrix} =
+\begin{bmatrix} -\sum_R I_x I_t \\ -\sum_R I_y I_t \end{bmatrix}\]</div>
+<p>左边的矩阵是<strong>structure tensor</strong>，它是positive definite的，所以可逆：</p>
+<div class="arithmatex">\[\begin{bmatrix} u \\ v \end{bmatrix} =
+\begin{bmatrix} \sum_R I_x^2 &amp; \sum_R I_x I_y \\ \sum_R I_x I_y &amp; \sum_R I_y^2 \end{bmatrix}^{-1}
+\begin{bmatrix} -\sum_R I_x I_t \\ -\sum_R I_y I_t \end{bmatrix}\]</div>
+<p>这就是经典的<strong>Lucas-Kanade method</strong>（B. D. Lucas and T. Kanade, IJCAI 1981）。
+它有很多扩展，比如<strong>Horn-Schunck</strong>引入了global smoothness。</p>
+<p><img alt="Structure tensor" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/lucas-kanade-structure-tensor.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="Lucas-Kanade" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/lucas-kanade.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<p><strong>Motion segmentation</strong>：有了flow之后，一些物体可以直接<strong>基于运动</strong>分割出来，
+比如骑车的人和走路的人运动方向不同。</p>
+<figure><img alt="Motion segmentation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/motion-segmentation.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>Motion segmentation</figcaption></figure>
+<p><strong>Limitations of optical flow</strong>：</p>
+<ul>
+<li>它是"<strong>perceived</strong>"的2D motion，不是物体真实的运动</li>
+<li><strong>Aperture problem</strong>：如果一个一维结构（比如一条边）比image frame还大，而
+  它的端点都不在observation window（aperture）里，就<strong>无法测量真实的image
+  motion</strong>，只能测到<strong>与该结构正交的分量</strong>。经典例子是理发店旋转灯柱：真实
+  运动是水平旋转，看到的却是条纹向下移动</li>
+</ul>
+<figure><img alt="Aperture problem" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/aperture-problem.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>Aperture problem</figcaption></figure>
+<p>另外两个工程上的点：</p>
+<ul>
+<li>以前optical flow很慢，640×480的image pair在CPU上要约80秒</li>
+<li>可视化：画成箭头会很乱，所以常用<strong>color coding</strong>，颜色代表方向、饱和度代表
+  幅值</li>
+</ul>
+<p><img alt="Optical flow visualised as arrows" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/optical-flow-arrows.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="Optical flow colour coding" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/optical-flow-color-coding.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<h4 id="can-we-do-vos-with-optical-flow">Can we do VOS with optical flow?</h4>
+<p><strong>Object Flow</strong>（Tsai et al., "Video Segmentation via Object Flow", CVPR
+2016）把segmentation和optical flow estimation<strong>联合建模</strong>：</p>
+<ul>
+<li>从initial optical flow出发，<strong>motion boundaries indicate potential object
+  boundary</strong>，用它update object mask</li>
+<li>反过来，<strong>object boundaries indicate motion discontinuities</strong>，用mask
+  update optical flow</li>
+<li>两者交替迭代</li>
+</ul>
+<p><img alt="Object Flow: motion boundaries indicate object boundaries" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/object-flow.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="Object Flow: joint update of mask and flow" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/object-flow-joint.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<p>问题是：<strong>slow to optimise</strong>（runtime最多20秒，还不算optical flow本身），
+而且<strong>initialisation matters</strong>，需要一个还算准确的initial optical flow。
+DL to the rescue?</p>
+<figure><img alt="Object Flow limitations" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/object-flow-limitations.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>Object Flow limitations</figcaption></figure>
+<h4 id="optical-flow-with-cnns-flownet">Optical flow with CNNs: FlowNet</h4>
+<p><strong>FlowNet</strong>（Fischer / Dosovitskiy et al., ICCV 2015）用CNN<strong>end-to-end
+supervised</strong>地学optical flow：输入两帧，输出flow field。</p>
+<p><img alt="FlowNet: end-to-end supervised optical flow" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/flownet-idea.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="FlowNetS vs FlowNetC demo" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/flownet-demo.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<p><strong>Architecture 1（FlowNetS, "simple"）</strong>：把两张图<strong>stack</strong>起来，输入变成
+2 × RGB = 6 channels，接一个普通的encoder（conv1到conv6），再接一个
+<strong>refinement</strong>模块（upconv加skip connections，逐级上采样）输出flow。用
+<strong>L2 loss</strong>在<strong>synthetic data</strong>上训练。</p>
+<figure><img alt="FlowNetS architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/flownet-s.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>FlowNetS architecture</figcaption></figure>
+<p><strong>Quiz: 为什么用synthetic data？</strong> 训练集是<strong>Flying Chairs</strong>：把渲染的椅子
+随机贴在背景图上再做随机变换。原因是真实视频几乎不可能标注dense的
+ground-truth flow（每个像素一个精确的2D位移），而synthetic data的flow是
+<strong>精确已知</strong>的，而且想要多少有多少。Synthetic data现在很流行，比如
+<strong>SURREAL</strong>（Synthetic hUmans foR REAL tasks）和<strong>BEDLAM</strong>（Black et al.,
+CVPR 2023）。</p>
+<p><img alt="Flying Chairs" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/flying-chairs.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="SURREAL dataset" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/surreal.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="BEDLAM dataset" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/bedlam.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<p><strong>Architecture 2（FlowNetC, "correlation"）</strong>：<strong>Siamese architecture</strong>，
+两张图分别过同一套conv1到conv3，然后的key design choice是<strong>how to combine
+the information from both images</strong>。答案是<strong>correlation layer</strong>。</p>
+<figure><img alt="FlowNetC: Siamese architecture" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/flownet-c.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>FlowNetC: Siamese architecture</figcaption></figure>
+<p><strong>Correlation layer</strong>：给两个feature tensor <span class="arithmatex">\(F_1\)</span>、<span class="arithmatex">\(F_2\)</span>（<span class="arithmatex">\(h \times w \times
+c\)</span>），flatten成<span class="arithmatex">\(hw \times c\)</span>，计算<strong>pairwise dot-product</strong>
+<span class="arithmatex">\(s_{ij} = f_i \cdot f_j\)</span>，得到一个<span class="arithmatex">\(hw \times hw\)</span>的matching score。Dot product
+衡量两个feature的similarity。注意这是一个<strong>fixed operation，没有learnable
+weights</strong>。（实际实现里只在一个local neighbourhood里算，否则太大。）
+Correlation layer对找image correspondences很有用，比如Rocco et al.（CVPR
+2017）用它做geometric matching，估计从image A到image B的transformation。</p>
+<p><img alt="Correlation layer" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/correlation-layer.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="Correlation layer for geometric matching" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/correlation-layer-matching.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<h4 id="segflow">SegFlow</h4>
+<p><strong>SegFlow</strong>（Cheng et al., ICCV 2017）用一个网络<strong>联合估计optical flow和
+object segment</strong>：上面是segmentation branch（ResNet，frame <span class="arithmatex">\(t\)</span>），下面是
+flow branch（FlowNetS风格，frame <span class="arithmatex">\(t\)</span>和<span class="arithmatex">\(t+1\)</span>），两个branch在多个scale上
+交换feature，即<strong>joint feature representation at multiple scales</strong>。两个
+任务的<strong>supervision need not be synchronised</strong>，即segmentation的标注和flow
+的标注可以来自不同数据。训练用<strong>alternating optimisation</strong>：固定一个网络
+优化另一个。</p>
+<p><img alt="SegFlow" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/segflow.png" loading="lazy" decoding="async" width="1170" height="649">
+<img alt="SegFlow: alternating optimisation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/segflow-alternating.png" loading="lazy" decoding="async" width="1170" height="649"></p>
+<p><strong>Motion-based VOS小结</strong>：</p>
+<ul>
+<li>现在我们能以low latency得到准确的optical flow</li>
+<li>但naively把optical flow用于dense tracking收益有限，因为有严重的
+  (self-)occlusions、illumination changes等等</li>
+<li>在semi-supervised VOS（dense tracking）里这仍然是active research area</li>
+</ul>
 <h3 id="63-appearance-only-vos">6.3 Appearance-only VOS</h3>
-<p><em>(OSVOS, OnAVOS, MaskTrack …)</em></p>
+<p><strong>Main idea</strong>：用已有的annotation（包括第一帧）训练一个segmentation model，
+然后<strong>独立地</strong>应用到每一帧。</p>
+<h4 id="osvos">OSVOS</h4>
+<p><strong>One-Shot VOS（OSVOS）</strong>（Caelles et al., CVPR 2017）把训练分成三步：</p>
+<ol>
+<li><strong>Pre-training</strong>：base network在ImageNet上预训练，学到edges和basic image
+   features</li>
+<li><strong>Training</strong>：parent network在DAVIS training set上训练，学会如何做video
+   segmentation（"objectness"）</li>
+<li><strong>Fine-tuning</strong>：test network在test sequence的<strong>第一帧</strong>上fine-tune，学会
+   <strong>which object to segment</strong></li>
+</ol>
+<figure><img alt="OSVOS: pre-training, training, fine-tuning" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/osvos.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>OSVOS: pre-training, training, fine-tuning</figcaption></figure>
+<p>"<strong>One-shot</strong>"指的就是从一个example（第一帧）学会分割整个sequence，这发生在
+fine-tuning step：模型<strong>learns the appearance of the foreground</strong> object。
+Fine-tune之后<strong>每帧独立处理</strong>，所以没有temporal information；fine-tuned的
+参数在处理下一个视频前会被丢弃。</p>
+<figure><img alt="OSVOS: one-shot" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/osvos-one-shot.png" loading="lazy" decoding="async" width="1170" height="649"><figcaption>OSVOS: one-shot</figcaption></figure>
+<h4 id="onavos">OnAVOS</h4>
+<p>问题：物体的appearance会因为物体本身和camera pose的变化而变化，只在第一帧
+上fine-tune不够。一个想法是用<strong>pseudo-labels</strong>让模型adapt到整个视频。</p>
+<p><strong>OnAVOS（Online Adaptation VOS）</strong>（Voigtlaender and Leibe, BMVC 2017）：
+在<strong>每一帧</strong>上adapt模型，不只是第一帧。流程是：用frame 1初始化annotated
+samples；对new frame做prediction；<strong>select confident pixels</strong>作为pseudo-label
+加入annotated samples；再fine-tune segmentation model。下图里蓝色是
+background samples、红色是foreground samples。</p>
+<p><img alt="OnAVOS: online adaptation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/onavos.png" loading="lazy" decoding="async" width="1172" height="657">
+<img alt="OnAVOS: before and after adaptation" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/onavos-results.png" loading="lazy" decoding="async" width="1172" height="657"></p>
+<ul>
+<li>OnAVOS比OSVOS更准，因为不是在单个样本上fine-tune，而是在一个动态的
+  pseudo-label集合上</li>
+<li>但pseudo-label可能不准，所以它的收益会随时间递减</li>
+<li>Drawback：慢</li>
+</ul>
+<h4 id="masktrack">MaskTrack</h4>
+<p>一个反过来的思路：用<strong>正确的signal</strong>来fine-tune模型。<strong>MaskTrack</strong>（Perazzi
+et al., "Learning Video Object Segmentation from Static Images", CVPR 2017）
+的输入是<strong>当前帧<span class="arithmatex">\(t\)</span></strong>加上<strong>上一帧的mask estimate <span class="arithmatex">\(t-1\)</span></strong>，输出refined mask
+<span class="arithmatex">\(t\)</span>。</p>
+<figure><img alt="MaskTrack" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/masktrack.png" loading="lazy" decoding="async" width="1172" height="657"><figcaption>MaskTrack</figcaption></figure>
+<p>关键是<strong>training inputs can be simulated</strong>：</p>
+<ol>
+<li>把一张标注好的static image的mask当作ground truth</li>
+<li><strong>Perturb the mask</strong>：affine transformations、non-rigid deformation</li>
+<li>让网络学会从perturbed mask<strong>recover</strong>原始mask</li>
+</ol>
+<p>这和Faster R-CNN里用displacement训练box regressor、以及Lecture 4的
+<strong>Tracktor</strong>在精神上非常相似：都是把"上一帧的估计"当作输入，让网络学会
+refine。因为训练只需要static images，所以标题叫"from static images"。</p>
+<p><img alt="MaskTrack: simulated training" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/masktrack-training.png" loading="lazy" decoding="async" width="1172" height="657">
+<img alt="MaskTrack is similar in spirit to Tracktor" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/masktrack-tracktor.png" loading="lazy" decoding="async" width="1172" height="657">
+<img alt="MaskTrack: example training masks" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/masktrack-simulated-masks.png" loading="lazy" decoding="async" width="1172" height="657"></p>
+<p><strong>Summary of appearance-based models</strong>：</p>
+<ul>
+<li>Advantages：可以在static images上训练；能很好地从occlusion中恢复；概念上
+  简单</li>
+<li>Disadvantages：没有temporal consistency；test time可能很慢，因为需要adapt</li>
+</ul>
 <h3 id="64-metric-based-approaches-pixel-wise-retrieval">6.4 Metric-based approaches: pixel-wise retrieval</h3>
-<p><em>(…)</em></p>
+<p><strong>Idea</strong>：学一个<strong>pixel-level embedding space</strong>，其中两个feature vector的
+proximity是semantically meaningful的。</p>
+<ul>
+<li><strong>Training</strong>：用<strong>triplet loss</strong>把foreground pixels拉近、把它们和
+  background pixels分开</li>
+<li><strong>Test</strong>：把annotated frame和test frame的pixels都embed，对test pixels做
+  <strong>nearest neighbour search</strong></li>
+</ul>
+<p><strong>Pixel-wise retrieval</strong>（Chen et al., "Blazingly Fast Video Object
+Segmentation with Pixel-Wise Metric Learning", CVPR 2018）：embedding network
+由base feature extractor和embedding head组成，reference image和test image
+都映射到embedding space，用user input标记reference里的foreground pixels，
+再用nearest neighbour classifier给test pixels分类。<strong>User input可以是任何
+形式</strong>：first-frame ground-truth mask、scribble等等。</p>
+<figure><img alt="Pixel-wise retrieval" src="../images/blog/Course_notes/Computer_Vision/Computer_Vision_III/cv3-note3/pixel-wise-retrieval.png" loading="lazy" decoding="async" width="1172" height="657"><figcaption>Pixel-wise retrieval</figcaption></figure>
+<p><strong>Advantages</strong>：</p>
+<ul>
+<li>不需要为每个sequence重新训练或fine-tune模型，所以快</li>
+<li>可以用<strong>unsupervised training</strong>学到有用的feature representation，比如
+  contrastive learning（课程后面会讲，比如Jabri et al., "Space-Time
+  Correspondence as a Contrastive Random Walk", NeurIPS 2020）</li>
+</ul>
 <h2 id="references">References</h2>
 <ul>
 <li>Shi &amp; Malik. <a href="https://ieeexplore.ieee.org/document/868688">Normalized Cuts and Image Segmentation</a>. TPAMI 2000.</li>

@@ -39,6 +39,26 @@
                 <li class="toc-h3"><a href="#11-rigid-body">1.1 Rigid Body</a></li>
                 <li class="toc-h3"><a href="#12-translational-motion">1.2 Translational Motion</a></li>
                 <li class="toc-h3"><a href="#13-rotational-motion">1.3 Rotational Motion</a></li>
+                <li class="toc-h2"><a href="#2-rotation-matrix">2. Rotation Matrix</a></li>
+                <li class="toc-h2"><a href="#5-euler-angles">5. 什么是 Euler Angles？</a></li>
+                <li class="toc-h3"><a href="#_1">定义</a></li>
+                <li class="toc-h2"><a href="#10-quaternion">10. 为什么引入 Quaternion？</a></li>
+                <li class="toc-h2"><a href="#12-addition">12. Addition</a></li>
+                <li class="toc-h2"><a href="#13-scalar-multiplication">13. Scalar Multiplication</a></li>
+                <li class="toc-h2"><a href="#16-axis-angle">16. Axis-Angle</a></li>
+                <li class="toc-h3"><a href="#scalar-part">scalar part</a></li>
+                <li class="toc-h3"><a href="#vector-part">vector part</a></li>
+                <li class="toc-h2"><a href="#20-unity">20. Unity 为什么三种都出现？</a></li>
+                <li class="toc-h3"><a href="#euler-angles">Euler Angles</a></li>
+                <li class="toc-h3"><a href="#quaternion_1">Quaternion</a></li>
+                <li class="toc-h3"><a href="#rotation-matrix">Rotation Matrix</a></li>
+                <li class="toc-h2"><a href="#21-rotation-state">21. Rotation 的 State 是什么？</a></li>
+                <li class="toc-h3"><a href="#q">\(q\)</a></li>
+                <li class="toc-h3"><a href="#omega">\(\omega\)</a></li>
+                <li class="toc-h3"><a href="#direction">Direction</a></li>
+                <li class="toc-h3"><a href="#magnitude">Magnitude</a></li>
+                <li class="toc-h2"><a href="#24-torque">24. 什么是 Torque？</a></li>
+                <li class="toc-h2"><a href="#26-inertia">26. 什么是 Inertia？</a></li>
                 <li class="toc-h2"><a href="#2-rigid-contacts">2. Rigid Contacts</a></li>
                 <li class="toc-h3"><a href="#21-particle-collision-detection-and-response">2.1 Particle Collision Detection and Response</a></li>
                 <li class="toc-h3"><a href="#22-rigid-body-collision-detection-and-response">2.2 Rigid Body Collision Detection and Response</a></li>
@@ -53,15 +73,2001 @@
             <h1>GAMES103 — Physically-Based Animation Note2: Rigid Body Dynamics and Contacts</h1>
             <div class="post-meta">
                 <span>Published 24 August 2026</span> ·
+                <span>Updated 3 September 2026</span> ·
                 <span class="post-category">Course notes › Computer Graphics › Animation › Games103</span> ·
-                <span>38 words · 1 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
+                <span>8,724 words · 34 min read</span><span id="busuanzi_container_page_pv" style="display:none"> ·
                 <span id="busuanzi_value_page_pv"></span> views</span>
             </div>
 
 <h2 id="1-rigid-body-dynamics">1. Rigid Body Dynamics</h2>
 <h3 id="11-rigid-body">1.1 Rigid Body</h3>
+<p>什么是刚体？ 刚体是一种理想化的物体模型，严格定义是：
+A rigid body is a system of material points in a 3D Euclidean space <span class="arithmatex">\(\mathbb{R}^{3}\)</span>, where the Euclidean distance between any two points remains invariant under any motion.
+也就是说，假设刚体内部任意两个点为为 <span class="arithmatex">\(i\)</span> 和 <span class="arithmatex">\(j\)</span>，它们在时刻 <span class="arithmatex">\(t\)</span> 的位置分别是</p>
+<p>p
+i
+    ​</p>
+<p>(t),p
+j
+    ​</p>
+<p>(t),</p>
+<p>那么刚体必须满足那么刚体必须满足</p>
+<div class="arithmatex">\[ \boxed{ \|\mathbf p_i(t)-\mathbf p_j(t)\| = \text{constant} } \]</div>
+<p>或者更严格地写成</p>
+<p>∥p
+i
+    ​</p>
+<p>(t)−p
+j
+    ​</p>
+<p>(t)∥=∥p
+i
+    ​</p>
+<p>(0)−p
+j
+    ​</p>
+<p>(0)∥
+    ​
+对物体中任意两个点、任意时刻都成立。</p>
+<p>In virtual worlds, we want to simulate rigid body motions as well.</p>
+<p><img alt="alt text" src="image.png" loading="lazy" decoding="async">
+The goal of simulation is to update the state variable over time. 
+Quiz: What is <strong>state variable</strong> ? System theory 
+<img alt="alt text" src="image-1.png" loading="lazy" decoding="async"> 因为刚体不能形变，刚体运动完全可以分解为rotation + Translation.</p>
+<p>为了描述一个刚体，首先给物体建立自己的坐标系，称为：</p>
+<div class="arithmatex">\[ \boxed{\text{Local Space}} \]</div>
+<p>也常叫：</p>
+<p>object space；
+body space；
+local coordinate system。</p>
+<p>PPT 左图中，兔子处于一个 reference configuration。</p>
+<p>假设兔子上的某个点为 <span class="arithmatex">\(i\)</span>，它在 local space 中的位置记作</p>
+<div class="arithmatex">\[ \boxed{\mathbf r_i} \]</div>
+<p>例如：</p>
+<div class="arithmatex">\[ \mathbf r_i= \begin{bmatrix} r_x\\ r_y\\ r_z \end{bmatrix}. \]</div>
+<p>它描述的是：</p>
+<p>点 <span class="arithmatex">\(i\)</span> 相对于刚体自身参考坐标系的位置。</p>
+<p>对于一个刚体，因为物体内部不会发生形变，所以</p>
+<div class="arithmatex">\[ \boxed{\mathbf r_i} \]</div>
+<p>可以保持固定。</p>
+<p>这正是使用 local space 的意义：</p>
+<p>把物体自身的几何形状和物体在世界中的运动分开。</p>
+<p>物体本身的 geometry 存在 local space 中，而整个物体如何运动，则由另外的 transformation 描述。</p>
+<ol start="8">
+<li>Rotation</li>
+</ol>
+<p>接下来考虑整个物体旋转。</p>
+<p>设</p>
+<div class="arithmatex">\[ \mathbf R \]</div>
+<p>是刚体当前的 rotation。</p>
+<p>那么 local point</p>
+<div class="arithmatex">\[ \mathbf r_i \]</div>
+<p>旋转之后变成</p>
+<div class="arithmatex">\[ \boxed{ \mathbf R\mathbf r_i } \]</div>
+<p>这里 <span class="arithmatex">\(\mathbf R\)</span> 是三维 rotation matrix：</p>
+<div class="arithmatex">\[ \mathbf R\in SO(3). \]</div>
+<p>所谓</p>
+<div class="arithmatex">\[ SO(3) \]</div>
+<p>即三维特殊正交群：</p>
+<div class="arithmatex">\[ SO(3) = \left\{ R\in\mathbb R^{3\times3} \mid R^TR=I,\; \det R=1 \right\}. \]</div>
+<p>其中</p>
+<div class="arithmatex">\[ R^TR=I \]</div>
+<p>保证旋转保持长度和角度，</p>
+<p>而</p>
+<div class="arithmatex">\[ \det R=1 \]</div>
+<p>排除 reflection。</p>
+<p>因此 rotation 不会改变两个点之间的距离，这与 rigid body 的定义一致。</p>
+<ol start="9">
+<li>Translation</li>
+</ol>
+<p>旋转之后，还可以把整个物体平移。</p>
+<p>设刚体 local origin 在 world space 中的位置为</p>
+<div class="arithmatex">\[ \boxed{\mathbf x}. \]</div>
+<p>那么经过旋转后的点</p>
+<div class="arithmatex">\[ Rr_i \]</div>
+<p>再整体加上 translation：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf x+\mathbf R\mathbf r_i } \]</div>
+<p>于是点 <span class="arithmatex">\(i\)</span> 的最终 world-space position 为</p>
+<div class="arithmatex">\[ \boxed{ \mathbf p_i = \mathbf x+\mathbf R\mathbf r_i } \]</div>
+<p>这就是这一部分最重要的公式。</p>
+<ol start="10">
+<li>Local Space 与 World Space</li>
+</ol>
+<p>这里实际上存在两个不同的坐标。</p>
+<p>Local coordinate
+$$ \mathbf r_i $$</p>
+<p>描述点在物体自身坐标系中的位置。</p>
+<p>World coordinate
+$$ \mathbf p_i $$</p>
+<p>描述这个点在整个场景坐标系中的位置。</p>
+<p>二者通过 rigid transformation 联系：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf p_i = \mathbf x+\mathbf R\mathbf r_i } \]</div>
+<p>所以整个过程是：</p>
+<div class="arithmatex">\[ \mathbf r_i \overset{\text{rotate}}{\longrightarrow} R\mathbf r_i \overset{\text{translate}}{\longrightarrow} \mathbf x+R\mathbf r_i. \]</div>
+<p>即：</p>
+<p>Local Space→Rotation→Translation→World Space 是 Rigid Transformation？</p>
+<p>上面的变换</p>
+<div class="arithmatex">\[ \boxed{ T(\mathbf r)=R\mathbf r+\mathbf x } \]</div>
+<p>称为 rigid transformation / rigid-body transformation。</p>
+<p>它由两个部分组成：</p>
+<div class="arithmatex">\[ R:\quad \text{rotation} \]</div>
+<p>以及</p>
+<div class="arithmatex">\[ x:\quad \text{translation}. \]</div>
+<p>Rigid transformation 最重要的性质就是：</p>
+<div class="arithmatex">\[ \boxed{\text{preserves Euclidean distances}} \]</div>
+<p>证明很直接。</p>
+<p>对于 local space 中任意两个点 <span class="arithmatex">\(r_i,r_j\)</span>：</p>
+<div class="arithmatex">\[ p_i=x+Rr_i $$ $$ p_j=x+Rr_j. \]</div>
+<p>因此</p>
+<div class="arithmatex">\[ p_i-p_j = R(r_i-r_j). \]</div>
+<p>于是</p>
+<div class="arithmatex">\[ \|p_i-p_j\|^2 = (r_i-r_j)^T R^TR(r_i-r_j). \]</div>
+<p>因为</p>
+<div class="arithmatex">\[ R^TR=I, \]</div>
+<p>所以</p>
+<div class="arithmatex">\[ \boxed{ \|p_i-p_j\| = \|r_i-r_j\| } \]</div>
+<p>也就是说，经过这个 transformation 后，物体内部任意两点距离保持不变。</p>
+<p>所以它确实描述的是 rigid body motion。 整个物体当前的 spatial configuration 只需要：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf x,\mathbf R } \]</div>
+<p>就能确定。</p>
+<p>这里的</p>
+<div class="arithmatex">\[ (\mathbf x,R) \]</div>
+<p>通常称为刚体的：</p>
+<div class="arithmatex">\[ \boxed{\text{pose}} \]</div>
+<p>即刚体在空间中的位置与姿态。</p>
 <h3 id="12-translational-motion">1.2 Translational Motion</h3>
+<p>什么是 Translational Motion?</p>
+<p><strong>Translational motion（平移运动）</strong>指物体中的所有点在同一时间发生相同的位移，而物体的 orientation 不发生改变。</p>
+<p>如果刚体中某个点原本为</p>
+<div class="arithmatex">\[ \mathbf p_i, \]</div>
+<p>经过平移 <span class="arithmatex">\(\mathbf x\)</span> 后：</p>
+<div class="arithmatex">\[ \mathbf p_i'=\mathbf p_i+\mathbf x. \]</div>
+<p>因此平移不会改变任意两点之间的相对位置：</p>
+<div class="arithmatex">\[ \mathbf p_i'-\mathbf p_j' = (\mathbf p_i+\mathbf x)-(\mathbf p_j+\mathbf x) = \mathbf p_i-\mathbf p_j. \]</div>
+<p>所以 translation 是一种 rigid motion。</p>
+<p>为什么 position 和 velocity 都必须放进 state？</p>
+<p>速度的定义是</p>
+<div class="arithmatex">\[ \boxed{ \mathbf v(t)=\frac{d\mathbf x(t)}{dt} } \]</div>
+<p>因此如果知道一段时间内的 velocity，就能通过积分得到 position：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf x(t_1) = \mathbf x(t_0) + \int_{t_0}^{t_1}\mathbf v(t)\,dt } \]</div>
+<p>这就是 PPT 第二条公式。</p>
+<p>但 velocity 本身也会因为 force 改变。</p>
+<p>根据 Newton's second law：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf f=M\mathbf a } \]</div>
+<p>而</p>
+<div class="arithmatex">\[ \mathbf a=\frac{d\mathbf v}{dt}. \]</div>
+<p>所以</p>
+<div class="arithmatex">\[ M\frac{d\mathbf v}{dt}=\mathbf f. \]</div>
+<p>因此</p>
+<div class="arithmatex">\[ \frac{d\mathbf v}{dt} = M^{-1}\mathbf f. \]</div>
+<p>对时间积分：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf v(t_1) = \mathbf v(t_0) + M^{-1} \int_{t_0}^{t_1} \mathbf f(\mathbf x(t),\mathbf v(t),t)\,dt } \]</div>
+<p>这就是 PPT 第一条公式。</p>
+<p>这里的 <span class="arithmatex">\(M\)</span> 是什么？</p>
+<p><span class="arithmatex">\(M\)</span> 表示 mass matrix（质量矩阵）。</p>
+<p>对于现在这种只考虑一个刚体整体平移的简单情况，如果质量为 <span class="arithmatex">\(m\)</span>，通常可以写成</p>
+<div class="arithmatex">\[ \boxed{ M=mI } \]</div>
+<p>因此</p>
+<div class="arithmatex">\[ M^{-1}=\frac1m I \]</div>
+<p>于是 Newton's law 就回到最熟悉的形式：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf a=\frac{\mathbf f}{m} } \]</div>
+<p>PPT 使用 <span class="arithmatex">\(M\)</span> 而不是直接使用 <span class="arithmatex">\(m\)</span>，是因为后面更一般的动力系统通常统一写成矩阵形式。</p>
+<ol start="4">
+<li>Translational Dynamics 的连续时间模型</li>
+</ol>
+<p>因此现在有两个 differential equations：</p>
+<div class="arithmatex">\[ \boxed{ \frac{d\mathbf v}{dt} = M^{-1}\mathbf f(\mathbf x,\mathbf v,t) } \]</div>
+<p>和</p>
+<div class="arithmatex">\[ \boxed{ \frac{d\mathbf x}{dt} = \mathbf v. } \]</div>
+<p>这两个方程合在一起就是这一节 translational motion 的动力学模型。</p>
+<p>可以理解为：</p>
+<div class="arithmatex">\[ \mathbf f \rightarrow \frac{d\mathbf v}{dt} \rightarrow \mathbf v \rightarrow \frac{d\mathbf x}{dt} \rightarrow \mathbf x. \]</div>
+<p>或者：</p>
+<p>$$ \boxed{ \text{force} \rightarrow \text{acceleration} \rightarrow \text{velocity} \rightarrow \text{position} } $$
+5. 为什么突然开始讲 Integration？</p>
+<p>理论上，如果知道完整的</p>
+<div class="arithmatex">\[ \mathbf f(t) \]</div>
+<p>和</p>
+<div class="arithmatex">\[ \mathbf v(t), \]</div>
+<p>我们直接计算积分即可。</p>
+<p>但 physics engine 并不知道未来完整的连续曲线。</p>
+<p>它只能知道当前：</p>
+<div class="arithmatex">\[ t^{[0]} \]</div>
+<p>时刻的状态，然后计算下一个：</p>
+<div class="arithmatex">\[ t^{[1]}=t^{[0]}+\Delta t. \]</div>
+<p>所以真正的问题是：</p>
+<div class="arithmatex">\[ \boxed{ \int_{t^{[0]}}^{t^{[1]}}\mathbf v(t)\,dt } \]</div>
+<p>到底怎么计算？</p>
+<p>同样，</p>
+<div class="arithmatex">\[ \int_{t^{[0]}}^{t^{[1]}} \mathbf f(t)\,dt \]</div>
+<p>也需要近似计算。</p>
+<p>这就是 numerical integration。</p>
+<p>Numerical Integration
+6. 积分在这里的几何意义</p>
+<p>考虑一维 velocity <span class="arithmatex">\(v(t)\)</span>。</p>
+<p>积分</p>
+<div class="arithmatex">\[ \int_{t_0}^{t_1}v(t)\,dt \]</div>
+<p>就是 <span class="arithmatex">\(v-t\)</span> 图中曲线下面的面积。</p>
+<p>而这个面积恰好就是 displacement：</p>
+<div class="arithmatex">\[ \boxed{ \Delta x= \int_{t_0}^{t_1}v(t)\,dt } \]</div>
+<p>问题是我们不知道整条 <span class="arithmatex">\(v(t)\)</span> 曲线。</p>
+<p>因此很多 numerical integration methods 的基本思想都是：</p>
+<p>用一个容易计算的几何图形近似曲线下的面积。</p>
+<p>PPT 这里主要用 rectangle 来近似。</p>
+<p>不同方法的区别就是：</p>
+<p>这个矩形的高度取在哪里？
+    ​
+xplicit Euler</p>
+<p>Explicit Euler 使用区间左端点的值作为矩形高度。</p>
+<p>令</p>
+<div class="arithmatex">\[ \Delta t=t^{[1]}-t^{[0]}. \]</div>
+<p>那么：</p>
+<div class="arithmatex">\[ \boxed{ \int_{t^{[0]}}^{t^{[1]}} \mathbf v(t)\,dt \approx \Delta t\,\mathbf v(t^{[0]}) } \]</div>
+<p>因此 position update 为</p>
+<div class="arithmatex">\[ \boxed{ \mathbf x^{[1]} = \mathbf x^{[0]} + \Delta t\,\mathbf v^{[0]} } \]</div>
+<p>这里叫 explicit（显式），因为右边全部都是当前已经知道的量：</p>
+<div class="arithmatex">\[ x^{[0]},\quad v^{[0]}. \]</div>
+<p>所以直接代进去就能得到</p>
+<div class="arithmatex">\[ x^{[1]}. \]</div>
+<p>不需要解任何方程。</p>
+<ol start="8">
+<li>Explicit Euler 的误差从哪里来？</li>
+</ol>
+<p>PPT 用 Taylor expansion 解释这一点。</p>
+<p>在 <span class="arithmatex">\(t^{[0]}\)</span> 附近展开：</p>
+<div class="arithmatex">\[ \mathbf v(t) = \mathbf v(t^{[0]}) + (t-t^{[0]})\mathbf v'(t^{[0]}) +\cdots \]</div>
+<p>积分得到</p>
+<div class="arithmatex">\[ \int_{t^{[0]}}^{t^{[1]}}\mathbf v(t)\,dt = \Delta t\,\mathbf v(t^{[0]}) + \frac{\Delta t^2}{2}\mathbf v'(t^{[0]}) +\cdots \]</div>
+<p>Explicit Euler 只保留第一项：</p>
+<div class="arithmatex">\[ \Delta t\,\mathbf v(t^{[0]}). \]</div>
+<p>所以一次 step 丢掉的第一项大小为</p>
+<div class="arithmatex">\[ O(\Delta t^2). \]</div>
+<p>因此：</p>
+<div class="arithmatex">\[ \boxed{ \text{one-step / local error} = O(\Delta t^2) } \]</div>
+<p>但 PPT 又说 Explicit Euler 是 1st-order accurate，这两个说法并不矛盾。</p>
+<p>因为在固定总时间 <span class="arithmatex">\(T\)</span> 内需要大约</p>
+<div class="arithmatex">\[ N\sim\frac{T}{\Delta t} \]</div>
+<p>个 step。</p>
+<p>每步误差 <span class="arithmatex">\(O(\Delta t^2)\)</span> 累积之后，总体误差约为</p>
+<div class="arithmatex">\[ \frac1{\Delta t}O(\Delta t^2) = O(\Delta t). \]</div>
+<p>因此：</p>
+<div class="arithmatex">\[ \boxed{ \text{global error}=O(\Delta t) } \]</div>
+<p>所以 Explicit Euler 是 first-order method。</p>
+<p>这个区别最好在笔记里记清：</p>
+<p>$$ \boxed{ \begin{aligned} \text{local error}&amp;=O(\Delta t^2)\ \text{global error}&amp;=O(\Delta t) \end{aligned} } $$
+9. 用 Explicit Euler 更新 velocity</p>
+<p>同样地，</p>
+<div class="arithmatex">\[ \mathbf v(t^{[1]}) = \mathbf v(t^{[0]}) + M^{-1} \int_{t^{[0]}}^{t^{[1]}} \mathbf f(t)\,dt. \]</div>
+<p>Explicit Euler 用当前 force：</p>
+<div class="arithmatex">\[ \int_{t^{[0]}}^{t^{[1]}}\mathbf f(t)\,dt \approx \Delta t\,\mathbf f^{[0]}. \]</div>
+<p>因此：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf v^{[1]} = \mathbf v^{[0]} + \Delta t M^{-1}\mathbf f^{[0]} } \]</div>
+<p>其中</p>
+<div class="arithmatex">\[ \mathbf f^{[0]} = \mathbf f(\mathbf x^{[0]},\mathbf v^{[0]},t^{[0]}). \]</div>
+<p>如果 position 也使用 Explicit Euler，则：</p>
+<div class="arithmatex">\[ \boxed{ \begin{aligned} \mathbf v^{[1]} &amp;= \mathbf v^{[0]} +\Delta tM^{-1}\mathbf f^{[0]}\\[2mm] \mathbf x^{[1]} &amp;= \mathbf x^{[0]} +\Delta t\mathbf v^{[0]} \end{aligned} } \]</div>
+<p>注意第二行用的是旧速度</p>
+<p>$$ v^{[0]}. $$
+10. Implicit Euler</p>
+<p>Implicit Euler 的思想刚好相反。</p>
+<p>它使用时间区间右端点的值作为 rectangle height：</p>
+<div class="arithmatex">\[ \boxed{ \int_{t^{[0]}}^{t^{[1]}} \mathbf v(t)\,dt \approx \Delta t\,\mathbf v(t^{[1]}) } \]</div>
+<p>所以：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf x^{[1]} = \mathbf x^{[0]} + \Delta t\,\mathbf v^{[1]} } \]</div>
+<p>为什么叫 implicit（隐式）？</p>
+<p>因为右边出现了未来时刻的未知量</p>
+<div class="arithmatex">\[ v^{[1]}. \]</div>
+<p>更一般地，一个 ODE</p>
+<div class="arithmatex">\[ \dot y=g(y,t) \]</div>
+<p>的 Implicit Euler 是：</p>
+<div class="arithmatex">\[ \boxed{ y^{[1]} = y^{[0]} + \Delta t\, g(y^{[1]},t^{[1]}) } \]</div>
+<p>未知数 <span class="arithmatex">\(y^{[1]}\)</span> 同时出现在方程左右两边，因此通常需要 solve an equation。</p>
+<p>这就是 explicit 和 implicit 最本质的区别：</p>
+<div class="arithmatex">\[ \boxed{ \begin{array}{c|c} \text{Explicit} &amp; \text{只使用已经知道的旧状态}\\ \hline \text{Implicit} &amp; \text{公式包含未知的新状态} \end{array} } \]</div>
+<p>Implicit Euler 同样是一阶方法：</p>
+<div class="arithmatex">\[ \boxed{ \text{local error}=O(\Delta t^2), \qquad \text{global error}=O(\Delta t) } \]</div>
+<p>但是 implicit methods 通常具有更好的 numerical stability，代价是每一步计算更复杂。</p>
+<p>Explicit 和 Implicit 图形上到底区别在哪里？</p>
+<p>假设真正的面积为</p>
+<div class="arithmatex">\[ \int_{t^{[0]}}^{t^{[1]}}v(t)\,dt. \]</div>
+<p>Explicit Euler 用：</p>
+<div class="arithmatex">\[ v(t^{[0]}) \]</div>
+<p>作为矩形高度：</p>
+<div class="arithmatex">\[ \boxed{\text{left endpoint}} \]</div>
+<p>Implicit Euler 用：</p>
+<div class="arithmatex">\[ v(t^{[1]}) \]</div>
+<p>作为矩形高度：</p>
+<div class="arithmatex">\[ \boxed{\text{right endpoint}} \]</div>
+<p>所以可以直接记成：</p>
+<p>$$ \boxed{ \begin{aligned} \text{Explicit Euler: }&amp; \Delta t\,v^{[0]}\ \text{Implicit Euler: }&amp; \Delta t\,v^{[1]} \end{aligned} } $$
+12. Mid-point Method</p>
+<p>第三种是 mid-point method（中点法）。</p>
+<p>它既不取左端点，也不取右端点，而取：</p>
+<div class="arithmatex">\[ t^{[0.5]} = t^{[0]}+\frac{\Delta t}{2}. \]</div>
+<p>于是：</p>
+<div class="arithmatex">\[ \boxed{ \int_{t^{[0]}}^{t^{[1]}} \mathbf v(t)\,dt \approx \Delta t\,\mathbf v(t^{[0.5]}) } \]</div>
+<p>为什么它明显更准？</p>
+<p>因为如果曲线在区间内平滑，中点更能够代表整个 interval 的平均高度。</p>
+<ol start="13">
+<li>为什么 Mid-point 是二阶的？</li>
+</ol>
+<p>把积分拆成两部分：</p>
+<div class="arithmatex">\[ \int_{t^{[0]}}^{t^{[1]}}\mathbf v(t)\,dt = \int_{t^{[0]}}^{t^{[0.5]}}\mathbf v(t)\,dt + \int_{t^{[0.5]}}^{t^{[1]}}\mathbf v(t)\,dt. \]</div>
+<p>如果围绕 midpoint 做 Taylor expansion，左右两边的一阶非对称误差会互相抵消。</p>
+<p>最后得到：</p>
+<div class="arithmatex">\[ \int_{t^{[0]}}^{t^{[1]}}\mathbf v(t)\,dt = \Delta t\,\mathbf v(t^{[0.5]}) + O(\Delta t^3). \]</div>
+<p>所以：</p>
+<div class="arithmatex">\[ \boxed{ \text{local error} = O(\Delta t^3) } \]</div>
+<p>累积之后：</p>
+<div class="arithmatex">\[ \boxed{ \text{global error} = O(\Delta t^2) } \]</div>
+<p>因此 Mid-point 是：</p>
+<div class="arithmatex">\[ \boxed{\text{second-order accurate}} \]</div>
+<p>这也是 PPT 为什么特别把 Mid-point 和两个 Euler method 分开。</p>
+<ol start="14">
+<li>三种积分方法放在一起</li>
+</ol>
+<p>这几页真正要建立的是：</p>
+<div class="arithmatex">\[ \int_{t^{[0]}}^{t^{[1]}}v(t)dt \]</div>
+<p>可以用不同位置的 sample 近似。</p>
+<p>Method  Approximation   Global order
+Explicit Euler  <span class="arithmatex">\(\Delta t\,v^{[0]}\)</span>   1st order
+Implicit Euler  <span class="arithmatex">\(\Delta t\,v^{[1]}\)</span>   1st order
+Mid-point   <span class="arithmatex">\(\Delta t\,v^{[0.5]}\)</span> 2nd order</p>
+<p>本质：</p>
+<div class="arithmatex">\[ \boxed{ \text{numerical integration} = \text{用有限几个 sample 近似连续积分} } \]</div>
+<p>Semi-Implicit / Leapfrog
+15. 为什么 velocity 和 position 不一定使用同一种 Euler？</p>
+<p>现在回到 translational dynamics：</p>
+<div class="arithmatex">\[ \begin{aligned} v^{[1]} &amp;= v^{[0]}+ M^{-1}\int f(t)dt\\ x^{[1]} &amp;= x^{[0]}+ \int v(t)dt. \end{aligned} \]</div>
+<p>这其实有两个积分：</p>
+<p>force 积分得到 velocity；
+velocity 积分得到 position。</p>
+<p>所以完全可以给两个积分选择不同的方法。</p>
+<p>一个在 physics simulation 中非常常见的组合是：</p>
+<p>先用当前 force 更新 velocity：</p>
+<div class="arithmatex">\[ \boxed{ v^{[1]} = v^{[0]} + \Delta t M^{-1}f^{[0]} } \]</div>
+<p>然后立刻使用刚刚得到的新速度</p>
+<div class="arithmatex">\[ v^{[1]} \]</div>
+<p>更新 position：</p>
+<div class="arithmatex">\[ \boxed{ x^{[1]} = x^{[0]} + \Delta t v^{[1]}. } \]</div>
+<p>合起来：</p>
+<div class="arithmatex">\[ \boxed{ \begin{aligned} v^{[1]} &amp;= v^{[0]}+\Delta tM^{-1}f^{[0]}\\ x^{[1]} &amp;= x^{[0]}+\Delta t v^{[1]} \end{aligned} } \]</div>
+<p>这就是这套 PPT 后面真正采用的更新方法。</p>
+<p>它通常叫：</p>
+<div class="arithmatex">\[ \boxed{\text{semi-implicit Euler}} \]</div>
+<p>或者更标准地叫：</p>
+<p>$$ \boxed{\text{symplectic Euler}} $$
+16. 为什么叫 semi-implicit？</p>
+<p>观察两个 equation：</p>
+<p>velocity update 使用当前状态：</p>
+<div class="arithmatex">\[ f^{[0]}, \]</div>
+<p>属于 explicit。</p>
+<p>但 position update 使用已经更新后的：</p>
+<div class="arithmatex">\[ v^{[1]}, \]</div>
+<p>形式上类似 implicit Euler。</p>
+<p>所以是：</p>
+<div class="arithmatex">\[ \boxed{ \text{Explicit velocity update} + \text{Implicit-style position update} } \]</div>
+<p>因此称为：</p>
+<div class="arithmatex">\[ \boxed{\text{semi-implicit}} \]</div>
+<p>它仍然非常容易计算，因为第一步先得到了 <span class="arithmatex">\(v^{[1]}\)</span>，第二步直接使用即可，不需要真正解 nonlinear equation。</p>
+<ol start="17">
+<li>Leapfrog 的含义</li>
+</ol>
+<p>PPT 接下来画了两只青蛙交替向前跳，并引出：</p>
+<div class="arithmatex">\[ \boxed{\text{Leapfrog Integration}} \]</div>
+<p>“leapfrog”这个名字来自变量在时间轴上交错前进。</p>
+<p>经典 leapfrog 的一种表示是：</p>
+<div class="arithmatex">\[ x^{[0]},x^{[1]},x^{[2]},\ldots \]</div>
+<p>放在 integer time steps，而 velocity 放在：</p>
+<div class="arithmatex">\[ v^{[0.5]},v^{[1.5]},v^{[2.5]},\ldots \]</div>
+<p>也就是说：</p>
+<div class="arithmatex">\[ \boxed{ \text{position 与 velocity 错开半个 time step} } \]</div>
+<p>典型形式：</p>
+<div class="arithmatex">\[ \boxed{ v^{[n+\frac12]} = v^{[n-\frac12]} + \Delta t\,a^{[n]} } \]</div>
+<p>然后：</p>
+<div class="arithmatex">\[ \boxed{ x^{[n+1]} = x^{[n]} + \Delta t\,v^{[n+\frac12]} } \]</div>
+<p>于是：</p>
+<div class="arithmatex">\[ v \rightarrow x \rightarrow v \rightarrow x \]</div>
+<p>两个变量像两只青蛙一样不断互相“跳过”对方，所以叫 leapfrog。</p>
+<p>严格数值分析术语里，经典 leapfrog 和 semi-implicit Euler 并不是完全同一个公式；但它们关系非常紧密，都属于 physics simulation 中常见的结构保持型积分方式。这套 PPT 后面的实际 simulator 采用的是上面的 semi-implicit / symplectic Euler 更新。</p>
+<p>Types of Forces
+18. Gravity Force</p>
+<p>接下来要回答的是：</p>
+<div class="arithmatex">\[ f^{[0]} \]</div>
+<p>到底从哪里来？</p>
+<p>第一种最基本的 force 是 gravity。</p>
+<p>在近地面、均匀重力场的近似下：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf f_g=m\mathbf g } \]</div>
+<p>其中</p>
+<div class="arithmatex">\[ m \]</div>
+<p>是物体质量，</p>
+<div class="arithmatex">\[ \mathbf g \]</div>
+<p>是 gravitational acceleration。</p>
+<p>例如如果 <span class="arithmatex">\(y\)</span> 轴向上：</p>
+<div class="arithmatex">\[ \mathbf g= \begin{bmatrix} 0\\ -9.81\\ 0 \end{bmatrix} \text{m/s}^2. \]</div>
+<p>所以：</p>
+<div class="arithmatex">\[ \mathbf f_g = m \begin{bmatrix} 0\\ -9.81\\ 0 \end{bmatrix}. \]</div>
+<p>代入 Newton：</p>
+<div class="arithmatex">\[ a=M^{-1}f_g. \]</div>
+<p>对于 <span class="arithmatex">\(M=mI\)</span>：</p>
+<div class="arithmatex">\[ a=\frac1m(mg)=g. \]</div>
+<p>因此在忽略空气阻力时：</p>
+<div class="arithmatex">\[ \boxed{\text{重力产生的加速度与物体质量无关}} \]</div>
+<p>这就是为什么理想情况下轻物体和重物体具有相同的自由落体加速度。</p>
+<ol start="19">
+<li>Drag Force</li>
+</ol>
+<p><strong>Drag force（阻力）</strong>是与物体相对介质运动有关、通常与运动方向相反的力。</p>
+<p>在简单 simulation 中经常使用 linear drag：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf f_d=-c\mathbf v } \]</div>
+<p>其中：</p>
+<div class="arithmatex">\[ c&gt;0 \]</div>
+<p>是 drag coefficient。</p>
+<p>负号意味着：</p>
+<div class="arithmatex">\[ \boxed{\text{drag direction is opposite to velocity}} \]</div>
+<p>所以 drag 的作用就是逐渐降低 velocity。</p>
+<p>例如：</p>
+<p>$$ v&gt;0 \Rightarrow f_d&lt;0. $$
+20. 为什么 PPT 把 Drag Force 划掉了？</p>
+<p>PPT 并不是说“drag force 不存在”。</p>
+<p>它想表达的是：</p>
+<p>在很多实时 graphics / game simulation 中，不一定真的把 drag 建模成一个 force，再经过 Newton equation 更新 velocity。</p>
+<p>因为 drag 的最终效果主要是：</p>
+<div class="arithmatex">\[ \boxed{\text{velocity decays}} \]</div>
+<p>所以工程中经常直接写成：</p>
+<div class="arithmatex">\[ \boxed{ \mathbf v\leftarrow \gamma\mathbf v } \]</div>
+<p>其中</p>
+<div class="arithmatex">\[ 0&lt;\gamma&lt;1 \]</div>
+<p>叫 velocity decay / damping coefficient。</p>
+<p>例如：</p>
+<div class="arithmatex">\[ \gamma=0.99 \]</div>
+<p>表示每次 update 后：</p>
+<div class="arithmatex">\[ v_{\text{new}}=0.99v_{\text{old}}. \]</div>
+<p>这是一种非常常见的 game-physics approximation。</p>
+<p>更严格地，如果希望 damping 不太依赖 frame rate，可以写成指数形式：</p>
+<div class="arithmatex">\[ \boxed{ v(t+\Delta t) = e^{-k\Delta t}v(t) } \]</div>
+<p>但 PPT 这一页主要想说明的是：</p>
+<p>$$ \boxed{ \text{Drag 可以在实际 engine 中直接实现为 velocity decay} } $$
+Rigid Body Simulator — Translation Only
+21. 现在终于可以写完整 simulator 了</p>
+<p>最后一页把前面的所有内容串了起来。</p>
+<p>输入当前 state：</p>
+<div class="arithmatex">\[ \boxed{ s^{[0]} = (x^{[0]},v^{[0]}) } \]</div>
+<p>Simulator 要产生：</p>
+<div class="arithmatex">\[ \boxed{ s^{[1]} = (x^{[1]},v^{[1]}). } \]</div>
+<p>整个过程分成三步。</p>
+<p>Step 1：计算所有 forces</p>
+<p>不同 force 分别根据当前 state 计算：</p>
+<div class="arithmatex">\[ \boxed{ f_i^{[0]} = Force_i(x^{[0]},v^{[0]}) } \]</div>
+<p>例如：</p>
+<div class="arithmatex">\[ f_g=mg, \]</div>
+<p>也可能还有：</p>
+<div class="arithmatex">\[ f_{\text{spring}}, \quad f_{\text{drag}}, \quad f_{\text{user}}, \ldots \]</div>
+<p>Newton's second law 使用的是 net force（合力）：</p>
+<div class="arithmatex">\[ \boxed{ f^{[0]} = \sum_i f_i^{[0]} } \]</div>
+<p>这是力的叠加原理。</p>
+<p>Step 2：force 更新 velocity</p>
+<p>使用：</p>
+<div class="arithmatex">\[ a=M^{-1}f \]</div>
+<p>以及 Explicit Euler：</p>
+<p>$$ \boxed{ v^{[1]} = v^{[0]} + \Delta tM^{-1}f^{[0]} } $$
+Step 3：velocity 更新 position</p>
+<p>PPT 使用的是新速度：</p>
+<div class="arithmatex">\[ \boxed{ x^{[1]} = x^{[0]} + \Delta t v^{[1]} } \]</div>
+<p>因此这不是 fully explicit Euler，而是前面讲的：</p>
+<div class="arithmatex">\[ \boxed{\text{semi-implicit / symplectic Euler}} \]</div>
+<p>最终输出：</p>
+<div class="arithmatex">\[ \boxed{ s^{[1]} = (x^{[1]},v^{[1]}). } \]</div>
+<p>然后下一 frame 再把</p>
+<div class="arithmatex">\[ s^{[1]} \]</div>
+<p>作为新的输入：</p>
+<div class="arithmatex">\[ s^{[1]} \rightarrow s^{[2]} \rightarrow s^{[3]} \rightarrow\cdots \]</div>
+<p>physics simulation 就这样向前推进。</p>
+<ol start="22">
+<li>整个 Translation Simulator 可以浓缩成四行</li>
+</ol>
+<p>这一部分最值得直接放进笔记里的 algorithm 是：</p>
+<div class="arithmatex">\[ \boxed{ \begin{aligned} \mathbf f^n &amp;= \sum_i \mathbf f_i(\mathbf x^n,\mathbf v^n,t^n) \\[1mm] \mathbf a^n &amp;= M^{-1}\mathbf f^n \\[1mm] \mathbf v^{n+1} &amp;= \mathbf v^n+\Delta t\,\mathbf a^n \\[1mm] \mathbf x^{n+1} &amp;= \mathbf x^n+\Delta t\,\mathbf v^{n+1} \end{aligned} } \]</div>
+<p>其中：</p>
+<div class="arithmatex">\[ \boxed{ s^n=(x^n,v^n) } \]</div>
+<p>就是当前 state。</p>
+<ol start="23">
+<li>这一部分 PPT 的完整逻辑</li>
+</ol>
+<p>前面我们知道 rigid-body motion 可以拆成：</p>
+<div class="arithmatex">\[ \text{translation}+\text{rotation}. \]</div>
+<p>现在先只解决 translation。</p>
+<p>Translation 的 state 是：</p>
+<div class="arithmatex">\[ \boxed{(x,v)} \]</div>
+<p>Newton's law 给出：</p>
+<div class="arithmatex">\[ \boxed{ \dot v=M^{-1}f } \]</div>
+<p>而 velocity 的定义给出：</p>
+<div class="arithmatex">\[ \boxed{ \dot x=v. } \]</div>
+<p>因此连续系统是：</p>
+<div class="arithmatex">\[ \boxed{ \begin{cases} \dot v=M^{-1}f(x,v,t)\\ \dot x=v \end{cases}} \]</div>
+<p>但是 computer 不能直接连续地求解它，所以把时间离散成：</p>
+<div class="arithmatex">\[ t^0,t^1,t^2,\ldots \]</div>
+<p>然后使用 numerical integration：</p>
+<div class="arithmatex">\[ \boxed{ \text{continuous differential equation} \rightarrow \text{discrete update rule} } \]</div>
+<p>最终得到课程实际使用的 simulator：</p>
+<div class="arithmatex">\[ \boxed{ \begin{cases} f^n=\sum_i f_i^n\\ v^{n+1}=v^n+\Delta tM^{-1}f^n\\ x^{n+1}=x^n+\Delta t v^{n+1} \end{cases}} \]</div>
+<p>所以这几页真正要建立的核心思想可以压缩成一句：</p>
+<div class="arithmatex">\[ \boxed{ \textbf{Rigid-body translation simulation is numerical integration of Newton's equation of motion.} } \]</div>
+<p>也就是：刚体平移模拟，本质上就是对 Newton 运动方程进行数值积分。</p>
+<figure><img alt="alt text" src="image-3.png" loading="lazy" decoding="async"><figcaption>alt text</figcaption></figure>
 <h3 id="13-rotational-motion">1.3 Rotational Motion</h3>
+<p>这一部分从“平移怎么模拟”进入到真正的 <strong>3D rigid-body dynamics</strong>。前面 translation 很简单，因为 position 是一个普通的 3D vector；rotation 麻烦得多：首先要选择一种合适的 <strong>orientation representation</strong>，然后定义 angular velocity、torque、inertia，最后才能像平移那样做时间积分。</p>
+<p>整段 PPT 的主线可以先记成：</p>
+<div class="arithmatex">\[
+\boxed{
+\begin{array}{ccc}
+\text{Translation} &amp;&amp; \text{Rotation}\\
+x &amp;&amp; q\\
+v &amp;&amp; \omega\\
+m &amp;&amp; I\\
+f &amp;&amp; \tau
+\end{array}}
+\]</div>
+<p>也就是说，后面的 rotational dynamics 基本上是在构造一套和 Newton 平移动力学对应的旋转系统。</p>
+<hr>
+<h1 id="1-rotation">1. Rotation 应该怎样表示？</h1>
+<p>一个三维刚体的 orientation 有 3 个自由度：</p>
+<div class="arithmatex">\[
+\boxed{3\text{ rotational DoFs}}
+\]</div>
+<p>但“3 个自由度”并不意味着一定要用 3 个数表示。常见表示有：</p>
+<ol>
+<li>Rotation matrix</li>
+<li>Euler angles</li>
+<li>Quaternion</li>
+</ol>
+<p>这几页 PPT 的目的就是解释：</p>
+<blockquote>
+<p>为什么 graphics 中经常使用 matrix，UI 中经常使用 Euler angles，但 rigid-body dynamics 最后选择 quaternion。</p>
+</blockquote>
+<hr>
+<h1 id="rotation-represented-by-matrix">Rotation Represented by Matrix</h1>
+<h2 id="2-rotation-matrix">2. Rotation Matrix</h2>
+<p>三维旋转可以用矩阵</p>
+<div class="arithmatex">\[
+\boxed{
+R\in SO(3)
+}
+\]</div>
+<p>表示，其中</p>
+<div class="arithmatex">\[
+SO(3)=
+\left\{
+R\in\mathbb R^{3\times3}
+\mid
+R^TR=I,\det R=1
+\right\}.
+\]</div>
+<p>对一个 local-space point <span class="arithmatex">\(r_i\)</span>，旋转后的坐标就是：</p>
+<div class="arithmatex">\[
+\boxed{
+r_i' = Rr_i
+}
+\]</div>
+<p>所以 PPT 说 matrix representation：</p>
+<blockquote>
+<p>is friendly for applying rotation to each vertex.</p>
+</blockquote>
+<p>这是 rotation matrix 在 graphics 中最大的优势：<strong>旋转一个点就是一次 matrix-vector multiplication。</strong></p>
+<p>例如整个 mesh：</p>
+<div class="arithmatex">\[
+r_1,r_2,\ldots,r_N
+\]</div>
+<p>都可以直接做</p>
+<div class="arithmatex">\[
+Rr_i.
+\]</div>
+<hr>
+<h1 id="3-3times3-rotation-matrix-3-dofs">3. 为什么 <span class="arithmatex">\(3\times3\)</span> rotation matrix 实际上只有 3 DoFs？</h1>
+<p>矩阵有 9 个元素：</p>
+<div class="arithmatex">\[
+R=
+\begin{bmatrix}
+r_{00}&amp;r_{01}&amp;r_{02}\\
+r_{10}&amp;r_{11}&amp;r_{12}\\
+r_{20}&amp;r_{21}&amp;r_{22}
+\end{bmatrix}.
+\]</div>
+<p>看起来有 9 个变量，但它们不能独立选择，因为必须满足：</p>
+<div class="arithmatex">\[
+R^TR=I.
+\]</div>
+<p>这意味着三个 column 必须：</p>
+<ul>
+<li>长度为 1；</li>
+<li>两两正交。</li>
+</ul>
+<p>再加上：</p>
+<div class="arithmatex">\[
+\det R=1.
+\]</div>
+<p>所以合法 rotation matrix 只形成一个 3-dimensional space：</p>
+<div class="arithmatex">\[
+\boxed{\dim SO(3)=3}.
+\]</div>
+<p>因此 matrix representation 存在 redundancy：</p>
+<div class="arithmatex">\[
+\boxed{
+9\text{ numbers}
+\quad\text{represent}\quad
+3\text{ DoFs}
+}
+\]</div>
+<p>这就是 PPT 所说的：</p>
+<blockquote>
+<p>It has too much redundancy.</p>
+</blockquote>
+<hr>
+<h1 id="4-matrix-dynamics">4. 为什么 Matrix 不特别适合 Dynamics？</h1>
+<p>还有一个更重要的问题：</p>
+<div class="arithmatex">\[
+\boxed{\dot R}
+\]</div>
+<p>并不是一个直观的“旋转速度”。</p>
+<p>平移非常简单：</p>
+<div class="arithmatex">\[
+v=\dot x.
+\]</div>
+<p>但旋转不能直接写成：</p>
+<div class="arithmatex">\[
+\omega=\dot R.
+\]</div>
+<p>因为：</p>
+<div class="arithmatex">\[
+\dot R
+\]</div>
+<p>是一个 <span class="arithmatex">\(3\times3\)</span> matrix，而 physical angular velocity 应该只有 3 个自由度。</p>
+<p>真正的关系是类似：</p>
+<div class="arithmatex">\[
+\boxed{
+\dot R=[\omega]_\times R
+}
+\]</div>
+<p>具体左右乘取决于 angular velocity 使用 world frame 还是 body frame。</p>
+<p>其中</p>
+<div class="arithmatex">\[
+[\omega]_\times=
+\begin{bmatrix}
+0&amp;-\omega_z&amp;\omega_y\\
+\omega_z&amp;0&amp;-\omega_x\\
+-\omega_y&amp;\omega_x&amp;0
+\end{bmatrix}
+\]</div>
+<p>是由 angular velocity 构造出的 skew-symmetric matrix。</p>
+<p>所以 rotation matrix 虽然非常适合：</p>
+<div class="arithmatex">\[
+\boxed{\text{apply rotation}}
+\]</div>
+<p>但并不是最方便的：</p>
+<div class="arithmatex">\[
+\boxed{\text{integrate rotational dynamics}}.
+\]</div>
+<hr>
+<h1 id="rotation-represented-by-euler-angles">Rotation Represented by Euler Angles</h1>
+<h2 id="5-euler-angles">5. 什么是 Euler Angles？</h2>
+<p>Euler angles 的基本思想是：</p>
+<blockquote>
+<p>一个任意三维 orientation，可以表示成依次绕三个指定坐标轴进行的旋转。</p>
+</blockquote>
+<p>因此使用三个角：</p>
+<div class="arithmatex">\[
+\boxed{
+(\alpha,\beta,\gamma)
+}
+\]</div>
+<p>表示 orientation。</p>
+<p>例如一种 convention 可以写成：</p>
+<div class="arithmatex">\[
+R=R_z(\alpha)R_x(\beta)R_y(\gamma).
+\]</div>
+<p>不同系统的：</p>
+<ul>
+<li>axis order；</li>
+<li>intrinsic / extrinsic rotation；</li>
+<li>左右手坐标系；</li>
+</ul>
+<p>都可能不同。</p>
+<p>PPT 特别指出 Unity 使用的 Euler-angle convention 涉及：</p>
+<div class="arithmatex">\[
+Z\rightarrow X\rightarrow Y
+\]</div>
+<p>的旋转顺序。</p>
+<hr>
+<h1 id="6-euler-angles">6. Euler Angles 的优点</h1>
+<p>Euler angles 最大的优点是：</p>
+<div class="arithmatex">\[
+\boxed{\text{intuitive}}
+\]</div>
+<p>比如 UI 中：</p>
+<pre><code class="language-text">Rotation
+X: 30°
+Y: 45°
+Z: 10°
+</code></pre>
+<p>人能够直接理解。</p>
+<p>所以它很适合：</p>
+<ul>
+<li>user interface；</li>
+<li>design；</li>
+<li>manual control；</li>
+<li>animation editing。</li>
+</ul>
+<p>Unity Inspector 里也因此给用户显示 Euler angles。</p>
+<hr>
+<h1 id="7-euler-angles-gimbal-lock">7. Euler Angles 最大的问题：Gimbal Lock</h1>
+<p>PPT 接下来专门解释 <strong>gimbal lock（万向节死锁）</strong>。</p>
+<h3 id="_1">定义</h3>
+<blockquote>
+<p>Gimbal lock is a configuration in which two rotational axes become aligned, causing the parameterization to lose one rotational degree of freedom.</p>
+</blockquote>
+<p>也就是说，本来三个独立 rotation axes：</p>
+<div class="arithmatex">\[
+a_1,\ a_2,\ a_3
+\]</div>
+<p>应该提供三个独立 DoFs。</p>
+<p>但是在某些 orientation 下：</p>
+<div class="arithmatex">\[
+a_1\parallel a_3.
+\]</div>
+<p>两个 rotation 操作变成绕同一个方向，因此独立旋转方向从三个降为两个：</p>
+<div class="arithmatex">\[
+\boxed{
+3\text{ DoFs}
+\rightarrow
+2\text{ DoFs}
+}
+\]</div>
+<p>这就是：</p>
+<div class="arithmatex">\[
+\boxed{\text{gimbal lock}}
+\]</div>
+<hr>
+<h1 id="8-gimbal-lock">8. Gimbal Lock 不意味着物体本身不能那样旋转</h1>
+<p>这是一个很容易误解的地方。</p>
+<p>Gimbal lock 不是说：</p>
+<blockquote>
+<p>物理空间突然只有两个 rotational DoFs 了。</p>
+</blockquote>
+<p>而是说：</p>
+<blockquote>
+<p><strong>Euler-angle parameterization 在这个位置变得奇异。</strong></p>
+</blockquote>
+<p>物体本身仍然可以进行任意三维旋转。</p>
+<p>出问题的是：</p>
+<div class="arithmatex">\[
+(\alpha,\beta,\gamma)
+\]</div>
+<p>这组坐标不能在这个 configuration 附近良好地描述 orientation。</p>
+<p>所以 gimbal lock 本质上属于：</p>
+<div class="arithmatex">\[
+\boxed{\text{representation singularity}}
+\]</div>
+<p>而不是物理系统本身的问题。</p>
+<hr>
+<h1 id="9-euler-angle-derivative-angular-velocity">9. Euler-angle derivative 也不是 Angular Velocity</h1>
+<p>另一个非常重要的问题是：</p>
+<div class="arithmatex">\[
+\boxed{
+\omega
+\neq
+\begin{bmatrix}
+\dot\alpha\\
+\dot\beta\\
+\dot\gamma
+\end{bmatrix}
+}
+\]</div>
+<p>一般情况下并不相等。</p>
+<p>因为 Euler rotations 是连续组合的，而后面的 rotation axis 会受到前面 rotation 的影响。</p>
+<p>因此从 Euler-angle rates</p>
+<div class="arithmatex">\[
+(\dot\alpha,\dot\beta,\dot\gamma)
+\]</div>
+<p>转换成 physical angular velocity <span class="arithmatex">\(\omega\)</span>，需要一个与当前 orientation 有关的 transformation。</p>
+<p>在 gimbal lock 附近，这个 transformation 还会变得 singular。</p>
+<p>所以 Euler angles 也不特别适合 rigid-body dynamics。</p>
+<hr>
+<h1 id="quaternion">Quaternion</h1>
+<h2 id="10-quaternion">10. 为什么引入 Quaternion？</h2>
+<p>PPT 先从 complex number 类比。</p>
+<p>Complex number：</p>
+<div class="arithmatex">\[
+z=a+bi
+\]</div>
+<p>具有：</p>
+<div class="arithmatex">\[
+i^2=-1.
+\]</div>
+<p>可以认为它由两个 real numbers 表示：</p>
+<div class="arithmatex">\[
+(a,b).
+\]</div>
+<p>Quaternion 是 Hamilton 对 complex number 的扩展：</p>
+<div class="arithmatex">\[
+\boxed{
+q=s+xi+yj+zk
+}
+\]</div>
+<p>其中：</p>
+<div class="arithmatex">\[
+i^2=j^2=k^2=ijk=-1.
+\]</div>
+<p>因此一个 quaternion 有四个 real components：</p>
+<div class="arithmatex">\[
+\boxed{
+q=(s,x,y,z)
+}
+\]</div>
+<p>或者更适合 dynamics 的写法：</p>
+<div class="arithmatex">\[
+\boxed{
+q=[s,\mathbf v]
+}
+\]</div>
+<p>其中：</p>
+<div class="arithmatex">\[
+s\in\mathbb R
+\]</div>
+<p>叫 <strong>scalar part</strong>，</p>
+<div class="arithmatex">\[
+\mathbf v=
+\begin{bmatrix}
+x\\y\\z
+\end{bmatrix}
+\]</div>
+<p>叫 <strong>vector part</strong>。</p>
+<hr>
+<h1 id="11-quaternion">11. Quaternion 乘法为什么特殊？</h1>
+<p>基础单位满足：</p>
+<div class="arithmatex">\[
+i^2=j^2=k^2=-1
+\]</div>
+<p>以及：</p>
+<div class="arithmatex">\[
+ij=k,\qquad
+jk=i,\qquad
+ki=j
+\]</div>
+<p>但是反过来：</p>
+<div class="arithmatex">\[
+ji=-k,\qquad
+kj=-i,\qquad
+ik=-j.
+\]</div>
+<p>因此 quaternion multiplication 最重要的性质之一是：</p>
+<div class="arithmatex">\[
+\boxed{
+q_1q_2\neq q_2q_1
+}
+\]</div>
+<p>也就是：</p>
+<div class="arithmatex">\[
+\boxed{\text{non-commutative}}
+\]</div>
+<p>这其实非常适合 rotation，因为三维旋转本来也不满足交换律：</p>
+<div class="arithmatex">\[
+R_xR_y\neq R_yR_x.
+\]</div>
+<hr>
+<h1 id="quaternion-arithmetic">Quaternion Arithmetic</h1>
+<p>设：</p>
+<div class="arithmatex">\[
+q_1=[s_1,v_1],
+\qquad
+q_2=[s_2,v_2].
+\]</div>
+<h2 id="12-addition">12. Addition</h2>
+<div class="arithmatex">\[
+\boxed{
+q_1+q_2
+=
+[s_1+s_2,\;v_1+v_2]
+}
+\]</div>
+<p>就是 component-wise addition。</p>
+<hr>
+<h2 id="13-scalar-multiplication">13. Scalar Multiplication</h2>
+<p>对于 scalar <span class="arithmatex">\(a\)</span>：</p>
+<div class="arithmatex">\[
+\boxed{
+aq=[as,av]
+}
+\]</div>
+<hr>
+<h1 id="14-quaternion-multiplication">14. Quaternion Multiplication</h1>
+<p>最重要的是：</p>
+<div class="arithmatex">\[
+\boxed{
+q_1q_2
+=
+[
+s_1s_2-v_1\cdot v_2,\,
+s_1v_2+s_2v_1+v_1\times v_2
+]
+}
+\]</div>
+<p>注意这里同时出现：</p>
+<div class="arithmatex">\[
+\boxed{\text{dot product}}
+\]</div>
+<p>和：</p>
+<div class="arithmatex">\[
+\boxed{\text{cross product}}.
+\]</div>
+<p>这也是 quaternion algebra 和 3D geometry 联系起来的关键。</p>
+<hr>
+<h1 id="15-quaternion-norm">15. Quaternion Norm</h1>
+<p>定义：</p>
+<div class="arithmatex">\[
+\boxed{
+\|q\|
+=
+\sqrt{s^2+\|v\|^2}
+}
+\]</div>
+<p>也就是：</p>
+<div class="arithmatex">\[
+\|q\|
+=
+\sqrt{s^2+x^2+y^2+z^2}.
+\]</div>
+<p>如果：</p>
+<div class="arithmatex">\[
+\boxed{\|q\|=1}
+\]</div>
+<p>称为：</p>
+<div class="arithmatex">\[
+\boxed{\text{unit quaternion}}.
+\]</div>
+<p>真正用来表示 rotation 的是 <strong>unit quaternion</strong>。</p>
+<hr>
+<h1 id="quaternion-representing-rotation">Quaternion Representing Rotation</h1>
+<h2 id="16-axis-angle">16. Axis-Angle</h2>
+<p>三维 rotation 本身还有一种非常自然的描述：</p>
+<blockquote>
+<p>绕某个 axis <span class="arithmatex">\(\hat u\)</span>，旋转一个 angle <span class="arithmatex">\(\theta\)</span>。</p>
+</blockquote>
+<p>其中：</p>
+<div class="arithmatex">\[
+\|\hat u\|=1.
+\]</div>
+<p>这叫：</p>
+<div class="arithmatex">\[
+\boxed{\text{axis-angle representation}}
+\]</div>
+<p>而 quaternion 恰好可以非常自然地编码 axis-angle。</p>
+<hr>
+<h1 id="17-axis-angle-quaternion">17. 从 Axis-Angle 构造 Quaternion</h1>
+<p>绕单位轴</p>
+<div class="arithmatex">\[
+\hat u
+\]</div>
+<p>旋转角度</p>
+<div class="arithmatex">\[
+\theta
+\]</div>
+<p>对应的 quaternion 为：</p>
+<div class="arithmatex">\[
+\boxed{
+q=
+\left[
+\cos\frac{\theta}{2},
+\;
+\hat u\sin\frac{\theta}{2}
+\right]
+}
+\]</div>
+<p>或者展开：</p>
+<div class="arithmatex">\[
+\boxed{
+q=
+\begin{bmatrix}
+\cos(\theta/2)\\
+u_x\sin(\theta/2)\\
+u_y\sin(\theta/2)\\
+u_z\sin(\theta/2)
+\end{bmatrix}
+}
+\]</div>
+<p>因此：</p>
+<h3 id="scalar-part">scalar part</h3>
+<div class="arithmatex">\[
+s=\cos\frac\theta2
+\]</div>
+<h3 id="vector-part">vector part</h3>
+<div class="arithmatex">\[
+v=\hat u\sin\frac\theta2.
+\]</div>
+<p>因为：</p>
+<div class="arithmatex">\[
+\|\hat u\|=1,
+\]</div>
+<p>所以：</p>
+<div class="arithmatex">\[
+\|v\|^2
+=
+\sin^2\frac\theta2.
+\]</div>
+<p>于是：</p>
+<div class="arithmatex">\[
+\|q\|^2
+=
+\cos^2\frac\theta2
++
+\sin^2\frac\theta2
+=1.
+\]</div>
+<p>因此：</p>
+<div class="arithmatex">\[
+\boxed{\text{rotation quaternion 必须是 unit quaternion}}
+\]</div>
+<hr>
+<h1 id="18-theta2-theta">18. 为什么是 <span class="arithmatex">\(\theta/2\)</span> 而不是 <span class="arithmatex">\(\theta\)</span>？</h1>
+<p>这是 quaternion rotation 的一个基本性质。</p>
+<p>Unit quaternions 构成一个 3D rotation space 的 double cover：</p>
+<div class="arithmatex">\[
+\boxed{
+q\text{ 和 }-q
+\text{ 表示同一个 rotation}
+}
+\]</div>
+<p>例如：</p>
+<div class="arithmatex">\[
+q=
+\left[
+\cos\frac\theta2,
+u\sin\frac\theta2
+\right]
+\]</div>
+<p>和：</p>
+<div class="arithmatex">\[
+-q
+\]</div>
+<p>最终得到相同的 3D orientation。</p>
+<p>因此 quaternion 的参数天然出现 half-angle。</p>
+<p>笔记中现阶段记住 axis-angle mapping 即可：</p>
+<div class="arithmatex">\[
+\boxed{
+(\hat u,\theta)
+\longleftrightarrow
+\left[
+\cos\frac\theta2,
+\hat u\sin\frac\theta2
+\right]
+}
+\]</div>
+<hr>
+<h1 id="19-quaternion-rotation-matrix">19. Quaternion 转 Rotation Matrix</h1>
+<p>设：</p>
+<div class="arithmatex">\[
+q=[s,x,y,z]
+\]</div>
+<p>且</p>
+<div class="arithmatex">\[
+\|q\|=1.
+\]</div>
+<p>则它对应：</p>
+<div class="arithmatex">\[
+\boxed{
+R=
+\begin{bmatrix}
+s^2+x^2-y^2-z^2
+&amp;
+2(xy-sz)
+&amp;
+2(xz+sy)
+\\
+2(xy+sz)
+&amp;
+s^2-x^2+y^2-z^2
+&amp;
+2(yz-sx)
+\\
+2(xz-sy)
+&amp;
+2(yz+sx)
+&amp;
+s^2-x^2-y^2+z^2
+\end{bmatrix}
+}
+\]</div>
+<p>因此 quaternion 和 matrix 并不是互相竞争、只能选一个。</p>
+<p>实际系统完全可以：</p>
+<div class="arithmatex">\[
+\boxed{
+\text{Quaternion for storage/integration}
+\rightarrow
+\text{Matrix for transforming vertices}
+}
+\]</div>
+<p>这正是下一页 Unity 的设计。</p>
+<hr>
+<h1 id="rotation-representations-in-unity">Rotation Representations in Unity</h1>
+<h2 id="20-unity">20. Unity 为什么三种都出现？</h2>
+<p>PPT 的图实际上非常重要：</p>
+<div class="arithmatex">\[
+\boxed{
+\text{Euler Angles}
+\leftrightarrow
+\text{Quaternion}
+\leftrightarrow
+\text{Matrix}
+}
+\]</div>
+<p>它们承担不同任务。</p>
+<h3 id="euler-angles">Euler Angles</h3>
+<p>用于：</p>
+<div class="arithmatex">\[
+\boxed{\text{human interface}}
+\]</div>
+<p>例如：</p>
+<pre><code class="language-csharp">transform.eulerAngles
+</code></pre>
+<p>因为人容易理解 <span class="arithmatex">\(X,Y,Z\)</span> angles。</p>
+<hr>
+<h3 id="quaternion_1">Quaternion</h3>
+<p>Unity 内部的 orientation：</p>
+<pre><code class="language-csharp">transform.rotation
+</code></pre>
+<p>使用：</p>
+<div class="arithmatex">\[
+\boxed{\text{Quaternion}}
+\]</div>
+<p>这是实际 rotation state。</p>
+<hr>
+<h3 id="rotation-matrix">Rotation Matrix</h3>
+<p>当 graphics pipeline 真正要把大量 vertices 旋转时，可以把 quaternion 转成 matrix：</p>
+<div class="arithmatex">\[
+q\rightarrow R.
+\]</div>
+<p>因为：</p>
+<div class="arithmatex">\[
+Rr_i
+\]</div>
+<p>非常适合大量并行计算。</p>
+<p>所以三种表示并不是：</p>
+<blockquote>
+<p>谁最好？</p>
+</blockquote>
+<p>而是：</p>
+<div class="arithmatex">\[
+\boxed{
+\begin{array}{c|c}
+\text{Representation}&amp;\text{Best suited for}\\
+\hline
+\text{Euler angles}&amp;\text{UI / manual editing}\\
+\text{Quaternion}&amp;\text{orientation / dynamics}\\
+\text{Matrix}&amp;\text{applying transformations}
+\end{array}}
+\]</div>
+<hr>
+<h1 id="rotational-motion">Rotational Motion</h1>
+<h2 id="21-rotation-state">21. Rotation 的 State 是什么？</h2>
+<p>现在正式进入 rotational dynamics。</p>
+<p>前面的 translation state 是：</p>
+<div class="arithmatex">\[
+(x,v).
+\]</div>
+<p>对于 rotation，我们选择：</p>
+<div class="arithmatex">\[
+\boxed{
+(q,\omega)
+}
+\]</div>
+<p>其中：</p>
+<h3 id="q"><span class="arithmatex">\(q\)</span></h3>
+<p>orientation quaternion。</p>
+<p>PPT 的定义：</p>
+<blockquote>
+<p>rotation from the reference configuration to the current configuration.</p>
+</blockquote>
+<p>也就是说：</p>
+<div class="arithmatex">\[
+q(t)
+\]</div>
+<p>告诉我们：</p>
+<div class="arithmatex">\[
+\boxed{
+\text{Local/reference orientation}
+\rightarrow
+\text{current orientation}
+}
+\]</div>
+<hr>
+<h3 id="omega"><span class="arithmatex">\(\omega\)</span></h3>
+<p><strong>Angular velocity（角速度）</strong>。</p>
+<p>它是一个 3D vector：</p>
+<div class="arithmatex">\[
+\boxed{
+\omega=
+\begin{bmatrix}
+\omega_x\\
+\omega_y\\
+\omega_z
+\end{bmatrix}
+}
+\]</div>
+<p>其几何意义非常重要。</p>
+<hr>
+<h1 id="22-angular-velocity">22. Angular Velocity 的定义</h1>
+<p>Angular velocity vector：</p>
+<div class="arithmatex">\[
+\boxed{\omega}
+\]</div>
+<p>满足：</p>
+<h3 id="direction">Direction</h3>
+<div class="arithmatex">\[
+\boxed{
+\frac{\omega}{\|\omega\|}
+}
+\]</div>
+<p>表示瞬时 rotation axis。</p>
+<h3 id="magnitude">Magnitude</h3>
+<div class="arithmatex">\[
+\boxed{
+\|\omega\|
+}
+\]</div>
+<p>表示 angular speed，一般单位：</p>
+<div class="arithmatex">\[
+\mathrm{rad/s}.
+\]</div>
+<p>因此：</p>
+<div class="arithmatex">\[
+\boxed{
+\omega
+=
+\text{axis}\times\text{angular speed}
+}
+\]</div>
+<p>注意：</p>
+<div class="arithmatex">\[
+\omega
+\]</div>
+<p>不是“一个 angle”，也不是 Euler angles。</p>
+<p>它描述的是：</p>
+<div class="arithmatex">\[
+\boxed{\text{orientation 当前变化得有多快、绕哪个方向变化}}
+\]</div>
+<hr>
+<h1 id="23-quaternion-angular-velocity">23. Quaternion 与 Angular Velocity 的微分关系</h1>
+<p>平移有：</p>
+<div class="arithmatex">\[
+\dot x=v.
+\]</div>
+<p>rotation 也需要对应关系：</p>
+<div class="arithmatex">\[
+\dot q=? 
+\]</div>
+<p>在 PPT 当前采用的 convention 下：</p>
+<div class="arithmatex">\[
+\boxed{
+\dot q
+=
+\frac12
+[0,\omega]\,q
+}
+\]</div>
+<p>这里：</p>
+<div class="arithmatex">\[
+[0,\omega]
+\]</div>
+<p>是一个 scalar part 为 0 的 quaternion：</p>
+<div class="arithmatex">\[
+[0,\omega_x,\omega_y,\omega_z].
+\]</div>
+<p>因此对一个 timestep <span class="arithmatex">\(\Delta t\)</span>，Euler integration 给出：</p>
+<div class="arithmatex">\[
+q^{[1]}
+\approx
+q^{[0]}
++
+\frac{\Delta t}{2}
+[0,\omega]q^{[0]}.
+\]</div>
+<p>PPT 后面使用更新后的 angular velocity：</p>
+<div class="arithmatex">\[
+\boxed{
+q^{[1]}
+=
+q^{[0]}
++
+\left[
+0,\frac{\Delta t}{2}\omega^{[1]}
+\right]
+q^{[0]}
+}
+\]</div>
+<p>这与前面的 position update：</p>
+<div class="arithmatex">\[
+x^{[1]}=x^{[0]}+\Delta t v^{[1]}
+\]</div>
+<p>是完全对应的。</p>
+<hr>
+<h1 id="torque">Torque</h1>
+<h2 id="24-torque">24. 什么是 Torque？</h2>
+<p>平移里：</p>
+<div class="arithmatex">\[
+\boxed{\text{Force causes translational acceleration}}
+\]</div>
+<p>旋转里对应的是：</p>
+<div class="arithmatex">\[
+\boxed{\text{Torque causes angular acceleration}}
+\]</div>
+<p><strong>Torque（力矩 / 转矩）</strong>描述一个 force 对物体产生旋转趋势的大小和方向。</p>
+<p>设 force：</p>
+<div class="arithmatex">\[
+f_i
+\]</div>
+<p>作用在相对于 center of mass 的位置：</p>
+<div class="arithmatex">\[
+r_i^{world}.
+\]</div>
+<p>那么 torque：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau_i
+=
+r_i^{world}\times f_i
+}
+\]</div>
+<p>在当前刚体表示中：</p>
+<div class="arithmatex">\[
+r_i^{world}=Rr_i
+\]</div>
+<p>所以 PPT 写：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau_i
+=
+(Rr_i)\times f_i
+}
+\]</div>
+<p>总 torque：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau
+=
+\sum_i\tau_i
+}
+\]</div>
+<hr>
+<h1 id="25-torque-cross-product">25. 为什么 Torque 是 Cross Product？</h1>
+<p>Cross product magnitude：</p>
+<div class="arithmatex">\[
+\|\tau\|
+=
+\|r\|\|f\|\sin\theta.
+\]</div>
+<p>也可以写成：</p>
+<div class="arithmatex">\[
+\boxed{
+\|\tau\|
+=
+d_\perp\|f\|
+}
+\]</div>
+<p>其中 <span class="arithmatex">\(d_\perp\)</span> 是 rotation center 到 force line of action 的垂直距离。</p>
+<p>因此：</p>
+<ul>
+<li>force 越大 → torque 越大；</li>
+<li>lever arm 越长 → torque 越大；</li>
+<li>force 如果正好指向旋转中心：</li>
+</ul>
+<div class="arithmatex">\[
+r\parallel f
+\]</div>
+<p>则：</p>
+<div class="arithmatex">\[
+\boxed{\tau=0}.
+\]</div>
+<p>这就是为什么推门时在门把手处垂直推，比靠近门轴推容易得多。</p>
+<hr>
+<h1 id="inertia">Inertia</h1>
+<h2 id="26-inertia">26. 什么是 Inertia？</h2>
+<p>平移动力学里有：</p>
+<div class="arithmatex">\[
+f=ma.
+\]</div>
+<p>质量 <span class="arithmatex">\(m\)</span> 描述：</p>
+<blockquote>
+<p>一个物体有多难产生 linear acceleration。</p>
+</blockquote>
+<p>旋转里对应的 quantity 是：</p>
+<div class="arithmatex">\[
+\boxed{\text{moment of inertia / inertia tensor}}
+\]</div>
+<p>它描述：</p>
+<blockquote>
+<p>一个刚体有多难产生 angular acceleration。</p>
+</blockquote>
+<p>但和 mass 不同，它不是简单一个 scalar。</p>
+<p>三维中一般写成：</p>
+<div class="arithmatex">\[
+\boxed{
+I\in\mathbb R^{3\times3}
+}
+\]</div>
+<p>称为：</p>
+<div class="arithmatex">\[
+\boxed{\text{inertia tensor}}
+\]</div>
+<hr>
+<h1 id="27-inertia">27. 为什么 Inertia 不是只由总质量决定？</h1>
+<p>两个物体即使：</p>
+<div class="arithmatex">\[
+m_1=m_2
+\]</div>
+<p>只要质量分布不同，它们旋转起来的难度就可能完全不同。</p>
+<p>例如同样质量：</p>
+<ul>
+<li>质量集中在 rotation axis 附近；</li>
+<li>质量集中在很远的外围；</li>
+</ul>
+<p>第二个明显更难改变 angular velocity。</p>
+<p>所以：</p>
+<div class="arithmatex">\[
+\boxed{
+\text{mass}
+\rightarrow
+\text{amount of matter}
+}
+\]</div>
+<p>但：</p>
+<div class="arithmatex">\[
+\boxed{
+\text{inertia}
+\rightarrow
+\text{mass distribution relative to rotation axes}
+}
+\]</div>
+<hr>
+<h1 id="28-reference-inertia-tensor">28. Reference Inertia Tensor</h1>
+<p>如果把刚体离散成若干 particles：</p>
+<div class="arithmatex">\[
+m_i,\qquad r_i,
+\]</div>
+<p>其中 <span class="arithmatex">\(r_i\)</span> 是相对于 center of mass 的 local position，那么：</p>
+<div class="arithmatex">\[
+\boxed{
+I_{\rm ref}
+=
+\sum_i
+m_i
+\left[
+(r_i^Tr_i)I_3-r_ir_i^T
+\right]
+}
+\]</div>
+<p>这是刚体在 reference/local space 中的 inertia tensor。</p>
+<p>其中：</p>
+<div class="arithmatex">\[
+r_i^Tr_i=\|r_i\|^2.
+\]</div>
+<p>因为刚体自身形状和 mass distribution 不改变，所以：</p>
+<div class="arithmatex">\[
+\boxed{
+I_{\rm ref}
+}
+\]</div>
+<p>可以预先计算一次。</p>
+<hr>
+<h1 id="29-world-space-inertia">29. World-space Inertia</h1>
+<p>当刚体发生 rotation <span class="arithmatex">\(R\)</span> 后，inertia tensor 在 world coordinates 中也必须随 orientation 改变：</p>
+<div class="arithmatex">\[
+\boxed{
+I
+=
+R I_{\rm ref}R^T
+}
+\]</div>
+<p>这一点和 mass 很不一样。</p>
+<p>Mass：</p>
+<div class="arithmatex">\[
+m
+\]</div>
+<p>不管物体怎么旋转都一样。</p>
+<p>但 inertia matrix：</p>
+<div class="arithmatex">\[
+I
+\]</div>
+<p>会随 orientation 改变，因为它是相对于当前 world axes 描述 rotational resistance 的。</p>
+<hr>
+<h1 id="translation-rotation">Translation 与 Rotation 的对应关系</h1>
+<p>这张 PPT 非常值得直接整理成笔记表格：</p>
+<table>
+<thead>
+<tr>
+<th>Translational motion</th>
+<th>Rotational motion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Position <span class="arithmatex">\(x\)</span></td>
+<td>Orientation <span class="arithmatex">\(q\)</span></td>
+</tr>
+<tr>
+<td>Velocity <span class="arithmatex">\(v\)</span></td>
+<td>Angular velocity <span class="arithmatex">\(\omega\)</span></td>
+</tr>
+<tr>
+<td>Mass <span class="arithmatex">\(M\)</span></td>
+<td>Inertia <span class="arithmatex">\(I\)</span></td>
+</tr>
+<tr>
+<td>Force <span class="arithmatex">\(f\)</span></td>
+<td>Torque <span class="arithmatex">\(\tau\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>因此：</p>
+<div class="arithmatex">\[
+\boxed{
+x
+\leftrightarrow q
+}
+\]</div>
+<div class="arithmatex">\[
+\boxed{
+v
+\leftrightarrow\omega
+}
+\]</div>
+<div class="arithmatex">\[
+\boxed{
+M
+\leftrightarrow I
+}
+\]</div>
+<div class="arithmatex">\[
+\boxed{
+f
+\leftrightarrow\tau
+}
+\]</div>
+<p>这基本就是整个 rigid-body dynamics 的结构。</p>
+<hr>
+<h1 id="30-rotational-equation-of-motion">30. Rotational Equation of Motion</h1>
+<p>平移：</p>
+<div class="arithmatex">\[
+\dot v=M^{-1}f.
+\]</div>
+<p>课程这里采用对应的旋转更新：</p>
+<div class="arithmatex">\[
+\boxed{
+\dot\omega=I^{-1}\tau
+}
+\]</div>
+<p>数值积分后：</p>
+<div class="arithmatex">\[
+\boxed{
+\omega^{[1]}
+=
+\omega^{[0]}
++
+\Delta t
+I^{-1}\tau^{[0]}
+}
+\]</div>
+<p>然后再用：</p>
+<div class="arithmatex">\[
+\boxed{
+\dot q
+=
+\frac12[0,\omega]q
+}
+\]</div>
+<p>更新 orientation：</p>
+<div class="arithmatex">\[
+\boxed{
+q^{[1]}
+=
+q^{[0]}
++
+\left[
+0,\frac{\Delta t}{2}\omega^{[1]}
+\right]q^{[0]}.
+}
+\]</div>
+<p>所以 rotation 也形成同样的 chain：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau
+\rightarrow
+\text{angular acceleration}
+\rightarrow
+\omega
+\rightarrow
+q
+}
+\]</div>
+<p>与 translation：</p>
+<div class="arithmatex">\[
+\boxed{
+f
+\rightarrow
+a
+\rightarrow
+v
+\rightarrow
+x
+}
+\]</div>
+<p>完全对应。</p>
+<hr>
+<h1 id="31-rigid-body-state">31. 完整 Rigid Body State</h1>
+<p>现在 rigid body 不再只是 translation-only。</p>
+<p>完整 state 可以写成：</p>
+<div class="arithmatex">\[
+\boxed{
+s=
+(x,v,q,\omega)
+}
+\]</div>
+<p>其中：</p>
+<div class="arithmatex">\[
+x\in\mathbb R^3
+\]</div>
+<p>position，</p>
+<div class="arithmatex">\[
+v\in\mathbb R^3
+\]</div>
+<p>linear velocity，</p>
+<div class="arithmatex">\[
+q\in\mathbb H,\quad\|q\|=1
+\]</div>
+<p>orientation，</p>
+<div class="arithmatex">\[
+\omega\in\mathbb R^3
+\]</div>
+<p>angular velocity。</p>
+<p>一个 simulator step 就是：</p>
+<div class="arithmatex">\[
+\boxed{
+s^{[0]}
+\rightarrow
+s^{[1]}.
+}
+\]</div>
+<hr>
+<h1 id="32-step-1-forces">32. Step 1：计算 Forces</h1>
+<p>对于每一个 force：</p>
+<div class="arithmatex">\[
+\boxed{
+f_i
+=
+Force_i(x_i,v_i)
+}
+\]</div>
+<p>所有 force 求和：</p>
+<div class="arithmatex">\[
+\boxed{
+f=\sum_i f_i.
+}
+\]</div>
+<p>然后更新 linear velocity：</p>
+<div class="arithmatex">\[
+\boxed{
+v
+\leftarrow
+v+\Delta tM^{-1}f
+}
+\]</div>
+<p>再更新 position：</p>
+<div class="arithmatex">\[
+\boxed{
+x
+\leftarrow
+x+\Delta t v.
+}
+\]</div>
+<p>这就是前面已经学过的 translation simulator。</p>
+<hr>
+<h1 id="33-step-2-quaternion-rotation-matrix">33. Step 2：由 Quaternion 得到 Rotation Matrix</h1>
+<p>因为 application point 的 local coordinate 是：</p>
+<div class="arithmatex">\[
+r_i
+\]</div>
+<p>但 torque 要在 world space 计算。</p>
+<p>所以先：</p>
+<div class="arithmatex">\[
+\boxed{
+R\leftarrow Rotate(q)
+}
+\]</div>
+<p>然后：</p>
+<div class="arithmatex">\[
+r_i^{world}=Rr_i.
+\]</div>
+<hr>
+<h1 id="34-step-3-torque">34. Step 3：计算 Torque</h1>
+<p>每个 force <span class="arithmatex">\(f_i\)</span> 产生：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau_i
+=
+(Rr_i)\times f_i.
+}
+\]</div>
+<p>所有 torque 求和：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau
+=
+\sum_i\tau_i.
+}
+\]</div>
+<hr>
+<h1 id="35-step-4-angular-velocity">35. Step 4：更新 Angular Velocity</h1>
+<p>计算当前 inertia：</p>
+<div class="arithmatex">\[
+I=RI_{\rm ref}R^T.
+\]</div>
+<p>然后：</p>
+<div class="arithmatex">\[
+\boxed{
+\omega
+\leftarrow
+\omega+\Delta t I^{-1}\tau
+}
+\]</div>
+<p>这和：</p>
+<div class="arithmatex">\[
+v\leftarrow v+\Delta tM^{-1}f
+\]</div>
+<p>一一对应。</p>
+<hr>
+<h1 id="36-step-5-quaternion">36. Step 5：更新 Quaternion</h1>
+<p>最后：</p>
+<div class="arithmatex">\[
+\boxed{
+q
+\leftarrow
+q+
+\left[
+0,\frac{\Delta t}{2}\omega
+\right]q
+}
+\]</div>
+<p>这样 orientation 就向前推进一个 timestep。</p>
+<p>因为 numerical integration 会产生 floating-point / discretization error，实际实现中通常还会重新归一化：</p>
+<div class="arithmatex">\[
+\boxed{
+q\leftarrow\frac{q}{\|q\|}
+}
+\]</div>
+<p>从而继续满足：</p>
+<div class="arithmatex">\[
+\|q\|=1.
+\]</div>
+<hr>
+<h1 id="37-simulator">37. 完整 Simulator 可以整理成这套算法</h1>
+<p>每个 timestep：</p>
+<div class="arithmatex">\[
+\boxed{
+\begin{aligned}
+f_i &amp;\leftarrow Force_i(x_i,v_i)
+\\
+f &amp;\leftarrow \sum_i f_i
+\\
+v &amp;\leftarrow v+\Delta tM^{-1}f
+\\
+x &amp;\leftarrow x+\Delta t v
+\\[2mm]
+R &amp;\leftarrow Rotate(q)
+\\
+\tau_i &amp;\leftarrow (Rr_i)\times f_i
+\\
+\tau &amp;\leftarrow \sum_i\tau_i
+\\
+I &amp;\leftarrow RI_{\rm ref}R^T
+\\
+\omega &amp;\leftarrow
+\omega+\Delta tI^{-1}\tau
+\\
+q &amp;\leftarrow
+q+
+\left[
+0,\frac{\Delta t}{2}\omega
+\right]q
+\\
+q &amp;\leftarrow q/\|q\|
+\end{aligned}
+}
+\]</div>
+<p>最终：</p>
+<div class="arithmatex">\[
+\boxed{
+(x,v,q,\omega)_n
+\rightarrow
+(x,v,q,\omega)_{n+1}.
+}
+\]</div>
+<hr>
+<h1 id="38-translation-rotation">38. 为什么 Translation 比 Rotation 容易很多？</h1>
+<p>最后一页 implementation issues 的第一句话：</p>
+<blockquote>
+<p>Translational motion is much easier to implement than rotational motion.</p>
+</blockquote>
+<p>现在原因已经很明显。</p>
+<p>Translation 中：</p>
+<div class="arithmatex">\[
+x,v,f
+\]</div>
+<p>全部都是普通 Euclidean vectors，</p>
+<p>mass 甚至基本只是：</p>
+<div class="arithmatex">\[
+m
+\]</div>
+<p>一个 scalar。</p>
+<p>而 rotation 中：</p>
+<ul>
+<li>orientation 不在普通 <span class="arithmatex">\(\mathbb R^3\)</span> 中；</li>
+<li>要用 quaternion；</li>
+<li>quaternion 必须保持 unit norm；</li>
+<li>angular velocity 与 quaternion derivative 有特殊关系；</li>
+<li>force 要先转换成 torque；</li>
+<li>inertia 是 matrix；</li>
+<li>inertia 还随 orientation 改变。</li>
+</ul>
+<p>所以：</p>
+<div class="arithmatex">\[
+\boxed{\text{rotational dynamics is geometrically more complicated}}
+\]</div>
+<hr>
+<h1 id="39-constant-angular-velocity">39. Constant Angular Velocity 是最简单的测试</h1>
+<p>PPT 建议实现时可以先不处理 torque，而给一个 constant angular velocity：</p>
+<div class="arithmatex">\[
+\boxed{
+\omega=\text{constant}
+}
+\]</div>
+<p>然后只反复更新：</p>
+<div class="arithmatex">\[
+q
+\leftarrow
+q+
+\left[
+0,\frac{\Delta t}{2}\omega
+\right]q.
+\]</div>
+<p>如果实现正确，物体应该绕：</p>
+<div class="arithmatex">\[
+\frac{\omega}{\|\omega\|}
+\]</div>
+<p>持续旋转，angular speed 为：</p>
+<div class="arithmatex">\[
+\|\omega\|.
+\]</div>
+<p>这是一个很好的 sanity check。</p>
+<hr>
+<h1 id="40-gravity-torque">40. 为什么 Gravity 不产生 Torque？</h1>
+<p>PPT 说：</p>
+<blockquote>
+<p>Gravity doesn't cause any torque.</p>
+</blockquote>
+<p>这里要准确理解它的前提：</p>
+<div class="arithmatex">\[
+\boxed{\text{uniform gravity + torque computed about center of mass}}
+\]</div>
+<p>对于每个 mass point：</p>
+<div class="arithmatex">\[
+f_i=m_i g.
+\]</div>
+<p>总 gravity torque about COM：</p>
+<div class="arithmatex">\[
+\tau_g
+=
+\sum_i r_i\times m_i g.
+\]</div>
+<p>因为：</p>
+<div class="arithmatex">\[
+\sum_i m_i r_i=0
+\]</div>
+<p>这是 center of mass coordinate 的定义，所以：</p>
+<div class="arithmatex">\[
+\tau_g
+=
+\left(\sum_i m_i r_i\right)\times g
+=0.
+\]</div>
+<p>因此：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau_g=0
+}
+\]</div>
+<p>所以均匀重力会改变：</p>
+<div class="arithmatex">\[
+v
+\]</div>
+<p>但不会改变：</p>
+<div class="arithmatex">\[
+\omega.
+\]</div>
+<p>也就是：</p>
+<div class="arithmatex">\[
+\boxed{
+\text{Gravity moves the COM, but does not spin a free rigid body about its COM.}
+}
+\]</div>
+<p>这里不要把它误记成“gravity 永远不能产生 torque”。比如一个物体固定在 hinge 上时，我们如果绕 hinge 而不是 center of mass 算 torque，gravity 完全可以产生 torque——pendulum 就是最简单的例子。</p>
+<hr>
+<h1 id="_2">这一部分最重要的课程脉络</h1>
+<p>现在从前面的 rigid body definition 一路走到完整 simulation，其实可以压缩成：</p>
+<p>刚体的 configuration：</p>
+<div class="arithmatex">\[
+\boxed{
+p_i=x+Rr_i
+}
+\]</div>
+<p>其中 rotation 最终使用 quaternion 表示：</p>
+<div class="arithmatex">\[
+\boxed{
+q=
+\left[
+\cos\frac\theta2,
+\hat u\sin\frac\theta2
+\right]
+}
+\]</div>
+<p>完整 state：</p>
+<div class="arithmatex">\[
+\boxed{
+s=(x,v,q,\omega)
+}
+\]</div>
+<p>平移动力学：</p>
+<div class="arithmatex">\[
+\boxed{
+f
+\rightarrow
+M^{-1}f
+\rightarrow
+v
+\rightarrow
+x
+}
+\]</div>
+<p>旋转动力学：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau
+\rightarrow
+I^{-1}\tau
+\rightarrow
+\omega
+\rightarrow
+q
+}
+\]</div>
+<p>其中：</p>
+<div class="arithmatex">\[
+\boxed{
+\tau_i=(Rr_i)\times f_i
+}
+\]</div>
+<p>以及：</p>
+<div class="arithmatex">\[
+\boxed{
+I=RI_{\rm ref}R^T
+}
+\]</div>
+<p>最终每一个 physics timestep 都是在执行：</p>
+<div class="arithmatex">\[
+\boxed{
+(x,v,q,\omega)^n
+\longrightarrow
+(x,v,q,\omega)^{n+1}.
+}
+\]</div>
+<p>这就是这组 PPT 到这里为止建立起来的 <strong>完整 rigid-body simulation framework</strong>。</p>
 <h2 id="2-rigid-contacts">2. Rigid Contacts</h2>
 <h3 id="21-particle-collision-detection-and-response">2.1 Particle Collision Detection and Response</h3>
 <h3 id="22-rigid-body-collision-detection-and-response">2.2 Rigid Body Collision Detection and Response</h3>

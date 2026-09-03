@@ -23,6 +23,24 @@ const POSTS = [
     "summary": "Notes for Fundamentals of Artificial Intelligence (IN2406) at TUM — rational agents, search, constraint satisfaction, logic, planning, and probabilistic reasoning."
   },
   {
+    "title": "GAMES204 — Computational Imaging: Notes",
+    "date": "2026-08-24",
+    "categories": [
+      "Course notes/Computational Imaging and Display/Computational Imaging/GameS204"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "computational imaging",
+      "GAMES204"
+    ],
+    "url": "posts/games204.html",
+    "updated": "2026-09-03",
+    "mtime": "2026-09-03T22:41:27+02:00",
+    "words": 3281,
+    "minutes": 12,
+    "summary": "Notes for GAMES204 (Computational Imaging)."
+  },
+  {
     "title": "GAMES103 — Physically-Based Animation Note1: Intro and Math Basics",
     "date": "2026-08-24",
     "categories": [
@@ -52,10 +70,10 @@ const POSTS = [
       "GAMES103"
     ],
     "url": "posts/games103-note2.html",
-    "updated": "2026-08-24",
-    "mtime": "2026-08-24T16:39:11+02:00",
-    "words": 38,
-    "minutes": 1,
+    "updated": "2026-09-03",
+    "mtime": "2026-09-03T22:41:27+02:00",
+    "words": 8724,
+    "minutes": 34,
     "summary": "GAMES103 note 2 — rigid body dynamics — state integration, rotation representations, and contact handling."
   },
   {
@@ -223,24 +241,6 @@ const POSTS = [
     "summary": "Notes for GAMES202 (Real-Time High Quality Rendering) — shadows, environment lighting, global illumination, and real-time ray tracing."
   },
   {
-    "title": "GAMES204 — Computational Imaging: Notes",
-    "date": "2026-08-24",
-    "categories": [
-      "Course notes/Computer Graphics/Rendering/Games204"
-    ],
-    "tags": [
-      "Computer Graphics",
-      "computational imaging",
-      "GAMES204"
-    ],
-    "url": "posts/games204.html",
-    "updated": "2026-08-24",
-    "mtime": "2026-08-24T16:39:11+02:00",
-    "words": 3,
-    "minutes": 1,
-    "summary": "Notes for GAMES204 (Computational Imaging)."
-  },
-  {
     "title": "3D Computer Vision (IN2228) — Notes 1",
     "date": "2026-08-24",
     "categories": [
@@ -313,10 +313,10 @@ const POSTS = [
       "video object segmentation"
     ],
     "url": "posts/cv3-image-segmentation.html",
-    "updated": "2026-08-27",
-    "mtime": "2026-08-27T10:42:10+02:00",
-    "words": 473,
-    "minutes": 3,
+    "updated": "2026-09-03",
+    "mtime": "2026-09-03T22:41:27+02:00",
+    "words": 11047,
+    "minutes": 44,
     "summary": "Third notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — segmentation from superpixels, clustering and normalized cuts through CRFs to FCNs, instance segmentation with Mask R-CNN and PointRend, panoptic segmentation and its evaluation, and video object segmentation from optical flow to pixel-wise retrieval."
   },
   {
@@ -355,7 +355,7 @@ const POSTS = [
     ],
     "url": "posts/cv3-object-tracking.html",
     "updated": "2026-08-29",
-    "mtime": "2026-08-29T21:07:51+02:00",
+    "mtime": "2026-08-29T21:19:52+02:00",
     "words": 6965,
     "minutes": 27,
     "summary": "Second notes for CV3 (IN2375, Detection, Segmentation and Tracking) at TUM — object tracking from Bayesian filtering to single-object online trackers (GOTURN, MDNet), multi-object association via motion models, Tracktor and ReID, graph-based MOT with message passing networks, and how tracking is evaluated."
