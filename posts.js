@@ -3,6 +3,214 @@
 
 const POSTS = [
   {
+    "title": "GAMES202 — Real-Time High Quality Rendering Note2: Environment Lighting and Precomputed Radiance Transfer",
+    "date": "2026-09-04",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games202"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "real-time rendering",
+      "environment lighting",
+      "PRT",
+      "GAMES202"
+    ],
+    "url": "posts/games202-note2.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 2570,
+    "minutes": 10,
+    "summary": "GAMES202 note 2 (Lectures 5–7) — image-based lighting with the split sum approximation, shadows from environment lighting, basis functions and spherical harmonics, prefiltered irradiance, precomputed radiance transfer for diffuse and glossy objects, and wavelets for all-frequency lighting."
+  },
+  {
+    "title": "GAMES202 — Real-Time High Quality Rendering Note3: Real-Time Global Illumination",
+    "date": "2026-09-04",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games202"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "real-time rendering",
+      "global illumination",
+      "GAMES202"
+    ],
+    "url": "posts/games202-note3.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 3162,
+    "minutes": 11,
+    "summary": "GAMES202 note 3 (Lectures 7–9) — one-bounce indirect illumination in real time, in 3D with reflective shadow maps, light propagation volumes and voxel GI, and in screen space with SSAO, SSDO and screen space reflections."
+  },
+  {
+    "title": "GAMES202 — Real-Time High Quality Rendering Note4: Real-Time Physically-Based Materials",
+    "date": "2026-09-04",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games202"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "real-time rendering",
+      "materials",
+      "PBR",
+      "GAMES202"
+    ],
+    "url": "posts/games202-note4.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 2268,
+    "minutes": 8,
+    "summary": "GAMES202 note 4 (Lectures 10–11) — microfacet BRDFs in real time (Beckmann, GGX, GTR, Smith shadowing-masking), the Kulla-Conty approximation for multiple bounces, Disney's principled BRDF, linearly transformed cosines for polygonal lights, and non-photorealistic rendering."
+  },
+  {
+    "title": "GAMES202 — Real-Time High Quality Rendering Note5: Real-Time Ray Tracing and Industrial Solutions",
+    "date": "2026-09-04",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games202"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "real-time rendering",
+      "ray tracing",
+      "denoising",
+      "GAMES202"
+    ],
+    "url": "posts/games202-note5.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 3681,
+    "minutes": 13,
+    "summary": "GAMES202 note 5 (Lectures 12–14) — real-time ray tracing at 1 SPP and why denoising is the key, temporal accumulation with motion vectors and its failure cases, spatial filtering (Gaussian, bilateral, joint bilateral, separable and à-trous filters, outlier clamping), SVGF and RAE, and industrial solutions such as TAA, DLSS, deferred/tiled/clustered shading, LoD and hybrid GI like Lumen."
+  },
+  {
+    "title": "GAMES101 — Modern Computer Graphics Note1: Linear Algebra and Transformation",
+    "date": "2026-09-03",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games101"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "rendering",
+      "GAMES101"
+    ],
+    "url": "posts/games101-note1.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 3730,
+    "minutes": 15,
+    "summary": "GAMES101 note 1 (Lectures 1–4) — what graphics is, the linear algebra toolbox, 2D/3D transformations with homogeneous coordinates, and the full viewing pipeline of model, view and projection matrices."
+  },
+  {
+    "title": "GAMES101 — Modern Computer Graphics Note2: Rasterization and Shading",
+    "date": "2026-09-03",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games101"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "rendering",
+      "GAMES101"
+    ],
+    "url": "posts/games101-note2.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 4945,
+    "minutes": 17,
+    "summary": "GAMES101 note 2 (Lectures 5–9, plus texture applications and shadow mapping) — viewport transform, rasterizing triangles, sampling theory and antialiasing, z-buffer, the Blinn-Phong model, shading frequencies, the graphics pipeline, texture mapping with barycentric interpolation, mipmaps, and shadow maps."
+  },
+  {
+    "title": "GAMES101 — Modern Computer Graphics Note3: Geometry",
+    "date": "2026-09-03",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games101"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "geometry",
+      "GAMES101"
+    ],
+    "url": "posts/games101-note3.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 2526,
+    "minutes": 9,
+    "summary": "GAMES101 note 3 (Lectures 10–12) — implicit and explicit geometry representations, Bézier curves and de Casteljau's algorithm, Bézier surfaces, and mesh processing with Loop and Catmull-Clark subdivision and quadric-error simplification."
+  },
+  {
+    "title": "GAMES101 — Modern Computer Graphics Note4: Ray Tracing and Materials",
+    "date": "2026-09-03",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games101"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "rendering",
+      "ray tracing",
+      "GAMES101"
+    ],
+    "url": "posts/games101-note4.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 6360,
+    "minutes": 24,
+    "summary": "GAMES101 note 4 (Lectures 13–17) — Whitted-style ray tracing, ray-object intersection, acceleration structures (grids, KD-trees, BVH), radiometry, the BRDF and the rendering equation, Monte Carlo path tracing with Russian roulette and light sampling, and material models from Lambertian to microfacet BRDFs."
+  },
+  {
+    "title": "GAMES101 — Modern Computer Graphics Note5: Advanced Rendering, Cameras and Color",
+    "date": "2026-09-03",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games101"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "rendering",
+      "GAMES101"
+    ],
+    "url": "posts/games101-note5.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 4520,
+    "minutes": 16,
+    "summary": "GAMES101 note 5 (Lectures 18–20) — advanced light transport (BDPT, MLT, photon mapping, VCM, instant radiosity), advanced appearance (participating media, hair and fur, BSSRDF, cloth, glinty details, procedural noise), cameras and lenses with the thin-lens model and depth of field, light fields, and the physics and perception of color."
+  },
+  {
+    "title": "GAMES101 — Modern Computer Graphics Note6: Animation and Simulation",
+    "date": "2026-09-03",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games101"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "animation",
+      "physics simulation",
+      "GAMES101"
+    ],
+    "url": "posts/games101-note6.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 2947,
+    "minutes": 10,
+    "summary": "GAMES101 note 6 (Lectures 21–22) — keyframe animation, mass-spring systems and particle systems, forward and inverse kinematics, rigging and motion capture, then single-particle simulation with explicit, midpoint, implicit and Verlet integrators, and a glimpse of rigid-body and fluid simulation (PBF, Eulerian vs Lagrangian, MPM)."
+  },
+  {
+    "title": "GAMES202 — Real-Time High Quality Rendering Note1: Overview, Recap and Real-Time Shadows",
+    "date": "2026-09-03",
+    "categories": [
+      "Course notes/Computer Graphics/Rendering/Games202"
+    ],
+    "tags": [
+      "Computer Graphics",
+      "real-time rendering",
+      "shadows",
+      "GAMES202"
+    ],
+    "url": "posts/games202-note1.html",
+    "updated": "2026-09-04",
+    "mtime": "2026-09-04T08:02:38+02:00",
+    "words": 3859,
+    "minutes": 14,
+    "summary": "GAMES202 note 1 (Lectures 1–4, plus distance field soft shadows from Lecture 5) — what real-time high quality rendering is, a recap of the pipeline and the rendering equation, shadow mapping and its issues, the key approximation of RTR, PCF and PCSS, variance and moment shadow maps, and SDF-based soft shadows."
+  },
+  {
     "title": "Fundamentals of Artificial Intelligence (IN2406) — Notes",
     "date": "2026-08-24",
     "categories": [
@@ -203,42 +411,6 @@ const POSTS = [
     "words": 3,
     "minutes": 1,
     "summary": "Notes for GAMES302 (Isogeometric Analysis) — splines and NURBS as a unified representation for geometric modeling and numerical simulation."
-  },
-  {
-    "title": "GAMES101 — Modern Computer Graphics: Notes",
-    "date": "2026-08-24",
-    "categories": [
-      "Course notes/Computer Graphics/Rendering/Games101"
-    ],
-    "tags": [
-      "Computer Graphics",
-      "rendering",
-      "GAMES101"
-    ],
-    "url": "posts/games101.html",
-    "updated": "2026-08-24",
-    "mtime": "2026-08-24T16:39:11+02:00",
-    "words": 3,
-    "minutes": 1,
-    "summary": "Notes for GAMES101 (Introduction to Modern Computer Graphics) — transformations, rasterization, shading, geometry, ray tracing, and animation."
-  },
-  {
-    "title": "GAMES202 — Real-Time High Quality Rendering: Notes",
-    "date": "2026-08-24",
-    "categories": [
-      "Course notes/Computer Graphics/Rendering/Games202"
-    ],
-    "tags": [
-      "Computer Graphics",
-      "real-time rendering",
-      "GAMES202"
-    ],
-    "url": "posts/games202.html",
-    "updated": "2026-08-24",
-    "mtime": "2026-08-24T16:39:11+02:00",
-    "words": 3,
-    "minutes": 1,
-    "summary": "Notes for GAMES202 (Real-Time High Quality Rendering) — shadows, environment lighting, global illumination, and real-time ray tracing."
   },
   {
     "title": "3D Computer Vision (IN2228) — Notes 1",
